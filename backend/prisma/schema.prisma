@@ -1,0 +1,370 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+}
+
+// ----------------------------------------------------
+// ENUMS
+// ----------------------------------------------------
+
+enum UserRole {
+  ADMIN
+  FUNDRAISER
+  USER
+}
+
+enum UserStatus {
+  ACTIVE
+  SUSPENDED
+  BANNED
+}
+
+enum VerificationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum CampaignStatus {
+  DRAFT
+  PENDING_APPROVAL
+  ACTIVE
+  PAUSED
+  COMPLETED
+  REJECTED
+  CANCELLED
+}
+
+enum MediaType {
+  IMAGE
+  VIDEO
+  DOCUMENT
+}
+
+enum PaymentMethod {
+  BANK_TRANSFER
+  VNPAY
+  MOMO
+  STRIPE
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCESS
+  FAILED
+  REFUNDED
+}
+
+enum CommunityMemberRole {
+  ADMIN
+  MODERATOR
+  MEMBER
+}
+
+// ----------------------------------------------------
+// MODELS
+// ----------------------------------------------------
+
+model User {
+  id              String      @id @default(uuid()) @db.VarChar(36)
+  email           String      @unique @db.VarChar(255)
+  passwordHash    String      @map("password_hash") @db.VarChar(255)
+  fullName        String      @map("full_name") @db.VarChar(150)
+  phoneNumber     String?     @map("phone_number") @db.VarChar(20)
+  avatarUrl       String?     @map("avatar_url") @db.VarChar(500)
+  bio             String?     @db.Text
+  role            UserRole    @default(USER)
+  status          UserStatus  @default(ACTIVE)
+  isEmailVerified Boolean     @default(false) @map("is_email_verified")
+  emailVerifiedAt DateTime?   @map("email_verified_at")
+  createdAt       DateTime    @default(now()) @map("created_at")
+  updatedAt       DateTime    @updatedAt @map("updated_at")
+
+  // Quan hệ
+  verification            Verification?      @relation("UserVerification")
+  reviewedVerifications   Verification[]     @relation("VerificationReviewer")
+  campaigns               Campaign[]         @relation("FundraiserCampaigns")
+  donations               Donation[]         @relation("UserDonations")
+  createdDisbursements    Disbursement[]     @relation("UserDisbursements")
+  createdCommunities      Community[]        @relation("CommunityCreator")
+  communityMemberships    CommunityMember[]  @relation("MemberCommunities")
+  posts                   CommunityPost[]    @relation("UserPosts")
+  comments                Comment[]          @relation("UserComments")
+  auditLogs               AuditLog[]         @relation("UserAuditLogs")
+
+  @@index([role])
+  @@index([status])
+  @@map("users")
+}
+
+model Verification {
+  id                  String             @id @default(uuid()) @db.VarChar(36)
+  userId              String             @unique @map("user_id") @db.VarChar(36)
+  idCardNumber        String             @map("id_card_number") @db.VarChar(50)
+  cardIssuedDate      DateTime?          @map("card_issued_date") @db.Date
+  cardIssuedPlace     String?            @map("card_issued_place") @db.VarChar(200)
+  frontCardImage      String             @map("front_card_image") @db.VarChar(500)
+  backCardImage       String             @map("back_card_image") @db.VarChar(500)
+  portraitImage       String             @map("portrait_image") @db.VarChar(500)
+  supportingDocuments Json?              @map("supporting_documents")
+  status              VerificationStatus @default(PENDING)
+  rejectionReason     String?            @map("rejection_reason") @db.Text
+  reviewedBy          String?            @map("reviewed_by") @db.VarChar(36)
+  reviewedAt          DateTime?          @map("reviewed_at")
+  createdAt           DateTime           @default(now()) @map("created_at")
+  updatedAt           DateTime           @updatedAt @map("updated_at")
+
+  // Quan hệ
+  user     User  @relation("UserVerification", fields: [userId], references: [id], onDelete: Cascade)
+  reviewer User? @relation("VerificationReviewer", fields: [reviewedBy], references: [id], onDelete: SetNull)
+
+  @@index([status])
+  @@map("verifications")
+}
+
+model Category {
+  id          String   @id @default(uuid()) @db.VarChar(36)
+  name        String   @db.VarChar(100)
+  slug        String   @unique @db.VarChar(120)
+  description String?  @db.Text
+  iconUrl     String?  @map("icon_url") @db.VarChar(500)
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  // Quan hệ
+  campaigns Campaign[] @relation("CategoryCampaigns")
+
+  @@index([isActive])
+  @@map("categories")
+}
+
+model Campaign {
+  id                String         @id @default(uuid()) @db.VarChar(36)
+  fundraiserId      String         @map("fundraiser_id") @db.VarChar(36)
+  categoryId        String         @map("category_id") @db.VarChar(36)
+  title             String         @db.VarChar(255)
+  slug              String         @unique @db.VarChar(280)
+  shortDescription  String         @map("short_description") @db.VarChar(500)
+  story             String         @db.LongText
+  coverImageUrl     String         @map("cover_image_url") @db.VarChar(500)
+  targetAmount      Decimal        @map("target_amount") @db.Decimal(15, 2)
+  currentAmount     Decimal        @default(0.00) @map("current_amount") @db.Decimal(15, 2)
+  donorCount        Int            @default(0) @map("donor_count") @db.UnsignedInt
+  startDate         DateTime       @map("start_date")
+  endDate           DateTime       @map("end_date")
+  status            CampaignStatus @default(DRAFT)
+  bankAccountNumber String         @map("bank_account_number") @db.VarChar(50)
+  bankName          String         @map("bank_name") @db.VarChar(100)
+  bankAccountName   String         @map("bank_account_name") @db.VarChar(150)
+  beneficiaryInfo   String?        @map("beneficiary_info") @db.Text
+  createdAt         DateTime       @default(now()) @map("created_at")
+  updatedAt         DateTime       @updatedAt @map("updated_at")
+
+  // Quan hệ
+  fundraiser     User             @relation("FundraiserCampaigns", fields: [fundraiserId], references: [id], onDelete: Restrict)
+  category       Category         @relation("CategoryCampaigns", fields: [categoryId], references: [id], onDelete: Restrict)
+  media          CampaignMedia[]  @relation("CampaignMediaList")
+  updates        CampaignUpdate[] @relation("CampaignUpdatesList")
+  donations      Donation[]       @relation("CampaignDonations")
+  disbursements  Disbursement[]   @relation("CampaignDisbursements")
+  communityPosts CommunityPost[]  @relation("CampaignPosts")
+  comments       Comment[]        @relation("CampaignComments")
+
+  @@index([fundraiserId])
+  @@index([categoryId])
+  @@index([status])
+  @@index([startDate, endDate])
+  @@index([createdAt])
+  @@map("campaigns")
+}
+
+model CampaignMedia {
+  id         String    @id @default(uuid()) @db.VarChar(36)
+  campaignId String    @map("campaign_id") @db.VarChar(36)
+  mediaType  MediaType @default(IMAGE) @map("media_type")
+  url        String    @db.VarChar(500)
+  caption    String?   @db.VarChar(255)
+  sortOrder  Int       @default(0) @map("sort_order")
+  createdAt  DateTime  @default(now()) @map("created_at")
+
+  // Quan hệ
+  campaign Campaign @relation("CampaignMediaList", fields: [campaignId], references: [id], onDelete: Cascade)
+
+  @@index([campaignId])
+  @@map("campaign_media")
+}
+
+model CampaignUpdate {
+  id          String   @id @default(uuid()) @db.VarChar(36)
+  campaignId  String   @map("campaign_id") @db.VarChar(36)
+  title       String   @db.VarChar(255)
+  content     String   @db.LongText
+  attachments Json?
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Quan hệ
+  campaign Campaign @relation("CampaignUpdatesList", fields: [campaignId], references: [id], onDelete: Cascade)
+
+  @@index([campaignId])
+  @@map("campaign_updates")
+}
+
+model Donation {
+  id                     String        @id @default(uuid()) @db.VarChar(36)
+  campaignId             String        @map("campaign_id") @db.VarChar(36)
+  donorId                String?       @map("donor_id") @db.VarChar(36)
+  transactionCode        String        @unique @map("transaction_code") @db.VarChar(64)
+  amount                 Decimal       @db.Decimal(15, 2)
+  donorName              String        @map("donor_name") @db.VarChar(150)
+  donorEmail             String?       @map("donor_email") @db.VarChar(255)
+  donorPhone             String?       @map("donor_phone") @db.VarChar(20)
+  message                String?       @db.VarChar(500)
+  isAnonymous            Boolean       @default(false) @map("is_anonymous")
+  paymentMethod          PaymentMethod @default(BANK_TRANSFER) @map("payment_method")
+  paymentStatus          PaymentStatus @default(PENDING) @map("payment_status")
+  paidAt                 DateTime?     @map("paid_at")
+  paymentGatewayResponse Json?         @map("payment_gateway_response")
+  createdAt              DateTime      @default(now()) @map("created_at")
+  updatedAt              DateTime      @updatedAt @map("updated_at")
+
+  // Quan hệ
+  campaign Campaign @relation("CampaignDonations", fields: [campaignId], references: [id], onDelete: Restrict)
+  donor    User?    @relation("UserDonations", fields: [donorId], references: [id], onDelete: SetNull)
+
+  @@index([campaignId])
+  @@index([donorId])
+  @@index([paymentStatus])
+  @@index([createdAt])
+  @@map("donations")
+}
+
+model Disbursement {
+  id               String   @id @default(uuid()) @db.VarChar(36)
+  campaignId       String   @map("campaign_id") @db.VarChar(36)
+  title            String   @db.VarChar(255)
+  amount           Decimal  @db.Decimal(15, 2)
+  disbursementDate DateTime @map("disbursement_date") @db.Date
+  proofDocuments   Json     @map("proof_documents")
+  note             String?  @db.Text
+  createdBy        String   @map("created_by") @db.VarChar(36)
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  // Quan hệ
+  campaign Campaign @relation("CampaignDisbursements", fields: [campaignId], references: [id], onDelete: Restrict)
+  creator  User     @relation("UserDisbursements", fields: [createdBy], references: [id], onDelete: Restrict)
+
+  @@index([campaignId])
+  @@map("disbursements")
+}
+
+model Community {
+  id          String   @id @default(uuid()) @db.VarChar(36)
+  name        String   @db.VarChar(150)
+  slug        String   @unique @db.VarChar(180)
+  description String?  @db.Text
+  avatarUrl   String?  @map("avatar_url") @db.VarChar(500)
+  coverUrl    String?  @map("cover_url") @db.VarChar(500)
+  creatorId   String   @map("creator_id") @db.VarChar(36)
+  isPrivate   Boolean  @default(false) @map("is_private")
+  memberCount Int      @default(1) @map("member_count") @db.UnsignedInt
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Quan hệ
+  creator User              @relation("CommunityCreator", fields: [creatorId], references: [id], onDelete: Restrict)
+  members CommunityMember[] @relation("CommunityMemberList")
+  posts   CommunityPost[]   @relation("CommunityPostList")
+
+  @@index([creatorId])
+  @@map("communities")
+}
+
+model CommunityMember {
+  id          String              @id @default(uuid()) @db.VarChar(36)
+  communityId String              @map("community_id") @db.VarChar(36)
+  userId      String              @map("user_id") @db.VarChar(36)
+  role        CommunityMemberRole @default(MEMBER)
+  joinedAt    DateTime            @default(now()) @map("joined_at")
+
+  // Quan hệ
+  community Community @relation("CommunityMemberList", fields: [communityId], references: [id], onDelete: Cascade)
+  user      User      @relation("MemberCommunities", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([communityId, userId])
+  @@index([userId])
+  @@map("community_members")
+}
+
+model CommunityPost {
+  id           String   @id @default(uuid()) @db.VarChar(36)
+  communityId  String   @map("community_id") @db.VarChar(36)
+  authorId     String   @map("author_id") @db.VarChar(36)
+  campaignId   String?  @map("campaign_id") @db.VarChar(36)
+  content      String   @db.Text
+  mediaUrls    Json?    @map("media_urls")
+  likeCount    Int      @default(0) @map("like_count") @db.UnsignedInt
+  commentCount Int      @default(0) @map("comment_count") @db.UnsignedInt
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  // Quan hệ
+  community Community @relation("CommunityPostList", fields: [communityId], references: [id], onDelete: Cascade)
+  author    User      @relation("UserPosts", fields: [authorId], references: [id], onDelete: Cascade)
+  campaign  Campaign? @relation("CampaignPosts", fields: [campaignId], references: [id], onDelete: SetNull)
+  comments  Comment[] @relation("PostComments")
+
+  @@index([communityId])
+  @@index([authorId])
+  @@index([campaignId])
+  @@map("community_posts")
+}
+
+model Comment {
+  id         String   @id @default(uuid()) @db.VarChar(36)
+  postId     String?  @map("post_id") @db.VarChar(36)
+  campaignId String?  @map("campaign_id") @db.VarChar(36)
+  userId     String   @map("user_id") @db.VarChar(36)
+  parentId   String?  @map("parent_id") @db.VarChar(36)
+  content    String   @db.Text
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  // Quan hệ
+  post     CommunityPost? @relation("PostComments", fields: [postId], references: [id], onDelete: Cascade)
+  campaign Campaign?      @relation("CampaignComments", fields: [campaignId], references: [id], onDelete: Cascade)
+  user     User           @relation("UserComments", fields: [userId], references: [id], onDelete: Cascade)
+  parent   Comment?       @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies  Comment[]      @relation("CommentReplies")
+
+  @@index([postId])
+  @@index([campaignId])
+  @@index([userId])
+  @@index([parentId])
+  @@map("comments")
+}
+
+model AuditLog {
+  id         String   @id @default(uuid()) @db.VarChar(36)
+  userId     String?  @map("user_id") @db.VarChar(36)
+  action     String   @db.VarChar(100)
+  entityName String   @map("entity_name") @db.VarChar(50)
+  entityId   String   @map("entity_id") @db.VarChar(36)
+  details    Json?
+  ipAddress  String?  @map("ip_address") @db.VarChar(45)
+  userAgent  String?  @map("user_agent") @db.VarChar(255)
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  // Quan hệ
+  user User? @relation("UserAuditLogs", fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([action])
+  @@index([entityName, entityId])
+  @@index([createdAt])
+  @@map("audit_logs")
+}

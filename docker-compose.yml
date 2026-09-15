@@ -1,57 +1,94 @@
-version: '3.8'
-
 services:
   # MySQL Database
   mysql:
     image: mysql:8.0
     container_name: crowdfunding_mysql
+    command: >
+      --character-set-server=utf8mb4
+      --collation-server=utf8mb4_unicode_ci
+      --default-authentication-plugin=mysql_native_password
     environment:
       MYSQL_ROOT_PASSWORD: rootpassword
       MYSQL_DATABASE: crowdfunding_db
       MYSQL_USER: dbuser
       MYSQL_PASSWORD: dbpassword
+      TZ: "Asia/Ho_Chi_Minh"
     ports:
       - "3306:3306"
     volumes:
       - mysql_data:/var/lib/mysql
+      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -u root -prootpassword || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
     restart: always
+    networks:
+      - crowdfunding_network
 
   # phpMyAdmin (Quản lý Database trực quan)
   phpmyadmin:
-    image: phpmyadmin/phpmyadmin
+    image: phpmyadmin/phpmyadmin:latest
     container_name: crowdfunding_phpmyadmin
     environment:
       PMA_HOST: mysql
+      PMA_PORT: 3306
       MYSQL_ROOT_PASSWORD: rootpassword
+      UPLOAD_LIMIT: 64M
     ports:
       - "8080:80"
     depends_on:
-      - mysql
+      mysql:
+        condition: service_healthy
+    restart: always
+    networks:
+      - crowdfunding_network
 
   # Redis (Lưu trữ Session & Caching)
   redis:
     image: redis:7.0-alpine
     container_name: crowdfunding_redis
+    command: redis-server --appendonly yes
     ports:
       - "6379:6379"
     volumes:
       - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     restart: always
+    networks:
+      - crowdfunding_network
 
   # MinIO (Lưu trữ file tương thích AWS S3)
   minio:
     image: minio/minio:latest
     container_name: crowdfunding_minio
     environment:
-      MINIO_ROOT_USER: admin
-      MINIO_ROOT_PASSWORD: supersecretpassword
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadminpassword
     command: server /data --console-address ":9001"
     ports:
-      - "9000:9000"  # Cổng gọi API
-      - "9001:9001"  # Cổng vào giao diện Console UI
+      - "9000:9000"  # Cổng gọi API S3
+      - "9001:9001"  # Cổng vào giao diện Web Console
     volumes:
       - minio_data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
     restart: always
+    networks:
+      - crowdfunding_network
+
+networks:
+  crowdfunding_network:
+    driver: bridge
 
 volumes:
   mysql_data:
