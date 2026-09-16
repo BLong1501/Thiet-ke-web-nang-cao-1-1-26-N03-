@@ -66,7 +66,7 @@ services:
 
   # MinIO (Lưu trữ file tương thích AWS S3)
   minio:
-    image: minio/minio:latest
+    image: quay.io/minio/minio:latest
     container_name: crowdfunding_minio
     environment:
       MINIO_ROOT_USER: minioadmin
