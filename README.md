@@ -1,4 +1,4 @@
-# Dự án Hệ thống Gây quỹ Cộng đồng (Crowdfunding) - CĐ09
+# Dự án Hệ thống Gây quỹ Cộng đồng (  ) - CĐ09
 
 Dự án này sử dụng mô hình kiến trúc **Modular Monolith** kết hợp MVC cho Backend và cấu trúc phân rã theo Component cho Frontend. Cấu trúc này giúp dễ dàng mở rộng, quản lý code theo từng nhóm tính năng (Feature-driven) và hạn chế xung đột khi làm việc nhóm.
 

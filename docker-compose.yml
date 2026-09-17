@@ -73,8 +73,8 @@ services:
       MINIO_ROOT_PASSWORD: minioadminpassword
     command: server /data --console-address ":9001"
     ports:
-      - "9000:9000"  # Cổng gọi API S3
-      - "9001:9001"  # Cổng vào giao diện Web Console
+      - "9005:9000"  # Cổng gọi API S3 
+      - "9006:9001"  # Cổng vào giao diện Web Console
     volumes:
       - minio_data:/data
     healthcheck:
