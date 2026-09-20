@@ -128,6 +128,126 @@ Dự án này được thiết kế để vượt qua mọi tiêu chuẩn khắt
 
 ---
 
+## 📡 Danh mục RESTful API Hệ thống (API Specification v1)
+
+Tất cả các API tuân thủ kiến trúc RESTful, tiền tố `/api/v1`, định dạng trao đổi dữ liệu JSON và chuẩn hóa mã trạng thái HTTP (200, 201, 400, 401, 403, 404, 500).
+
+### 🔗 Bảng đối chiếu 1-1 giữa Database Tables (15 bảng) và API Modules
+Hệ thống đạt độ khớp 100% giữa Cơ sở dữ liệu và các phân hệ API:
+
+| STT | Bảng trong Database | Phân hệ API tương ứng | Các API chính sử dụng bảng |
+| :---: | :--- | :--- | :--- |
+| 1 | `users` | Auth & Users (`/auth`, `/users`) | Đăng ký, đăng nhập, hồ sơ cá nhân, đổi mật khẩu, phân quyền |
+| 2 | `verifications` | KYC Verification (`/verifications`) | Nộp hồ sơ CCCD, duyệt/từ chối thẩm định cấp quyền gây quỹ |
+| 3 | `categories` | Categories (`/categories`, `/admin/categories`) | Danh mục chiến dịch (thêm, sửa, xóa, lấy danh sách công khai) |
+| 4 | `campaigns` | Campaigns (`/campaigns`) | CRUD chiến dịch, duyệt, tạm dừng, đóng chiến dịch |
+| 5 | `campaign_media` | Media (`/campaigns/:id/media`) | Quản lý bộ sưu tập ảnh/video minh chứng câu chuyện |
+| 6 | `campaign_updates` | Updates (`/campaigns/:id/updates`) | Đăng và xem nhật ký tiến độ điều trị / trao quà |
+| 7 | `donations` | Donations & Payments (`/donations`, `/payments`) | Lưu giao dịch ủng hộ, thanh toán QR/VNPAY, vinh danh nhà hảo tâm |
+| 8 | `disbursements` | Transparency (`/disbursements`) | Lập phiếu chi giải ngân, công khai sao kê hóa đơn đỏ |
+| 9 | `communities` | Communities (`/communities`) | Tạo và quản lý hội nhóm cộng đồng thiện nguyện |
+| 10 | `community_members` | Members (`/communities/:id/join`) | Quản lý thành viên và quyền trong nhóm cộng đồng |
+| 11 | `community_posts` | Posts (`/communities/:id/posts`) | Đăng bài viết thảo luận, lan tỏa chiến dịch trong nhóm |
+| 12 | `comments` | Comments (`/campaigns/:id/comments`) | Bình luận cổ vũ chiến dịch và thảo luận bài viết |
+| 13 | `reports` | Reports (`/reports`, `/admin/reports`) | Người dùng tố cáo vi phạm & Ban quản trị xử lý giải quyết |
+| 14 | `notifications` | Notifications (`/notifications`) | Xem và đánh dấu đã đọc thông báo quả chuông người dùng |
+| 15 | `audit_logs` | Audit Logs (`/admin/audit-logs`) | Tra cứu nhật ký kiểm toán hành vi quản trị hệ thống |
+
+---
+
+### 1. Phân hệ Xác thực & Tài khoản (`/auth` & `/users`)
+| Method | Endpoint | Mô tả chức năng | Quyền truy cập |
+| :---: | :--- | :--- | :--- |
+| `POST` | `/api/v1/auth/register` | Đăng ký tài khoản mới (Email, Password, Name) | Public |
+| `POST` | `/api/v1/auth/login` | Đăng nhập hệ thống, trả về JWT & Refresh Cookie | Public |
+| `POST` | `/api/v1/auth/logout` | Đăng xuất, hủy bỏ phiên làm việc | Authenticated |
+| `GET` | `/api/v1/auth/verify-email` | Kích hoạt tài khoản qua link email | Public |
+| `POST` | `/api/v1/auth/forgot-password` | Gửi email yêu cầu đặt lại mật khẩu | Public |
+| `POST` | `/api/v1/auth/reset-password` | Đặt lại mật khẩu mới bằng token | Public |
+| `POST` | `/api/v1/auth/refresh-token` | Cấp Access Token mới từ Refresh Token | Public |
+| `GET` | `/api/v1/users/me` | Lấy thông tin tài khoản hiện tại | Authenticated |
+| `PUT` | `/api/v1/users/me` | Cập nhật thông tin cá nhân (họ tên, bio, phone) | Authenticated |
+| `PUT` | `/api/v1/users/me/password` | Đổi mật khẩu tài khoản | Authenticated |
+| `POST` | `/api/v1/users/me/avatar` | Tải lên ảnh đại diện cá nhân | Authenticated |
+
+### 2. Phân hệ Xác minh danh tính Người gây quỹ (`/verifications`)
+| Method | Endpoint | Mô tả chức năng | Quyền truy cập |
+| :---: | :--- | :--- | :--- |
+| `POST` | `/api/v1/verifications` | Nộp hồ sơ KYC xin quyền gây quỹ (ảnh CCCD, bệnh án) | User |
+| `GET` | `/api/v1/verifications/my-status` | Xem trạng thái/kết quả hồ sơ KYC của bản thân | User |
+| `GET` | `/api/v1/verifications` | Danh sách hồ sơ KYC chờ duyệt (Phân trang, Lọc) | Admin |
+| `GET` | `/api/v1/verifications/:id` | Xem chi tiết giấy tờ hồ sơ KYC của người dùng | Admin |
+| `PATCH`| `/api/v1/verifications/:id/review`| Phê duyệt (`APPROVED`) hoặc Từ chối (`REJECTED`) | Admin |
+
+### 3. Phân hệ Quản lý Chiến dịch Gây quỹ (`/campaigns` & `/categories`)
+| Method | Endpoint | Mô tả chức năng | Quyền truy cập |
+| :---: | :--- | :--- | :--- |
+| `GET` | `/api/v1/categories` | Lấy danh mục chiến dịch đang kích hoạt | Public |
+| `GET` | `/api/v1/campaigns` | Tìm kiếm, lọc theo danh mục/trạng thái, phân trang | Public |
+| `GET` | `/api/v1/campaigns/:slug` | Xem chi tiết nội dung và câu chuyện chiến dịch | Public |
+| `GET` | `/api/v1/campaigns/my-campaigns` | Fundraiser xem danh sách chiến dịch của mình | Fundraiser |
+| `POST` | `/api/v1/campaigns` | Khởi tạo chiến dịch mới (lưu bản nháp `DRAFT`) | Fundraiser |
+| `PUT` | `/api/v1/campaigns/:id` | Cập nhật nội dung chiến dịch | Fundraiser sở hữu |
+| `PATCH`| `/api/v1/campaigns/:id/submit` | Gửi chiến dịch lên chờ Admin phê duyệt | Fundraiser sở hữu |
+| `POST` | `/api/v1/campaigns/:id/media` | Tải lên ảnh/video minh chứng cho chiến dịch | Fundraiser sở hữu |
+| `POST` | `/api/v1/campaigns/:id/updates`| Đăng nhật ký cập nhật tiến độ chiến dịch | Fundraiser sở hữu |
+| `GET` | `/api/v1/campaigns/:id/updates`| Xem danh sách nhật ký cập nhật tiến độ | Public |
+
+### 4. Phân hệ Quyên góp & Thanh toán (`/donations` & `/payments`)
+| Method | Endpoint | Mô tả chức năng | Quyền truy cập |
+| :---: | :--- | :--- | :--- |
+| `POST` | `/api/v1/donations` | Khởi tạo giao dịch đóng góp (số tiền, ẩn danh) | Public / User |
+| `POST` | `/api/v1/payments/create-url` | Tạo đường link/mã QR cổng thanh toán (VNPAY/MoMo) | Public / User |
+| `POST` | `/api/v1/payments/webhook` | Webhook tự động nhận kết quả từ cổng thanh toán (IPN) | Payment Gateway |
+| `GET` | `/api/v1/donations/campaign/:campaignId` | Danh sách đóng góp & Bảng vinh danh nhà hảo tâm | Public |
+| `GET` | `/api/v1/donations/my-history` | Xem lịch sử các lần quyên góp của tôi | Authenticated |
+| `GET` | `/api/v1/donations/:id/receipt` | Tải/xuất biên lai xác nhận quyên góp điện tử | Người đóng góp |
+
+### 5. Phân hệ Minh bạch tài chính & Giải ngân (`/disbursements`)
+| Method | Endpoint | Mô tả chức năng | Quyền truy cập |
+| :---: | :--- | :--- | :--- |
+| `GET` | `/api/v1/disbursements/campaign/:campaignId` | Xem sao kê toàn bộ các khoản chi tiêu chiến dịch | Public |
+| `GET` | `/api/v1/disbursements/:id` | Xem chi tiết phiếu chi và chứng từ hóa đơn gốc | Public |
+| `POST` | `/api/v1/disbursements` | Lập phiếu chi giải ngân mới (đính kèm hóa đơn đỏ) | Fundraiser / Admin |
+| `GET` | `/api/v1/campaigns/:id/export-statement` | Xuất file báo cáo tài chính sao kê (Excel/PDF) | Public / Admin |
+
+### 6. Phân hệ Tương tác & Cộng đồng (`/communities` & `/comments`)
+| Method | Endpoint | Mô tả chức năng | Quyền truy cập |
+| :---: | :--- | :--- | :--- |
+| `GET` | `/api/v1/campaigns/:id/comments` | Lấy danh sách bình luận cổ vũ chiến dịch | Public |
+| `POST` | `/api/v1/campaigns/:id/comments` | Gửi bình luận cổ vũ (hỗ trợ trả lời lồng nhau) | Authenticated |
+| `POST` | `/api/v1/users/:id/follow` | Theo dõi hoặc Bỏ theo dõi Người gây quỹ uy tín | Authenticated |
+| `GET` | `/api/v1/communities` | Danh sách các hội nhóm cộng đồng thiện nguyện | Public |
+| `POST` | `/api/v1/communities` | Khởi tạo nhóm cộng đồng mới | Authenticated |
+| `POST` | `/api/v1/communities/:id/join` | Tham gia hoặc rời khỏi nhóm cộng đồng | Authenticated |
+| `GET` | `/api/v1/communities/:id/posts`| Xem các bài viết thảo luận trong nhóm | Public / Member |
+| `POST` | `/api/v1/communities/:id/posts`| Đăng bài viết thảo luận trong nhóm | Member |
+
+### 7. Phân hệ Quản trị viên & Giám sát (`/admin` & `/reports`)
+| Method | Endpoint | Mô tả chức năng | Quyền truy cập |
+| :---: | :--- | :--- | :--- |
+| `GET` | `/api/v1/admin/users` | Quản lý danh sách thành viên (lọc theo role, status) | Admin |
+| `PATCH`| `/api/v1/admin/users/:id/status`| Khóa (`SUSPENDED`) hoặc Mở khóa tài khoản | Admin |
+| `PATCH`| `/api/v1/admin/users/:id/role` | Cấp hoặc thu hồi tư cách Người gây quỹ (`FUNDRAISER`)| Admin |
+| `PATCH`| `/api/v1/admin/campaigns/:id/status` | Phê duyệt (`ACTIVE`), từ chối, tạm dừng (`PAUSED`) | Admin |
+| `POST` | `/api/v1/reports` | Người dùng gửi tố giác chiến dịch/bài viết vi phạm | Authenticated |
+| `GET` | `/api/v1/admin/reports` | Ban quản trị xem danh sách báo cáo vi phạm | Admin |
+| `PATCH`| `/api/v1/admin/reports/:id/resolve`| Xử lý và ghi nhận giải quyết báo cáo vi phạm | Admin |
+| `POST` | `/api/v1/admin/categories` | Thêm danh mục gây quỹ mới | Admin |
+| `PUT` | `/api/v1/admin/categories/:id` | Cập nhật thông tin danh mục | Admin |
+| `DELETE`|`/api/v1/admin/categories/:id`| Xóa hoặc ẩn danh mục | Admin |
+| `GET` | `/api/v1/admin/analytics/overview`| Dashboard thống kê tổng dòng tiền, tỷ lệ thành công | Admin |
+| `GET` | `/api/v1/admin/audit-logs` | Tra cứu nhật ký kiểm toán hệ thống (Audit Logs) | Admin |
+
+### 8. Phân hệ Thông báo người dùng (`/notifications`)
+| Method | Endpoint | Mô tả chức năng | Quyền truy cập |
+| :---: | :--- | :--- | :--- |
+| `GET` | `/api/v1/notifications` | Lấy danh sách thông báo của tôi (có phân trang)| Authenticated |
+| `PATCH`| `/api/v1/notifications/:id/read` | Đánh dấu một thông báo là đã đọc | Authenticated |
+| `PATCH`| `/api/v1/notifications/read-all`| Đánh dấu tất cả thông báo là đã đọc | Authenticated |
+
+---
+
 ## 🛡️ Yêu cầu Bảo mật Ứng dụng Web (OWASP Top 10)
 
 Đây là các tiêu chí bảo mật **bắt buộc** cần tích hợp trực tiếp vào mã nguồn:

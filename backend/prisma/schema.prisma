@@ -64,6 +64,19 @@ enum CommunityMemberRole {
   MEMBER
 }
 
+enum ReportTargetType {
+  CAMPAIGN
+  USER
+  POST
+  COMMENT
+}
+
+enum ReportStatus {
+  PENDING
+  RESOLVED
+  REJECTED
+}
+
 // ----------------------------------------------------
 // MODELS
 // ----------------------------------------------------
@@ -93,6 +106,9 @@ model User {
   communityMemberships    CommunityMember[]  @relation("MemberCommunities")
   posts                   CommunityPost[]    @relation("UserPosts")
   comments                Comment[]          @relation("UserComments")
+  sentReports             Report[]           @relation("ReportAuthor")
+  resolvedReports         Report[]           @relation("ReportResolver")
+  notifications           Notification[]     @relation("UserNotifications")
   auditLogs               AuditLog[]         @relation("UserAuditLogs")
 
   @@index([role])
@@ -367,4 +383,46 @@ model AuditLog {
   @@index([entityName, entityId])
   @@index([createdAt])
   @@map("audit_logs")
+}
+
+model Report {
+  id             String           @id @default(uuid()) @db.VarChar(36)
+  reporterId     String           @map("reporter_id") @db.VarChar(36)
+  targetType     ReportTargetType @map("target_type")
+  targetId       String           @map("target_id") @db.VarChar(36)
+  reason         String           @db.VarChar(255)
+  description    String?          @db.Text
+  evidenceUrls   Json?            @map("evidence_urls")
+  status         ReportStatus     @default(PENDING)
+  resolvedBy     String?          @map("resolved_by") @db.VarChar(36)
+  resolutionNote String?          @map("resolution_note") @db.Text
+  createdAt      DateTime         @default(now()) @map("created_at")
+  updatedAt      DateTime         @updatedAt @map("updated_at")
+
+  // Quan hệ
+  reporter User  @relation("ReportAuthor", fields: [reporterId], references: [id], onDelete: Cascade)
+  resolver User? @relation("ReportResolver", fields: [resolvedBy], references: [id], onDelete: SetNull)
+
+  @@index([reporterId])
+  @@index([targetType, targetId])
+  @@index([status])
+  @@map("reports")
+}
+
+model Notification {
+  id        String   @id @default(uuid()) @db.VarChar(36)
+  userId    String   @map("user_id") @db.VarChar(36)
+  title     String   @db.VarChar(255)
+  message   String   @db.Text
+  type      String   @db.VarChar(50)
+  linkUrl   String?  @map("link_url") @db.VarChar(500)
+  isRead    Boolean  @default(false) @map("is_read")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  // Quan hệ
+  user User @relation("UserNotifications", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, isRead])
+  @@index([createdAt])
+  @@map("notifications")
 }

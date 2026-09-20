@@ -13,6 +13,8 @@ USE `crowdfunding_db`;
 -- Tắt kiểm tra khóa ngoại tạm thời để khởi tạo
 SET FOREIGN_KEY_CHECKS = 0;
 
+DROP TABLE IF EXISTS `notifications`;
+DROP TABLE IF EXISTS `reports`;
 DROP TABLE IF EXISTS `audit_logs`;
 DROP TABLE IF EXISTS `comments`;
 DROP TABLE IF EXISTS `community_posts`;
@@ -313,6 +315,48 @@ CREATE TABLE `audit_logs` (
     INDEX `idx_audit_logs_entity` (`entity_name`, `entity_id`),
     INDEX `idx_audit_logs_created_at` (`created_at`),
     CONSTRAINT `fk_audit_logs_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------------------
+-- 14. BẢNG REPORTS (Báo cáo tố giác vi phạm)
+-- --------------------------------------------------------------------
+CREATE TABLE `reports` (
+    `id` VARCHAR(36) NOT NULL,
+    `reporter_id` VARCHAR(36) NOT NULL COMMENT 'Người gửi tố giác',
+    `target_type` ENUM('CAMPAIGN', 'USER', 'POST', 'COMMENT') NOT NULL,
+    `target_id` VARCHAR(36) NOT NULL COMMENT 'ID của chiến dịch/bài viết bị báo cáo',
+    `reason` VARCHAR(255) NOT NULL COMMENT 'Lý do: Lừa đảo, giả mạo, hình ảnh phản cảm...',
+    `description` TEXT NULL COMMENT 'Mô tả chi tiết bằng chứng',
+    `evidence_urls` JSON NULL COMMENT 'Mảng link ảnh/video bằng chứng tố giác',
+    `status` ENUM('PENDING', 'RESOLVED', 'REJECTED') NOT NULL DEFAULT 'PENDING',
+    `resolved_by` VARCHAR(36) NULL COMMENT 'Admin xử lý',
+    `resolution_note` TEXT NULL COMMENT 'Ghi chú giải quyết của Admin',
+    `created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `updated_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
+    PRIMARY KEY (`id`),
+    INDEX `idx_reports_reporter` (`reporter_id`),
+    INDEX `idx_reports_target` (`target_type`, `target_id`),
+    INDEX `idx_reports_status` (`status`),
+    CONSTRAINT `fk_reports_reporter` FOREIGN KEY (`reporter_id`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT `fk_reports_resolver` FOREIGN KEY (`resolved_by`) REFERENCES `users` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------------------
+-- 15. BẢNG NOTIFICATIONS (Thông báo người dùng)
+-- --------------------------------------------------------------------
+CREATE TABLE `notifications` (
+    `id` VARCHAR(36) NOT NULL,
+    `user_id` VARCHAR(36) NOT NULL COMMENT 'Người nhận thông báo',
+    `title` VARCHAR(255) NOT NULL,
+    `message` TEXT NOT NULL,
+    `type` VARCHAR(50) NOT NULL COMMENT 'KYC_APPROVED, DONATION_SUCCESS, CAMPAIGN_UPDATE...',
+    `link_url` VARCHAR(500) NULL COMMENT 'Link điều hướng khi click vào thông báo',
+    `is_read` BOOLEAN NOT NULL DEFAULT FALSE,
+    `created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    PRIMARY KEY (`id`),
+    INDEX `idx_notifications_user` (`user_id`, `is_read`),
+    INDEX `idx_notifications_created_at` (`created_at`),
+    CONSTRAINT `fk_notifications_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ====================================================================
