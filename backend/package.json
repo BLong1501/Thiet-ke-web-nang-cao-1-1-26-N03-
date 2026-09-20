@@ -4,6 +4,11 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "build": "tsc",
+    "start": "node dist/server.js",
+    "prisma:generate": "prisma generate",
+    "prisma:push": "prisma db push",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
@@ -42,6 +47,7 @@
     "nodemon": "^3.1.14",
     "prettier": "^3.9.6",
     "ts-node": "^10.9.2",
+    "tsx": "^4.23.14",
     "typescript": "^7.0.2"
   }
 }
