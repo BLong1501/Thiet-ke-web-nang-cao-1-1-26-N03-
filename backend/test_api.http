@@ -83,3 +83,55 @@ Content-Type: application/json
 ### 10. ĐĂNG XUẤT
 POST {{baseUrl}}/auth/logout
 Authorization: Bearer {{token}}
+
+### ================================================================
+### PHÂN HỆ XÁC MINH DANH TÍNH KYC & NÂNG CẤP VAI TRÒ GÂY QUỸ
+### ================================================================
+
+### 11. USER NỘP ĐƠN ĐĂNG KÝ GÂY QUỸ (KYC)
+# Dùng token của USER vừa đăng nhập ở trên
+POST {{baseUrl}}/verifications/request
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "idCardNumber": "079201008899",
+  "cardIssuedDate": "2022-05-15",
+  "cardIssuedPlace": "Cục Cảnh sát QLHC về TTXH",
+  "frontCardImage": "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800",
+  "backCardImage": "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800",
+  "portraitImage": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=800",
+  "supportingDocuments": {
+    "organizationName": "Quỹ Trẻ Em Vùng Cao",
+    "licenseNumber": "QĐ-1234/UBND"
+  }
+}
+
+### 12. USER XEM TRẠNG THÁI HỒ SƠ CỦA MÌNH
+GET {{baseUrl}}/verifications/my-status
+Authorization: Bearer {{token}}
+
+### 13. ADMIN XEM DANH SÁCH HỒ SƠ ĐANG CHỜ DUYỆT (Cần Token có role ADMIN)
+@adminToken = YOUR_ADMIN_TOKEN_HERE
+GET {{baseUrl}}/verifications/pending?page=1&limit=10
+Authorization: Bearer {{adminToken}}
+
+### 14. ADMIN PHÊ DUYỆT HỒ SƠ -> TỰ ĐỘNG NÂNG CẤP USER LÊN FUNDRAISER!
+@verificationId = YOUR_VERIFICATION_ID_HERE
+PATCH {{baseUrl}}/verifications/{{verificationId}}/review
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+  "status": "APPROVED"
+}
+
+### 15. ADMIN TỪ CHỐI HỒ SƠ (KÈM LÝ DO)
+PATCH {{baseUrl}}/verifications/{{verificationId}}/review
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+  "status": "REJECTED",
+  "rejectionReason": "Ảnh chụp mặt sau CCCD bị mờ, không nhìn rõ số và con dấu. Vui lòng chụp lại rõ nét hơn."
+}

@@ -146,6 +146,136 @@
           }
         }
       ]
+    },
+    {
+      "name": "KYC & Nâng cấp Gây quỹ",
+      "item": [
+        {
+          "name": "1. Nộp hồ sơ KYC (User xin làm Fundraiser)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"idCardNumber\": \"079201008899\",\n  \"cardIssuedDate\": \"2022-05-15\",\n  \"cardIssuedPlace\": \"Cục Cảnh sát QLHC về TTXH\",\n  \"frontCardImage\": \"https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800\",\n  \"backCardImage\": \"https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800\",\n  \"portraitImage\": \"https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=800\",\n  \"supportingDocuments\": {\n    \"organizationName\": \"Quỹ Trẻ Em Vùng Cao\",\n    \"licenseNumber\": \"QĐ-1234/UBND\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/verifications/request",
+              "host": ["{{baseUrl}}"],
+              "path": ["verifications", "request"]
+            }
+          }
+        },
+        {
+          "name": "2. Xem trạng thái hồ sơ của mình",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/verifications/my-status",
+              "host": ["{{baseUrl}}"],
+              "path": ["verifications", "my-status"]
+            }
+          }
+        },
+        {
+          "name": "3. [ADMIN] Xem danh sách chờ duyệt",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/verifications/pending?page=1&limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["verifications", "pending"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "10" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "4. [ADMIN] Duyệt hồ sơ (Tự nâng cấp lên FUNDRAISER)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"APPROVED\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/verifications/:id/review",
+              "host": ["{{baseUrl}}"],
+              "path": ["verifications", ":id", "review"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": ""
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "5. [ADMIN] Từ chối hồ sơ kèm lý do",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"REJECTED\",\n  \"rejectionReason\": \"Ảnh chụp giấy tờ bị lóa sáng, không đọc được số CCCD.\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/verifications/:id/review",
+              "host": ["{{baseUrl}}"],
+              "path": ["verifications", ":id", "review"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": ""
+                }
+              ]
+            }
+          }
+        }
+      ]
     }
   ]
 }

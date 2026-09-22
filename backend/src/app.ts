@@ -18,6 +18,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser(process.env.COOKIE_SECRET));
 
 import authRouter from "./modules/auth/auth.routes";
+import { verificationRouter } from "./modules/verifications/verification.routes";
 
 // Health check endpoint
 app.get("/api/v1/health", (_req: Request, res: Response) => {
@@ -30,14 +31,15 @@ app.get("/api/v1/health", (_req: Request, res: Response) => {
 
 // Đăng ký các phân hệ Routes v1
 app.use("/api/v1/auth", authRouter);
+app.use("/api/v1/verifications", verificationRouter);
+
+import { sendError } from "./core/utils/response.util";
 
 // Middleware xử lý lỗi tập trung (Global Error Handler)
-app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
-  console.error("Global error handler:", err);
-  res.status(500).json({
-    status: "error",
-    message: err.message || "Internal Server Error",
-  });
+app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
+  const statusCode = err.statusCode || err.status || 500;
+  const message = err.message || "Đã xảy ra lỗi máy chủ nội bộ";
+  return sendError(res, statusCode, message, err.errors);
 });
 
 export default app;

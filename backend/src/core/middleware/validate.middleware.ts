@@ -38,3 +38,5 @@ export const validateRequest = (schema: ZodSchema | RequestValidationSchema) => 
     }
   };
 };
+
+export const validate = validateRequest;

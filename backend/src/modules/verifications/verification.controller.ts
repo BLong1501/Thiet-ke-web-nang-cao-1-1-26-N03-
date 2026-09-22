@@ -38,7 +38,7 @@ export class VerificationController {
 
   handleGetDetail = async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const { id } = req.params;
+      const id = String(req.params.id);
       const data = await this.service.getVerificationDetail(id);
       return sendSuccess(res, 200, "Lấy chi tiết hồ sơ xác minh thành công", data);
     } catch (error) {
@@ -49,7 +49,7 @@ export class VerificationController {
   handleReviewVerification = async (req: Request, res: Response, next: NextFunction) => {
     try {
       const adminId = req.user!.userId;
-      const { id } = req.params;
+      const id = String(req.params.id);
       const result = await this.service.reviewVerification(adminId, id, req.body);
       return sendSuccess(res, 200, result.message, result);
     } catch (error) {

@@ -39,8 +39,8 @@ export const submitVerificationSchema = z.object({
 
 export const reviewVerificationSchema = z
   .object({
-    status: z.enum([VerificationStatus.APPROVED, VerificationStatus.REJECTED], {
-      errorMap: () => ({ message: "Trạng thái xét duyệt phải là APPROVED hoặc REJECTED" }),
+    status: z.nativeEnum(VerificationStatus, {
+      message: "Trạng thái xét duyệt phải là APPROVED hoặc REJECTED",
     }),
     rejectionReason: z.string().trim().max(1000, "Lý do từ chối tối đa 1000 ký tự").optional(),
   })
