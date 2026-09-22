@@ -17,6 +17,8 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser(process.env.COOKIE_SECRET));
 
+import authRouter from "./modules/auth/auth.routes";
+
 // Health check endpoint
 app.get("/api/v1/health", (_req: Request, res: Response) => {
   res.status(200).json({
@@ -25,6 +27,9 @@ app.get("/api/v1/health", (_req: Request, res: Response) => {
     timestamp: new Date().toISOString(),
   });
 });
+
+// Đăng ký các phân hệ Routes v1
+app.use("/api/v1/auth", authRouter);
 
 // Middleware xử lý lỗi tập trung (Global Error Handler)
 app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {

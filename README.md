@@ -2,28 +2,97 @@
 
 Dự án này sử dụng mô hình kiến trúc **Modular Monolith** kết hợp MVC cho Backend và cấu trúc phân rã theo Component cho Frontend. Cấu trúc này giúp dễ dàng mở rộng, quản lý code theo từng nhóm tính năng (Feature-driven) và hạn chế xung đột khi làm việc nhóm.
 
-## Cấu trúc thư mục (Modular Monolith)
+## 🏗️ Cấu trúc Tổng thể & Kiến trúc Backend (Modular Monolith)
 
-- `/backend`: API Server (Node.js/Express hoặc NestJS)
-  - `src/`
-    - `core/`: Các thành phần cốt lõi dùng chung cho toàn dự án
-      - `config/`: Cấu hình hệ thống, biến môi trường
-      - `database/`: Kết nối cơ sở dữ liệu
-      - `middleware/`: Middleware dùng chung (Authentication, Error Handler...)
-      - `utils/`: Các hàm tiện ích (Helpers)
-    - `modules/`: Các phân hệ chức năng độc lập (Mỗi phân hệ tuân thủ MVC/Layered)
-      - `campaigns/`: Xử lý Chiến dịch (Controller, Service, Model, Route)
-      - `communities/`: Xử lý Mạng xã hội, Cộng đồng
-      - `donations/`: Xử lý Quyên góp, Thanh toán
-      - `users/`: Xử lý Người dùng, Đăng nhập
-      - `verifications/`: Xử lý Xác minh danh tính
-- `/frontend`: Giao diện người dùng (React)
-  - `assets/`: Tài nguyên tĩnh như hình ảnh, font chữ, CSS chung
-  - `components/`: Các UI component tái sử dụng (Button, Modal, Card...)
-  - `pages/`: Các trang chính của ứng dụng
-  - `services/`: Các module gọi API giao tiếp với Backend
-- `/database`: Chứa script tạo cơ sở dữ liệu (`.sql`), sơ đồ ERD, tài liệu thiết kế DB
-- `/docs`: Đặc tả API (Swagger, Postman), tài liệu phân tích nghiệp vụ
+Dự án áp dụng mô hình **Modular Monolith** kết hợp **Kiến trúc phân tầng 3 lớp (3-tier Layered Architecture: Controller - Service - Repository)** cho Backend và cấu trúc phân rã theo Component cho Frontend.
+
+```text
+├── backend/                  # API Server (Node.js/Express + TypeScript + Prisma)
+│   ├── prisma/               # Prisma Schema & Migrations
+│   └── src/
+│       ├── core/             # Các thành phần cốt lõi dùng chung
+│       │   ├── config/       # Quản lý biến môi trường
+│       │   ├── database/     # Kết nối Prisma Client, Redis singleton
+│       │   ├── middleware/   # Middleware dùng chung (Auth, Role, Error, Upload)
+│       │   └── utils/        # Hàm tiện ích (API Response, JWT, Hashing)
+│       ├── modules/          # Các phân hệ chức năng độc lập (Feature-driven)
+│       │   ├── auth/         # Phân hệ Xác thực & Quản lý người dùng
+│       │   ├── verifications/# Phân hệ Xác minh danh tính KYC Người gây quỹ
+│       │   ├── campaigns/    # Phân hệ Chiến dịch & Danh mục gây quỹ
+│       │   ├── donations/    # Phân hệ Quyên góp & Cổng thanh toán
+│       │   ├── disbursements/# Phân hệ Minh bạch tài chính & Giải ngân sao kê
+│       │   ├── communities/  # Phân hệ Nhóm cộng đồng & Mạng xã hội
+│       │   ├── reports/      # Phân hệ Tố giác & Xử lý vi phạm
+│       │   └── notifications/# Phân hệ Thông báo người dùng
+│       ├── app.ts            # Cấu hình Express App, Middlewares, Global Routes
+│       └── server.ts         # Khởi tạo Server & lắng nghe cổng
+├── frontend/                 # Giao diện người dùng (React + TypeScript + Vite)
+│   ├── src/
+│   │   ├── assets/           # Tài nguyên tĩnh (Hình ảnh, Icons, Styles)
+│   │   ├── components/       # Các UI Component dùng chung (Navbar, Footer, Button, Modal...)
+│   │   ├── pages/            # Các trang theo 3 góc nhìn (Donator, Fundraiser, Admin)
+│   │   ├── services/         # Axios API Client gọi sang Backend
+│   │   └── stores/           # Quản lý State toàn cục (Zustand)
+├── database/                 # Script DDL SQL (`init.sql`, `schema.sql`), Sơ đồ ERD
+├── docs/                     # Đặc tả API (OpenAPI/Swagger, Postman collection)
+└── docker-compose.yml        # Điều phối môi trường phát triển (MySQL, Redis, MinIO, phpMyAdmin)
+```
+
+### 🧩 Kiến trúc Chuẩn hóa bên trong Mỗi Module Backend
+
+Mỗi thư mục bên trong `backend/src/modules/<tên_module>/` được đóng gói hoàn chỉnh gồm **5 thành phần** tách biệt rõ ràng trách nhiệm:
+
+```text
+modules/<feature>/
+├── <feature>.routes.ts        # [1. ROUTING] Định nghĩa Endpoint & Gắn Middleware
+├── <feature>.controller.ts    # [2. CONTROLLER] Nhận Request & Trả về Response chuẩn
+├── <feature>.service.ts       # [3. SERVICE] Chứa 100% Nghiệp vụ & Business Logic
+├── <feature>.repository.ts    # [4. REPOSITORY] Truy vấn trực tiếp CSDL qua Prisma
+└── <feature>.validation.ts    # [5. VALIDATION/DTO] Schema kiểm thực dữ liệu với Zod
+```
+
+#### Chi tiết vai trò từng tầng:
+1. **`<feature>.routes.ts` (Routing Layer):**
+   * Đăng ký URL và HTTP Method (`GET`, `POST`, `PUT`, `DELETE`).
+   * Gắn các middleware "gác cổng": Xác thực token (`authenticate`), kiểm tra vai trò (`authorize(['ADMIN'])`), kiểm tra dữ liệu đầu vào (`validate(schema)`).
+2. **`<feature>.controller.ts` (Controller Layer - Tầng Điều khiển):**
+   * Đóng vai trò cầu nối HTTP: Bóc tách tham số từ request (`req.body`, `req.params`, `req.query`, `req.user`).
+   * Ủy quyền xử lý cho Service và gửi trả dữ liệu về Client với mã HTTP status chuẩn (`200`, `201`, `400`, `404`...).
+   * **Nguyên tắc:** Controller cực mỏng (Skinny Controller), tuyệt đối không viết câu lệnh database hay logic nghiệp vụ phức tạp tại đây.
+3. **`<feature>.service.ts` (Service Layer - Tầng Nghiệp vụ cốt lõi):**
+   * Nơi hiện thực hóa 100% quy tắc kinh doanh (Business Rules): kiểm tra điều kiện chiến dịch, tính toán số tiền, xử lý băm mật khẩu, ký token.
+   * Điều phối Database Transaction (ACID) khi cập nhật nhiều bảng đồng thời (ví dụ: xác nhận quyên góp thành công và cộng tiền vào chiến dịch).
+4. **`<feature>.repository.ts` (Repository Layer - Tầng Truy cập Dữ liệu):**
+   * Đóng gói toàn bộ các câu lệnh tương tác cơ sở dữ liệu thông qua Prisma Client.
+   * Tách biệt logic nghiệp vụ khỏi tầng dữ liệu; giúp dễ dàng thay thế công nghệ lưu trữ hoặc viết Unit Test độc lập.
+5. **`<feature>.validation.ts` (Validation / DTO Layer):**
+   * Sử dụng thư viện `Zod` để kiểm duyệt tính hợp lệ của dữ liệu đầu vào (độ dài mật khẩu, định dạng email, số tiền dương, ngày tháng hợp lệ...).
+   * Tự động sinh TypeScript Types (`z.infer<...>`) để đảm bảo an toàn kiểu dữ liệu trong toàn bộ module.
+
+#### 🔄 Vòng đời Xử lý một Request (Request Lifecycle):
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Client as Client (React Frontend / Mobile)
+    participant Route as 1. Route & Middlewares
+    participant Controller as 2. Controller
+    participant Service as 3. Service (Business Logic)
+    participant Repo as 4. Repository
+    participant DB as 5. Database (Aiven MySQL)
+
+    Client->>Route: Gửi HTTP Request (VD: POST /api/v1/campaigns)
+    Note over Route: 1. Kiểm tra JWT Token<br/>2. Kiểm duyệt dữ liệu đầu vào (Zod Schema)
+    Route->>Controller: Chuyển dữ liệu đã được làm sạch
+    Controller->>Service: Gọi hàm nghiệp vụ tương ứng
+    Note over Service: 1. Kiểm tra quyền Fundraiser<br/>2. Kiểm tra ngày bắt đầu/kết thúc hợp lệ<br/>3. Quản lý ACID Transaction
+    Service->>Repo: Gọi hàm truy xuất dữ liệu
+    Repo->>DB: Thực thi truy vấn qua Prisma Client
+    DB-->>Repo: Trả về kết quả từ MySQL
+    Repo-->>Service: Trả về Entity/Dữ liệu
+    Service-->>Controller: Trả về kết quả xử lý nghiệp vụ
+    Controller-->>Client: Trả về JSON Response + Mã HTTP Status chuẩn
+```
 
 ---
 

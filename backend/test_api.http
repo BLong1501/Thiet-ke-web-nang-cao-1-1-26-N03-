@@ -1,0 +1,85 @@
+### ================================================================
+### CROWDFUNDING API TEST FILE (Dùng với VS Code REST Client / Thunder Client)
+### ================================================================
+@baseUrl = http://localhost:5000/api/v1
+
+### 1. HEALTH CHECK SERVER
+GET {{baseUrl}}/health
+Content-Type: application/json
+
+### 2. ĐĂNG KÝ TÀI KHOẢN MỚI (User / Donater)
+# @name registerUser
+POST {{baseUrl}}/auth/register
+Content-Type: application/json
+
+{
+  "email": "testuser01@example.com",
+  "password": "Password123@",
+  "fullName": "Nguyễn Văn Test",
+  "role": "USER"
+}
+
+### 3. ĐĂNG KÝ TÀI KHOẢN GÂY QUỸ (Fundraiser)
+# @name registerFundraiser
+POST {{baseUrl}}/auth/register
+Content-Type: application/json
+
+{
+  "email": "fundraiser01@example.com",
+  "password": "Password123@",
+  "fullName": "Quỹ Trẻ Em Vùng Cao",
+  "role": "FUNDRAISER"
+}
+
+### 4. TEST BẮT LỖI FORM ĐĂNG KÝ (Mật khẩu yếu, thiếu tên) -> Kỳ vọng 400 Bad Request
+POST {{baseUrl}}/auth/register
+Content-Type: application/json
+
+{
+  "email": "invalid-email",
+  "password": "123",
+  "fullName": ""
+}
+
+### 5. TEST ĐĂNG KÝ TRÙNG EMAIL -> Kỳ vọng 409 Conflict
+POST {{baseUrl}}/auth/register
+Content-Type: application/json
+
+{
+  "email": "testuser01@example.com",
+  "password": "Password123@",
+  "fullName": "Nguyễn Văn Test Trùng"
+}
+
+### 6. ĐĂNG NHẬP (Lấy Token)
+# @name login
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "testuser01@example.com",
+  "password": "Password123@"
+}
+
+### LƯU Ý: Sau khi chạy request Đăng nhập ở trên, copy trường "accessToken" 
+### và dán vào biến @token bên dưới để test các API yêu cầu đăng nhập:
+@token = YOUR_ACCESS_TOKEN_HERE
+
+### 7. LẤY THÔNG TIN TÀI KHOẢN HIỆN TẠI (Yêu cầu JWT Token)
+GET {{baseUrl}}/auth/me
+Authorization: Bearer {{token}}
+
+### 8. TEST TRUY CẬP KHÔNG CÓ TOKEN -> Kỳ vọng 401 Unauthorized
+GET {{baseUrl}}/auth/me
+
+### 9. LÀM MỚI TOKEN (Refresh Token)
+POST {{baseUrl}}/auth/refresh-token
+Content-Type: application/json
+
+{
+  "refreshToken": "YOUR_REFRESH_TOKEN_HERE"
+}
+
+### 10. ĐĂNG XUẤT
+POST {{baseUrl}}/auth/logout
+Authorization: Bearer {{token}}
