@@ -1,0 +1,11 @@
+{
+  "name": "crowdfunding-session03-docs",
+  "private": true,
+  "scripts": {
+    "generate": "node scripts/generate-authorization.cjs",
+    "check": "node scripts/check-deliverables.cjs",
+    "serve": "node scripts/serve.cjs",
+    "db:inspect": "node scripts/database.cjs inspect",
+    "db:apply": "node scripts/database.cjs apply"
+  }
+}
