@@ -38,7 +38,10 @@ before(async()=>{
   replace(verificationService,'reviewVerification',async(admin:string,id:string,input:any)=>{calls.push(['review',admin,id,input]);return {message:'ok',verification:{id,status:input.status}};});
 });
 beforeEach(()=>{calls=[];});
-after(()=>{for(const [target,key,fn] of originals.reverse()) target[key]=fn;});
+after(()=>{
+  for(const [target,key,fn] of originals.reverse()) target[key]=fn;
+  setTimeout(() => process.exit(0), 100).unref();
+});
 
 for(const [method,url] of protectedRoutes) {
   test(`TOKEN-01 ${method.toUpperCase()} ${url}: missing token -> 401`,async()=>{
@@ -96,9 +99,17 @@ for(const role of [UserRole.FUNDRAISER,UserRole.ADMIN]) test(`ROLE-03 service re
 test('ROLE-01 registration cannot forward an injected ADMIN role; hashes password',async()=>{
   let saved:any;
   const repo={findByEmail:async()=>null,createUser:async(data:any)=>{saved=data;return {id:'new-user',email:data.email,role:'USER'};}};
-  const service=new AuthService(repo);
-  const result=await service.register({email:'new@example.test',password:'Example123!',fullName:'Test',role:'ADMIN'});
-  assert.equal(saved.role,undefined);assert.notEqual(saved.passwordHash,'Example123!');assert.match(saved.passwordHash,/^\$2[aby]\$10\$/);assert.equal(result.user.role,'USER');
+  const service=new AuthService(repo as any);
+  await service.register({email:'new@example.test',password:'Example123!',fullName:'Test',role:'ADMIN'} as any);
+  const { redisService } = await import('../src/core/database/redis');
+  const pending = await redisService.getPendingRegistration('new@example.test');
+  assert.ok(pending);
+  assert.equal((pending as any).role, undefined);
+  assert.notEqual(pending.passwordHash, 'Example123!');
+  assert.match(pending.passwordHash, /^\$2[aby]\$10\$/);
+  const result = await service.verifyEmail({ email: 'new@example.test', otp: pending.otp });
+  assert.equal(saved.role, undefined);
+  assert.equal(result.user.role, 'USER');
 });
 test('BM05-01 invalid KYC input fails before writes',async()=>{
   const response=await hit('post','/verifications/request').set('Authorization',`Bearer ${token(UserRole.USER)}`).send({idCardNumber:'x'});
