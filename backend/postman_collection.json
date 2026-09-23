@@ -1,8 +1,8 @@
 {
   "info": {
-    "_postman_id": "crowdfunding-api-v1",
-    "name": "Crowdfunding Platform API - Module Auth",
-    "description": "Bộ API kiểm thử hệ thống Crowdfunding Platform (Module Auth & Core)",
+    "_postman_id": "crowdfunding-api-v2",
+    "name": "Crowdfunding Platform API - Full Auth, Profile & KYC",
+    "description": "Bộ API kiểm thử hệ thống Crowdfunding Platform (Module Auth, Google Account Linking, Quên mật khẩu, Profile & KYC)",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
@@ -31,10 +31,10 @@
       }
     },
     {
-      "name": "Auth",
+      "name": "1. Xác thực & Đăng nhập",
       "item": [
         {
-          "name": "1. Đăng ký User (Donater)",
+          "name": "1.1. Đăng ký tài khoản (Gửi OTP Email)",
           "request": {
             "method": "POST",
             "header": [
@@ -45,7 +45,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"testuser02@example.com\",\n  \"password\": \"Password123@\",\n  \"fullName\": \"Trần Thị Quyên Góp\",\n  \"role\": \"USER\"\n}"
+              "raw": "{\n  \"email\": \"nguyenvana@example.com\",\n  \"password\": \"Password123@\",\n  \"fullName\": \"Nguyễn Văn A\",\n  \"phoneNumber\": \"0912345678\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/auth/register",
@@ -55,28 +55,7 @@
           }
         },
         {
-          "name": "2. Đăng ký Fundraiser (Gây quỹ)",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"email\": \"fundraiser02@example.com\",\n  \"password\": \"Password123@\",\n  \"fullName\": \"Tổ chức Cứu trợ Miền Trung\",\n  \"role\": \"FUNDRAISER\"\n}"
-            },
-            "url": {
-              "raw": "{{baseUrl}}/auth/register",
-              "host": ["{{baseUrl}}"],
-              "path": ["auth", "register"]
-            }
-          }
-        },
-        {
-          "name": "3. Đăng nhập (Auto Save Token)",
+          "name": "1.2. Xác thực Email bằng mã OTP (Auto Save Token)",
           "event": [
             {
               "listen": "test",
@@ -102,7 +81,105 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"testuser02@example.com\",\n  \"password\": \"Password123@\"\n}"
+              "raw": "{\n  \"email\": \"nguyenvana@example.com\",\n  \"otp\": \"123456\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/verify-email",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "verify-email"]
+            }
+          }
+        },
+        {
+          "name": "1.3. Gửi lại mã OTP xác thực",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"nguyenvana@example.com\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/resend-otp",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "resend-otp"]
+            }
+          }
+        },
+        {
+          "name": "1.4. Yêu cầu đặt lại mật khẩu (Quên mật khẩu)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"nguyenvana@example.com\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/forgot-password",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "forgot-password"]
+            }
+          }
+        },
+        {
+          "name": "1.5. Đặt mật khẩu mới qua OTP",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"nguyenvana@example.com\",\n  \"otp\": \"123456\",\n  \"newPassword\": \"NewPassword123@\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/reset-password",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "reset-password"]
+            }
+          }
+        },
+        {
+          "name": "1.6. Đăng nhập truyền thống (Auto Save Token)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const response = pm.response.json();",
+                  "if (response && response.data && response.data.accessToken) {",
+                  "    pm.collectionVariables.set('accessToken', response.data.accessToken);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"nguyenvana@example.com\",\n  \"password\": \"NewPassword123@\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/auth/login",
@@ -112,7 +189,42 @@
           }
         },
         {
-          "name": "4. Lấy Profile Hiện Tại (/auth/me)",
+          "name": "1.7. Đăng nhập Google (Account Linking)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const response = pm.response.json();",
+                  "if (response && response.data && response.data.accessToken) {",
+                  "    pm.collectionVariables.set('accessToken', response.data.accessToken);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"idToken\": \"mock_google_token_nguyenvana\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/google",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "google"]
+            }
+          }
+        },
+        {
+          "name": "1.8. Lấy Profile Hiện Tại (/auth/me)",
           "request": {
             "method": "GET",
             "header": [
@@ -129,7 +241,7 @@
           }
         },
         {
-          "name": "5. Đăng xuất",
+          "name": "1.9. Đăng xuất",
           "request": {
             "method": "POST",
             "header": [
@@ -148,10 +260,82 @@
       ]
     },
     {
-      "name": "KYC & Nâng cấp Gây quỹ",
+      "name": "2. Quản lý Trang cá nhân (Profile)",
       "item": [
         {
-          "name": "1. Nộp hồ sơ KYC (User xin làm Fundraiser)",
+          "name": "2.1. Xem thông tin cá nhân & Thống kê",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/profile/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["profile", "me"]
+            }
+          }
+        },
+        {
+          "name": "2.2. Cập nhật hồ sơ (Bổ sung SĐT, Bio, Avatar)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fullName\": \"Nguyễn Văn A (Đã cập nhật)\",\n  \"phoneNumber\": \"0987654321\",\n  \"bio\": \"Nhà hảo tâm tích cực.\",\n  \"avatarUrl\": \"https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=400\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/profile/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["profile", "me"]
+            }
+          }
+        },
+        {
+          "name": "2.3. Đổi mật khẩu",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"oldPassword\": \"NewPassword123@\",\n  \"newPassword\": \"SuperSecret2026@\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/profile/change-password",
+              "host": ["{{baseUrl}}"],
+              "path": ["profile", "change-password"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. KYC & Nâng cấp Gây quỹ",
+      "item": [
+        {
+          "name": "3.1. Nộp hồ sơ KYC (User xin làm Fundraiser)",
           "request": {
             "method": "POST",
             "header": [
@@ -176,7 +360,7 @@
           }
         },
         {
-          "name": "2. Xem trạng thái hồ sơ của mình",
+          "name": "3.2. Xem trạng thái hồ sơ của mình",
           "request": {
             "method": "GET",
             "header": [
@@ -193,7 +377,7 @@
           }
         },
         {
-          "name": "3. [ADMIN] Xem danh sách chờ duyệt",
+          "name": "3.3. [ADMIN] Xem danh sách chờ duyệt",
           "request": {
             "method": "GET",
             "header": [
@@ -214,7 +398,7 @@
           }
         },
         {
-          "name": "4. [ADMIN] Duyệt hồ sơ (Tự nâng cấp lên FUNDRAISER)",
+          "name": "3.4. [ADMIN] Duyệt hồ sơ (Tự nâng cấp lên FUNDRAISER)",
           "request": {
             "method": "PATCH",
             "header": [
@@ -230,37 +414,6 @@
             "body": {
               "mode": "raw",
               "raw": "{\n  \"status\": \"APPROVED\"\n}"
-            },
-            "url": {
-              "raw": "{{baseUrl}}/verifications/:id/review",
-              "host": ["{{baseUrl}}"],
-              "path": ["verifications", ":id", "review"],
-              "variable": [
-                {
-                  "key": "id",
-                  "value": ""
-                }
-              ]
-            }
-          }
-        },
-        {
-          "name": "5. [ADMIN] Từ chối hồ sơ kèm lý do",
-          "request": {
-            "method": "PATCH",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              },
-              {
-                "key": "Authorization",
-                "value": "Bearer {{accessToken}}"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"status\": \"REJECTED\",\n  \"rejectionReason\": \"Ảnh chụp giấy tờ bị lóa sáng, không đọc được số CCCD.\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/verifications/:id/review",

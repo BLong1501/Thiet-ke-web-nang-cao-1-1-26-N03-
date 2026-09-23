@@ -19,6 +19,7 @@ app.use(cookieParser(process.env.COOKIE_SECRET));
 
 import authRouter from "./modules/auth/auth.routes";
 import { verificationRouter } from "./modules/verifications/verification.routes";
+import { profileRouter } from "./modules/profile/profile.routes";
 
 // Health check endpoint
 app.get("/api/v1/health", (_req: Request, res: Response) => {
@@ -32,6 +33,7 @@ app.get("/api/v1/health", (_req: Request, res: Response) => {
 // Đăng ký các phân hệ Routes v1
 app.use("/api/v1/auth", authRouter);
 app.use("/api/v1/verifications", verificationRouter);
+app.use("/api/v1/profile", profileRouter);
 
 import { sendError } from "./core/utils/response.util";
 

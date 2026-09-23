@@ -1,5 +1,5 @@
 ### ================================================================
-### CROWDFUNDING API TEST FILE (Dùng với VS Code REST Client / Thunder Client)
+### CROWDFUNDING API TEST FILE (VS Code REST Client / Thunder Client)
 ### ================================================================
 @baseUrl = http://localhost:5000/api/v1
 
@@ -7,89 +7,131 @@
 GET {{baseUrl}}/health
 Content-Type: application/json
 
-### 2. ĐĂNG KÝ TÀI KHOẢN MỚI (User / Donater)
-# @name registerUser
+### ================================================================
+### PHÂN HỆ XÁC THỰC: ĐĂNG KÝ & XÁC MINH EMAIL OTP
+### ================================================================
+
+### 2. ĐĂNG KÝ TÀI KHOẢN MỚI (Hệ thống tự động sinh và gửi OTP về email)
+# @name register
 POST {{baseUrl}}/auth/register
 Content-Type: application/json
 
 {
-  "email": "testuser01@example.com",
+  "email": "nguyenvana@example.com",
   "password": "Password123@",
-  "fullName": "Nguyễn Văn Test",
-  "role": "USER"
+  "fullName": "Nguyễn Văn A",
+  "phoneNumber": "0912345678"
 }
 
-### 3. ĐĂNG KÝ TÀI KHOẢN GÂY QUỸ (Fundraiser)
-# @name registerFundraiser
-POST {{baseUrl}}/auth/register
+### 3. XÁC THỰC EMAIL BẰNG MÃ OTP (Xem mã OTP in ra ở Terminal của Server)
+# @name verifyEmail
+POST {{baseUrl}}/auth/verify-email
 Content-Type: application/json
 
 {
-  "email": "fundraiser01@example.com",
-  "password": "Password123@",
-  "fullName": "Quỹ Trẻ Em Vùng Cao",
-  "role": "FUNDRAISER"
+  "email": "nguyenvana@example.com",
+  "otp": "123456"
 }
 
-### 4. TEST BẮT LỖI FORM ĐĂNG KÝ (Mật khẩu yếu, thiếu tên) -> Kỳ vọng 400 Bad Request
-POST {{baseUrl}}/auth/register
+### 4. GỬI LẠI MÃ OTP XÁC THỰC EMAIL (Nếu mã cũ hết hạn)
+POST {{baseUrl}}/auth/resend-otp
 Content-Type: application/json
 
 {
-  "email": "invalid-email",
-  "password": "123",
-  "fullName": ""
+  "email": "nguyenvana@example.com"
 }
 
-### 5. TEST ĐĂNG KÝ TRÙNG EMAIL -> Kỳ vọng 409 Conflict
-POST {{baseUrl}}/auth/register
+### ================================================================
+### PHÂN HỆ XÁC THỰC: QUÊN & ĐẶT LẠI MẬT KHẨU
+### ================================================================
+
+### 5. YÊU CẦU ĐẶT LẠI MẬT KHẨU (Gửi OTP về Email)
+POST {{baseUrl}}/auth/forgot-password
 Content-Type: application/json
 
 {
-  "email": "testuser01@example.com",
-  "password": "Password123@",
-  "fullName": "Nguyễn Văn Test Trùng"
+  "email": "nguyenvana@example.com"
 }
 
-### 6. ĐĂNG NHẬP (Lấy Token)
+### 6. XÁC NHẬN MÃ OTP VÀ ĐẶT MẬT KHẨU MỚI
+POST {{baseUrl}}/auth/reset-password
+Content-Type: application/json
+
+{
+  "email": "nguyenvana@example.com",
+  "otp": "123456",
+  "newPassword": "NewPassword123@"
+}
+
+### ================================================================
+### PHÂN HỆ XÁC THỰC: ĐĂNG NHẬP & GOOGLE ACCOUNT LINKING
+### ================================================================
+
+### 7. ĐĂNG NHẬP TRUYỀN THỐNG (Email & Password)
 # @name login
 POST {{baseUrl}}/auth/login
 Content-Type: application/json
 
 {
-  "email": "testuser01@example.com",
-  "password": "Password123@"
+  "email": "nguyenvana@example.com",
+  "password": "NewPassword123@"
 }
 
-### LƯU Ý: Sau khi chạy request Đăng nhập ở trên, copy trường "accessToken" 
-### và dán vào biến @token bên dưới để test các API yêu cầu đăng nhập:
+### LƯU Ý: Sau khi đăng nhập, copy trường "accessToken" dán vào biến @token bên dưới:
 @token = YOUR_ACCESS_TOKEN_HERE
 
-### 7. LẤY THÔNG TIN TÀI KHOẢN HIỆN TẠI (Yêu cầu JWT Token)
-GET {{baseUrl}}/auth/me
-Authorization: Bearer {{token}}
-
-### 8. TEST TRUY CẬP KHÔNG CÓ TOKEN -> Kỳ vọng 401 Unauthorized
-GET {{baseUrl}}/auth/me
-
-### 9. LÀM MỚI TOKEN (Refresh Token)
-POST {{baseUrl}}/auth/refresh-token
+### 8. ĐĂNG NHẬP BẰNG GOOGLE (Hợp nhất tài khoản nếu trùng Email)
+# Có thể truyền Mock ID Token dạng: mock_google_token_{tên_email} để test không cần Google API Key thật
+POST {{baseUrl}}/auth/google
 Content-Type: application/json
 
 {
-  "refreshToken": "YOUR_REFRESH_TOKEN_HERE"
+  "idToken": "mock_google_token_nguyenvana"
 }
+
+### 9. LẤY THÔNG TIN TÀI KHOẢN HIỆN TẠI (/auth/me)
+GET {{baseUrl}}/auth/me
+Authorization: Bearer {{token}}
 
 ### 10. ĐĂNG XUẤT
 POST {{baseUrl}}/auth/logout
 Authorization: Bearer {{token}}
 
 ### ================================================================
+### PHÂN HỆ QUẢN LÝ TRANG CÁ NHÂN (MODULE PROFILE)
+### ================================================================
+
+### 11. XEM TRANG CÁ NHÂN (Kèm số liệu thống kê)
+GET {{baseUrl}}/profile/me
+Authorization: Bearer {{token}}
+
+### 12. CẬP NHẬT TRANG CÁ NHÂN (Bổ sung SĐT duy nhất, Bio, Avatar)
+PUT {{baseUrl}}/profile/me
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "fullName": "Nguyễn Văn A (Cập nhật)",
+  "phoneNumber": "0987654321",
+  "bio": "Nhà hảo tâm tích cực hỗ trợ các dự án giáo dục và y tế vùng cao.",
+  "avatarUrl": "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=400"
+}
+
+### 13. ĐỔI MẬT KHẨU
+PUT {{baseUrl}}/profile/change-password
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "oldPassword": "NewPassword123@",
+  "newPassword": "SuperSecret2026@"
+}
+
+### ================================================================
 ### PHÂN HỆ XÁC MINH DANH TÍNH KYC & NÂNG CẤP VAI TRÒ GÂY QUỸ
 ### ================================================================
 
-### 11. USER NỘP ĐƠN ĐĂNG KÝ GÂY QUỸ (KYC)
-# Dùng token của USER vừa đăng nhập ở trên
+### 14. USER NỘP ĐƠN ĐĂNG KÝ GÂY QUỸ (KYC)
 POST {{baseUrl}}/verifications/request
 Content-Type: application/json
 Authorization: Bearer {{token}}
@@ -107,16 +149,16 @@ Authorization: Bearer {{token}}
   }
 }
 
-### 12. USER XEM TRẠNG THÁI HỒ SƠ CỦA MÌNH
+### 15. USER XEM TIẾN ĐỘ HỒ SƠ KYC
 GET {{baseUrl}}/verifications/my-status
 Authorization: Bearer {{token}}
 
-### 13. ADMIN XEM DANH SÁCH HỒ SƠ ĐANG CHỜ DUYỆT (Cần Token có role ADMIN)
+### 16. ADMIN XEM DANH SÁCH HỒ SƠ CHỜ DUYỆT
 @adminToken = YOUR_ADMIN_TOKEN_HERE
 GET {{baseUrl}}/verifications/pending?page=1&limit=10
 Authorization: Bearer {{adminToken}}
 
-### 14. ADMIN PHÊ DUYỆT HỒ SƠ -> TỰ ĐỘNG NÂNG CẤP USER LÊN FUNDRAISER!
+### 17. ADMIN DUYỆT HỒ SƠ -> TỰ ĐỘNG NÂNG CẤP THÀNH FUNDRAISER!
 @verificationId = YOUR_VERIFICATION_ID_HERE
 PATCH {{baseUrl}}/verifications/{{verificationId}}/review
 Content-Type: application/json
@@ -124,14 +166,4 @@ Authorization: Bearer {{adminToken}}
 
 {
   "status": "APPROVED"
-}
-
-### 15. ADMIN TỪ CHỐI HỒ SƠ (KÈM LÝ DO)
-PATCH {{baseUrl}}/verifications/{{verificationId}}/review
-Content-Type: application/json
-Authorization: Bearer {{adminToken}}
-
-{
-  "status": "REJECTED",
-  "rejectionReason": "Ảnh chụp mặt sau CCCD bị mờ, không nhìn rõ số và con dấu. Vui lòng chụp lại rõ nét hơn."
 }

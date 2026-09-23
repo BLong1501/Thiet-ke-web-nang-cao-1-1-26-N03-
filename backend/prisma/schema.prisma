@@ -22,6 +22,11 @@ enum UserStatus {
   BANNED
 }
 
+enum AuthProvider {
+  LOCAL
+  GOOGLE
+}
+
 enum VerificationStatus {
   PENDING
   APPROVED
@@ -82,19 +87,21 @@ enum ReportStatus {
 // ----------------------------------------------------
 
 model User {
-  id              String      @id @default(uuid()) @db.VarChar(36)
-  email           String      @unique @db.VarChar(255)
-  passwordHash    String      @map("password_hash") @db.VarChar(255)
-  fullName        String      @map("full_name") @db.VarChar(150)
-  phoneNumber     String?     @map("phone_number") @db.VarChar(20)
-  avatarUrl       String?     @map("avatar_url") @db.VarChar(500)
-  bio             String?     @db.Text
-  role            UserRole    @default(USER)
-  status          UserStatus  @default(ACTIVE)
-  isEmailVerified Boolean     @default(false) @map("is_email_verified")
-  emailVerifiedAt DateTime?   @map("email_verified_at")
-  createdAt       DateTime    @default(now()) @map("created_at")
-  updatedAt       DateTime    @updatedAt @map("updated_at")
+  id              String        @id @default(uuid()) @db.VarChar(36)
+  email           String        @unique @db.VarChar(255)
+  passwordHash    String?       @map("password_hash") @db.VarChar(255)
+  fullName        String        @map("full_name") @db.VarChar(150)
+  phoneNumber     String?       @unique @map("phone_number") @db.VarChar(20)
+  avatarUrl       String?       @map("avatar_url") @db.VarChar(500)
+  bio             String?       @db.Text
+  googleId        String?       @unique @map("google_id") @db.VarChar(255)
+  authProvider    AuthProvider  @default(LOCAL) @map("auth_provider")
+  role            UserRole      @default(USER)
+  status          UserStatus    @default(ACTIVE)
+  isEmailVerified Boolean       @default(false) @map("is_email_verified")
+  emailVerifiedAt DateTime?     @map("email_verified_at")
+  createdAt       DateTime      @default(now()) @map("created_at")
+  updatedAt       DateTime      @updatedAt @map("updated_at")
 
   // Quan hệ
   verification            Verification?      @relation("UserVerification")

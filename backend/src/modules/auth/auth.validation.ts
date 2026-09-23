@@ -33,5 +33,63 @@ export const loginSchema = z.object({
   password: z.string().min(1, "Mật khẩu không được để trống"),
 });
 
+export const verifyEmailSchema = z.object({
+  email: z
+    .string()
+    .trim()
+    .min(1, "Email không được để trống")
+    .email("Định dạng email không hợp lệ"),
+  otp: z
+    .string()
+    .trim()
+    .length(6, "Mã OTP phải đúng 6 chữ số")
+    .regex(/^[0-9]+$/, "Mã OTP chỉ bao gồm các chữ số"),
+});
+
+export const resendOtpSchema = z.object({
+  email: z
+    .string()
+    .trim()
+    .min(1, "Email không được để trống")
+    .email("Định dạng email không hợp lệ"),
+});
+
+export const forgotPasswordSchema = z.object({
+  email: z
+    .string()
+    .trim()
+    .min(1, "Email không được để trống")
+    .email("Định dạng email không hợp lệ"),
+});
+
+export const resetPasswordSchema = z.object({
+  email: z
+    .string()
+    .trim()
+    .min(1, "Email không được để trống")
+    .email("Định dạng email không hợp lệ"),
+  otp: z
+    .string()
+    .trim()
+    .length(6, "Mã OTP phải đúng 6 chữ số")
+    .regex(/^[0-9]+$/, "Mã OTP chỉ bao gồm các chữ số"),
+  newPassword: z
+    .string()
+    .min(6, "Mật khẩu mới phải có tối thiểu 6 ký tự")
+    .max(100, "Mật khẩu mới tối đa 100 ký tự"),
+});
+
+export const googleAuthSchema = z.object({
+  idToken: z
+    .string()
+    .trim()
+    .min(10, "Google ID Token không hợp lệ"),
+});
+
 export type RegisterInput = z.infer<typeof registerSchema>;
 export type LoginInput = z.infer<typeof loginSchema>;
+export type VerifyEmailInput = z.infer<typeof verifyEmailSchema>;
+export type ResendOtpInput = z.infer<typeof resendOtpSchema>;
+export type ForgotPasswordInput = z.infer<typeof forgotPasswordSchema>;
+export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>;
+export type GoogleAuthInput = z.infer<typeof googleAuthSchema>;
