@@ -2,7 +2,7 @@
 
 **Nhóm 9 · Đề tài Crowdfunding · Ngày cập nhật 23/09/2026**
 
-Hồ sơ chỉ gồm phần cá nhân Phạm Đình Trường. Cấu trúc nộp kế thừa Buổi 2: thư mục buổi học → nhóm → thành viên → sản phẩm theo vai trò.
+Hồ sơ chỉ gồm phần cá nhân . Cấu trúc nộp kế thừa Buổi 2: thư mục buổi học → nhóm → thành viên → sản phẩm theo vai trò.
 
 ## Danh mục sản phẩm
 
