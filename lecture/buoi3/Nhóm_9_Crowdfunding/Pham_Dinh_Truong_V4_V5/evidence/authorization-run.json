@@ -1,0 +1,46 @@
+{
+  "recordedAt": "2026-09-22T14:39:33.144Z",
+  "command": "cd backend && npm test",
+  "environment": {
+    "os": "Windows",
+    "node": "24.16.0"
+  },
+  "scope": "HTTP router/middleware and selected Auth/KYC services; database boundary stubbed, no real database requests",
+  "tests": 35,
+  "passed": 35,
+  "failed": 0,
+  "skipped": 0,
+  "durationMs": 14352.3992,
+  "passRatePercent": 100,
+  "groups": {
+    "missingToken": 6,
+    "badSignature": 6,
+    "wrongRoleAdminEndpoints": 6,
+    "adminAllowed": 3,
+    "expiredAndRefreshToken": 2,
+    "identityOwnership": 3,
+    "invalidReviewStatus": 2,
+    "invalidRejectionReason": 2,
+    "submitKycWrongRoleService": 2,
+    "registrationRoleAndHash": 1,
+    "invalidKycInput": 1,
+    "health": 1
+  },
+  "source": "backend/tests/authorization.test.ts",
+  "limitations": [
+    "Not all 149 designed deny cases were executed.",
+    "No claim about real MySQL transactions, cloud deployment, role revocation, or future endpoints."
+  ],
+  "build": {
+    "command": "npm run build",
+    "result": "PASS",
+    "note": "module/moduleResolution set to Node16 for installed TypeScript 7."
+  },
+  "baseCommit": "94deb8e92b6bc084215f624f141d5ceaf3f7c59f",
+  "sourceState": "Working tree after KYC validation and TypeScript configuration fixes; not committed",
+  "sourceSha256": {
+    "backend/tests/authorization.test.ts": "8bbf5b53db8aae090cc69413c3176e366b0f2f5a0af216511a727a1dbf7194c3",
+    "backend/src/modules/verifications/verification.validation.ts": "e3606f72918aeb4e0cfbf03ad8be9fd766e63d832a5e6434db319619aeec883d",
+    "backend/tsconfig.json": "9e724c1ee68d61aee86b1dbfa51bbf85b939aae2b78109c0992f0b426be507ac"
+  }
+}

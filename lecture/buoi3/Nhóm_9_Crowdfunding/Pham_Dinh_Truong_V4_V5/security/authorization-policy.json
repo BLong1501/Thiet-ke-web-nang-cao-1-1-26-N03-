@@ -1,0 +1,999 @@
+{
+  "operations": [
+    {
+      "id": "HEALTH",
+      "method": "GET",
+      "path": "/health",
+      "name": "Kiểm tra tiến trình API",
+      "allow": [
+        "GUEST",
+        "USER",
+        "FUNDRAISER",
+        "ADMIN",
+        "GATEWAY"
+      ],
+      "state": "LIVE",
+      "condition": "Chỉ phản ánh tiến trình Express; không kiểm tra kết nối DB."
+    },
+    {
+      "id": "AUTH-REGISTER",
+      "method": "POST",
+      "path": "/auth/register",
+      "name": "Đăng ký tài khoản mới (Email, Password, Name)",
+      "allow": [
+        "GUEST",
+        "USER",
+        "FUNDRAISER",
+        "ADMIN",
+        "GATEWAY"
+      ],
+      "state": "LIVE",
+      "condition": "Theo danh mục API README; chỉ triển khai sau khi chốt hợp đồng dữ liệu."
+    },
+    {
+      "id": "AUTH-LOGIN",
+      "method": "POST",
+      "path": "/auth/login",
+      "name": "Đăng nhập hệ thống, trả về JWT & Refresh Cookie",
+      "allow": [
+        "GUEST",
+        "USER",
+        "FUNDRAISER",
+        "ADMIN",
+        "GATEWAY"
+      ],
+      "state": "LIVE",
+      "condition": "Theo danh mục API README; chỉ triển khai sau khi chốt hợp đồng dữ liệu."
+    },
+    {
+      "id": "API-03",
+      "method": "POST",
+      "path": "/auth/logout",
+      "name": "Đăng xuất, hủy bỏ phiên làm việc",
+      "allow": [
+        "USER",
+        "FUNDRAISER",
+        "ADMIN"
+      ],
+      "state": "PLANNED",
+      "condition": "Theo danh mục API README; chỉ triển khai sau khi chốt hợp đồng dữ liệu."
+    },
+    {
+      "id": "API-04",
+      "method": "GET",
+      "path": "/auth/verify-email",
+      "name": "Kích hoạt tài khoản qua link email",
+      "allow": [
+        "GUEST",
+        "USER",
+        "FUNDRAISER",
+        "ADMIN",
+        "GATEWAY"
+      ],
+      "state": "PLANNED",
+      "condition": "Theo danh mục API README; chỉ triển khai sau khi chốt hợp đồng dữ liệu."
+    },
+    {
+      "id": "API-05",
+      "method": "POST",
+      "path": "/auth/forgot-password",
+      "name": "Gửi email yêu cầu đặt lại mật khẩu",
+      "allow": [
+        "GUEST",
+        "USER",
+        "FUNDRAISER",
+        "ADMIN",
+        "GATEWAY"
+      ],
+      "state": "PLANNED",
+      "condition": "Theo danh mục API README; chỉ triển khai sau khi chốt hợp đồng dữ liệu."
+    },
+    {
+      "id": "API-06",
+      "method": "POST",
+      "path": "/auth/reset-password",
+      "name": "Đặt lại mật khẩu mới bằng token",
+      "allow": [
+        "GUEST",
+        "USER",
+        "FUNDRAISER",
+        "ADMIN",
+        "GATEWAY"
+      ],
+      "state": "PLANNED",
+      "condition": "Theo danh mục API README; chỉ triển khai sau khi chốt hợp đồng dữ liệu."
+    },
+    {
+      "id": "API-07",
+      "method": "POST",
+      "path": "/auth/refresh-token",
+      "name": "Cấp Access Token mới từ Refresh Token",
+      "allow": [
+        "GUEST",
+        "USER",
+        "FUNDRAISER",
+        "ADMIN",
+        "GATEWAY"
+      ],
+      "state": "PLANNED",
+      "condition": "Theo danh mục API README; chỉ triển khai sau khi chốt hợp đồng dữ liệu."
+    },
+    {
+      "id": "AUTH-ME",
+      "method": "GET",
+      "path": "/auth/me",
+      "name": "Lấy thông tin tài khoản hiện tại",
+      "allow": [
+        "USER",
+        "FUNDRAISER",
+        "ADMIN"
+      ],
+      "state": "LIVE",
+      "condition": "Chỉ dữ liệu của principal đăng nhập; bỏ qua/từ chối userId do client gửi. Không có quyền đọc hộ kể cả Admin."
+    },
+    {
+      "id": "API-09",
+      "method": "PUT",
+      "path": "/users/me",
+      "name": "Cập nhật thông tin cá nhân (họ tên, bio, phone)",
+      "allow": [
+        "USER",
+        "FUNDRAISER",
+        "ADMIN"
+      ],
+      "state": "PLANNED",
+      "condition": "Chỉ dữ liệu của principal đăng nhập; bỏ qua/từ chối userId do client gửi. Không có quyền đọc hộ kể cả Admin."
+    },
+    {
+      "id": "API-10",
+      "method": "PUT",
+      "path": "/users/me/password",
+      "name": "Đổi mật khẩu tài khoản",
+      "allow": [
+        "USER",
+        "FUNDRAISER",
+        "ADMIN"
+      ],
+      "state": "PLANNED",
+      "condition": "Chỉ dữ liệu của principal đăng nhập; bỏ qua/từ chối userId do client gửi. Không có quyền đọc hộ kể cả Admin."
+    },
+    {
+      "id": "API-11",
+      "method": "POST",
+      "path": "/users/me/avatar",
+      "name": "Tải lên ảnh đại diện cá nhân",
+      "allow": [
+        "USER",
+        "FUNDRAISER",
+        "ADMIN"
+      ],
+      "state": "PLANNED",
+      "condition": "Chỉ dữ liệu của principal đăng nhập; bỏ qua/từ chối userId do client gửi. Không có quyền đọc hộ kể cả Admin."
+    },
+    {
+      "id": "KYC-SUBMIT",
+      "method": "POST",
+      "path": "/verifications/request",
+      "name": "Nộp hồ sơ KYC xin quyền gây quỹ (ảnh CCCD, bệnh án)",
+      "allow": [
+        "USER"
+      ],
+      "state": "LIVE",
+      "condition": "UC02: USER nộp lần đầu hoặc gửi lại hồ sơ REJECTED. FUNDRAISER/ADMIN hiện bị service trả 400; PENDING/APPROVED không được nộp lại."
+    },
+    {
+      "id": "KYC-ME",
+      "method": "GET",
+      "path": "/verifications/my-status",
+      "name": "Xem trạng thái/kết quả hồ sơ KYC của bản thân",
+      "allow": [
+        "USER",
+        "FUNDRAISER",
+        "ADMIN"
+      ],
+      "state": "LIVE",
+      "condition": "Chỉ hồ sơ của req.user.userId; chưa nộp trả hasSubmitted=false, status=null, verification=null."
+    },
+    {
+      "id": "KYC-LIST",
+      "method": "GET",
+      "path": "/verifications/pending",
+      "name": "Danh sách hồ sơ KYC đang chờ duyệt (phân trang)",
+      "allow": [
+        "ADMIN"
+      ],
+      "state": "LIVE",
+      "condition": "Middleware authorize(ADMIN). Review chỉ hồ sơ PENDING; chỉ nhận quyết định APPROVED hoặc REJECTED."
+    },
+    {
+      "id": "KYC-DETAIL",
+      "method": "GET",
+      "path": "/verifications/{id}",
+      "name": "Xem chi tiết giấy tờ hồ sơ KYC của người dùng",
+      "allow": [
+        "ADMIN"
+      ],
+      "state": "LIVE",
+      "condition": "Middleware authorize(ADMIN). Review chỉ hồ sơ PENDING; chỉ nhận quyết định APPROVED hoặc REJECTED."
+    },
+    {
+      "id": "KYC-REVIEW",
+      "method": "PATCH",
+      "path": "/verifications/{id}/review",
+      "name": "Phê duyệt (APPROVED) hoặc Từ chối (REJECTED)",
+      "allow": [
+        "ADMIN"
+      ],
+      "state": "LIVE",
+      "condition": "Middleware authorize(ADMIN). Review chỉ hồ sơ PENDING; chỉ nhận quyết định APPROVED hoặc REJECTED."
+    },
+    {
+      "id": "API-17",
+      "method": "GET",
+      "path": "/categories",
+      "name": "Lấy danh mục chiến dịch đang kích hoạt",
+      "allow": [
+        "GUEST",
+        "USER",
+        "FUNDRAISER",
+        "ADMIN",
+        "GATEWAY"
+      ],
+      "state": "PLANNED",
+      "condition": "Theo danh mục API README; chỉ triển khai sau khi chốt hợp đồng dữ liệu."
+    },
+    {
+      "id": "API-18",
+      "method": "GET",
+      "path": "/campaigns",
+      "name": "Tìm kiếm, lọc theo danh mục/trạng thái, phân trang",
+      "allow": [
+        "GUEST",
+        "USER",
+        "FUNDRAISER",
+        "ADMIN",
+        "GATEWAY"
+      ],
+      "state": "PLANNED",
+      "condition": "Theo danh mục API README; chỉ triển khai sau khi chốt hợp đồng dữ liệu."
+    },
+    {
+      "id": "API-19",
+      "method": "GET",
+      "path": "/campaigns/{slug}",
+      "name": "Xem chi tiết nội dung và câu chuyện chiến dịch",
+      "allow": [
+        "GUEST",
+        "USER",
+        "FUNDRAISER",
+        "ADMIN",
+        "GATEWAY"
+      ],
+      "state": "PLANNED",
+      "condition": "Theo danh mục API README; chỉ triển khai sau khi chốt hợp đồng dữ liệu."
+    },
+    {
+      "id": "API-20",
+      "method": "GET",
+      "path": "/campaigns/my-campaigns",
+      "name": "Fundraiser xem danh sách chiến dịch của mình",
+      "allow": [
+        "FUNDRAISER"
+      ],
+      "state": "PLANNED",
+      "condition": "Theo danh mục API README; chỉ triển khai sau khi chốt hợp đồng dữ liệu."
+    },
+    {
+      "id": "API-21",
+      "method": "POST",
+      "path": "/campaigns",
+      "name": "Khởi tạo chiến dịch mới (lưu bản nháp DRAFT)",
+      "allow": [
+        "FUNDRAISER"
+      ],
+      "state": "PLANNED",
+      "condition": "Theo danh mục API README; chỉ triển khai sau khi chốt hợp đồng dữ liệu."
+    },
+    {
+      "id": "API-22",
+      "method": "PUT",
+      "path": "/campaigns/{id}",
+      "name": "Cập nhật nội dung chiến dịch",
+      "allow": [
+        "FUNDRAISER"
+      ],
+      "state": "PLANNED",
+      "condition": "Fundraiser chỉ thao tác chiến dịch của mình; kiểm tra ownership và trạng thái."
+    },
+    {
+      "id": "API-23",
+      "method": "PATCH",
+      "path": "/campaigns/{id}/submit",
+      "name": "Gửi chiến dịch lên chờ Admin phê duyệt",
+      "allow": [
+        "FUNDRAISER"
+      ],
+      "state": "PLANNED",
+      "condition": "Fundraiser chỉ thao tác chiến dịch của mình; kiểm tra ownership và trạng thái."
+    },
+    {
+      "id": "API-24",
+      "method": "POST",
+      "path": "/campaigns/{id}/media",
+      "name": "Tải lên ảnh/video minh chứng cho chiến dịch",
+      "allow": [
+        "FUNDRAISER"
+      ],
+      "state": "PLANNED",
+      "condition": "Fundraiser chỉ thao tác chiến dịch của mình; kiểm tra ownership và trạng thái."
+    },
+    {
+      "id": "API-25",
+      "method": "POST",
+      "path": "/campaigns/{id}/updates",
+      "name": "Đăng nhật ký cập nhật tiến độ chiến dịch",
+      "allow": [
+        "FUNDRAISER"
+      ],
+      "state": "PLANNED",
+      "condition": "Fundraiser chỉ thao tác chiến dịch của mình; kiểm tra ownership và trạng thái."
+    },
+    {
+      "id": "API-26",
+      "method": "GET",
+      "path": "/campaigns/{id}/updates",
+      "name": "Xem danh sách nhật ký cập nhật tiến độ",
+      "allow": [
+        "GUEST",
+        "USER",
+        "FUNDRAISER",
+        "ADMIN",
+        "GATEWAY"
+      ],
+      "state": "PLANNED",
+      "condition": "Theo danh mục API README; chỉ triển khai sau khi chốt hợp đồng dữ liệu."
+    },
+    {
+      "id": "API-27",
+      "method": "POST",
+      "path": "/donations",
+      "name": "Khởi tạo giao dịch đóng góp (số tiền, ẩn danh)",
+      "allow": [
+        "USER",
+        "FUNDRAISER",
+        "ADMIN"
+      ],
+      "state": "PLANNED",
+      "condition": "Thiết kế theo actor UC06–07/phạm vi: yêu cầu đăng nhập. README ghi Public/User và DB cho user_id NULL: nhóm cần chốt; chưa có backend. Ẩn danh là ẩn tên công khai, không bỏ xác thực."
+    },
+    {
+      "id": "API-28",
+      "method": "POST",
+      "path": "/payments/create-url",
+      "name": "Tạo đường link/mã QR cổng thanh toán (VNPAY/MoMo)",
+      "allow": [
+        "USER",
+        "FUNDRAISER",
+        "ADMIN"
+      ],
+      "state": "PLANNED",
+      "condition": "Thiết kế theo actor UC06–07/phạm vi: yêu cầu đăng nhập. README ghi Public/User và DB cho user_id NULL: nhóm cần chốt; chưa có backend. Ẩn danh là ẩn tên công khai, không bỏ xác thực."
+    },
+    {
+      "id": "PAY-WEBHOOK",
+      "method": "POST",
+      "path": "/payments/webhook",
+      "name": "Webhook tự động nhận kết quả từ cổng thanh toán (IPN)",
+      "allow": [
+        "GATEWAY"
+      ],
+      "state": "PLANNED",
+      "condition": "Xác minh chữ ký, giao dịch, số tiền và chống xử lý lặp. JWT Admin không cấp quyền giả mạo gateway."
+    },
+    {
+      "id": "API-30",
+      "method": "GET",
+      "path": "/donations/campaign/{campaignId}",
+      "name": "Danh sách đóng góp & Bảng vinh danh nhà hảo tâm",
+      "allow": [
+        "GUEST",
+        "USER",
+        "FUNDRAISER",
+        "ADMIN",
+        "GATEWAY"
+      ],
+      "state": "PLANNED",
+      "condition": "Theo danh mục API README; chỉ triển khai sau khi chốt hợp đồng dữ liệu."
+    },
+    {
+      "id": "API-31",
+      "method": "GET",
+      "path": "/donations/my-history",
+      "name": "Xem lịch sử các lần quyên góp của tôi",
+      "allow": [
+        "USER",
+        "FUNDRAISER",
+        "ADMIN"
+      ],
+      "state": "PLANNED",
+      "condition": "Chỉ dữ liệu của principal đăng nhập; bỏ qua/từ chối userId do client gửi. Không có quyền đọc hộ kể cả Admin."
+    },
+    {
+      "id": "API-32",
+      "method": "GET",
+      "path": "/donations/{id}/receipt",
+      "name": "Tải/xuất biên lai xác nhận quyên góp điện tử",
+      "allow": [
+        "USER",
+        "FUNDRAISER",
+        "ADMIN"
+      ],
+      "state": "PLANNED",
+      "condition": "Chỉ người đóng góp sở hữu giao dịch; Admin không tự động được xem biên lai riêng tư qua API này."
+    },
+    {
+      "id": "API-33",
+      "method": "GET",
+      "path": "/disbursements/campaign/{campaignId}",
+      "name": "Xem sao kê toàn bộ các khoản chi tiêu chiến dịch",
+      "allow": [
+        "GUEST",
+        "USER",
+        "FUNDRAISER",
+        "ADMIN",
+        "GATEWAY"
+      ],
+      "state": "PLANNED",
+      "condition": "Theo danh mục API README; chỉ triển khai sau khi chốt hợp đồng dữ liệu."
+    },
+    {
+      "id": "API-34",
+      "method": "GET",
+      "path": "/disbursements/{id}",
+      "name": "Xem chi tiết phiếu chi và chứng từ hóa đơn gốc",
+      "allow": [
+        "GUEST",
+        "USER",
+        "FUNDRAISER",
+        "ADMIN",
+        "GATEWAY"
+      ],
+      "state": "PLANNED",
+      "condition": "Theo danh mục API README; chỉ triển khai sau khi chốt hợp đồng dữ liệu."
+    },
+    {
+      "id": "API-35",
+      "method": "POST",
+      "path": "/disbursements",
+      "name": "Lập phiếu chi giải ngân mới (đính kèm hóa đơn đỏ)",
+      "allow": [
+        "FUNDRAISER",
+        "ADMIN"
+      ],
+      "state": "PLANNED",
+      "condition": "Fundraiser chỉ thao tác chiến dịch của mình; kiểm tra ownership và trạng thái. Admin được lập phiếu theo quyền quản trị trong README; phải ghi audit log."
+    },
+    {
+      "id": "API-36",
+      "method": "GET",
+      "path": "/campaigns/{id}/export-statement",
+      "name": "Xuất file báo cáo tài chính sao kê (Excel/PDF)",
+      "allow": [
+        "GUEST",
+        "USER",
+        "FUNDRAISER",
+        "ADMIN",
+        "GATEWAY"
+      ],
+      "state": "PLANNED",
+      "condition": "Theo danh mục API README; chỉ triển khai sau khi chốt hợp đồng dữ liệu."
+    },
+    {
+      "id": "API-37",
+      "method": "GET",
+      "path": "/campaigns/{id}/comments",
+      "name": "Lấy danh sách bình luận cổ vũ chiến dịch",
+      "allow": [
+        "GUEST",
+        "USER",
+        "FUNDRAISER",
+        "ADMIN",
+        "GATEWAY"
+      ],
+      "state": "PLANNED",
+      "condition": "Theo danh mục API README; chỉ triển khai sau khi chốt hợp đồng dữ liệu."
+    },
+    {
+      "id": "API-38",
+      "method": "POST",
+      "path": "/campaigns/{id}/comments",
+      "name": "Gửi bình luận cổ vũ (hỗ trợ trả lời lồng nhau)",
+      "allow": [
+        "USER",
+        "FUNDRAISER",
+        "ADMIN"
+      ],
+      "state": "PLANNED",
+      "condition": "Theo danh mục API README; chỉ triển khai sau khi chốt hợp đồng dữ liệu."
+    },
+    {
+      "id": "API-39",
+      "method": "POST",
+      "path": "/users/{id}/follow",
+      "name": "Theo dõi hoặc Bỏ theo dõi Người gây quỹ uy tín",
+      "allow": [
+        "USER",
+        "FUNDRAISER",
+        "ADMIN"
+      ],
+      "state": "DEFERRED",
+      "condition": "Theo danh mục API README; chỉ triển khai sau khi chốt hợp đồng dữ liệu."
+    },
+    {
+      "id": "API-40",
+      "method": "GET",
+      "path": "/communities",
+      "name": "Danh sách các hội nhóm cộng đồng thiện nguyện",
+      "allow": [
+        "GUEST",
+        "USER",
+        "FUNDRAISER",
+        "ADMIN",
+        "GATEWAY"
+      ],
+      "state": "DEFERRED",
+      "condition": "Theo danh mục API README; chỉ triển khai sau khi chốt hợp đồng dữ liệu."
+    },
+    {
+      "id": "API-41",
+      "method": "POST",
+      "path": "/communities",
+      "name": "Khởi tạo nhóm cộng đồng mới",
+      "allow": [
+        "USER",
+        "FUNDRAISER",
+        "ADMIN"
+      ],
+      "state": "DEFERRED",
+      "condition": "Theo danh mục API README; chỉ triển khai sau khi chốt hợp đồng dữ liệu."
+    },
+    {
+      "id": "API-42",
+      "method": "POST",
+      "path": "/communities/{id}/join",
+      "name": "Tham gia hoặc rời khỏi nhóm cộng đồng",
+      "allow": [
+        "USER",
+        "FUNDRAISER",
+        "ADMIN"
+      ],
+      "state": "DEFERRED",
+      "condition": "Theo danh mục API README; chỉ triển khai sau khi chốt hợp đồng dữ liệu."
+    },
+    {
+      "id": "API-43",
+      "method": "GET",
+      "path": "/communities/{id}/posts",
+      "name": "Xem các bài viết thảo luận trong nhóm",
+      "allow": [
+        "GUEST",
+        "USER",
+        "FUNDRAISER",
+        "ADMIN",
+        "GATEWAY"
+      ],
+      "state": "DEFERRED",
+      "condition": "Nhóm công khai: ai cũng đọc; nhóm riêng: chỉ thành viên. Đăng bài cần tư cách MEMBER/MODERATOR/ADMIN trong nhóm, kể cả tài khoản Admin hệ thống."
+    },
+    {
+      "id": "API-44",
+      "method": "POST",
+      "path": "/communities/{id}/posts",
+      "name": "Đăng bài viết thảo luận trong nhóm",
+      "allow": [
+        "USER",
+        "FUNDRAISER",
+        "ADMIN"
+      ],
+      "state": "DEFERRED",
+      "condition": "Nhóm công khai: ai cũng đọc; nhóm riêng: chỉ thành viên. Đăng bài cần tư cách MEMBER/MODERATOR/ADMIN trong nhóm, kể cả tài khoản Admin hệ thống."
+    },
+    {
+      "id": "API-45",
+      "method": "GET",
+      "path": "/admin/users",
+      "name": "Quản lý danh sách thành viên (lọc theo role, status)",
+      "allow": [
+        "ADMIN"
+      ],
+      "state": "PLANNED",
+      "condition": "Theo danh mục API README; chỉ triển khai sau khi chốt hợp đồng dữ liệu."
+    },
+    {
+      "id": "API-46",
+      "method": "PATCH",
+      "path": "/admin/users/{id}/status",
+      "name": "Khóa (SUSPENDED) hoặc Mở khóa tài khoản",
+      "allow": [
+        "ADMIN"
+      ],
+      "state": "PLANNED",
+      "condition": "Theo danh mục API README; chỉ triển khai sau khi chốt hợp đồng dữ liệu."
+    },
+    {
+      "id": "API-47",
+      "method": "PATCH",
+      "path": "/admin/users/{id}/role",
+      "name": "Cấp hoặc thu hồi tư cách Người gây quỹ (FUNDRAISER)",
+      "allow": [
+        "ADMIN"
+      ],
+      "state": "PLANNED",
+      "condition": "Theo danh mục API README; chỉ triển khai sau khi chốt hợp đồng dữ liệu."
+    },
+    {
+      "id": "API-48",
+      "method": "PATCH",
+      "path": "/admin/campaigns/{id}/status",
+      "name": "Phê duyệt (ACTIVE), từ chối, tạm dừng (PAUSED)",
+      "allow": [
+        "ADMIN"
+      ],
+      "state": "PLANNED",
+      "condition": "Theo danh mục API README; chỉ triển khai sau khi chốt hợp đồng dữ liệu."
+    },
+    {
+      "id": "API-49",
+      "method": "POST",
+      "path": "/reports",
+      "name": "Người dùng gửi tố giác chiến dịch/bài viết vi phạm",
+      "allow": [
+        "USER",
+        "FUNDRAISER",
+        "ADMIN"
+      ],
+      "state": "PLANNED",
+      "condition": "Theo danh mục API README; chỉ triển khai sau khi chốt hợp đồng dữ liệu."
+    },
+    {
+      "id": "API-50",
+      "method": "GET",
+      "path": "/admin/reports",
+      "name": "Ban quản trị xem danh sách báo cáo vi phạm",
+      "allow": [
+        "ADMIN"
+      ],
+      "state": "PLANNED",
+      "condition": "Theo danh mục API README; chỉ triển khai sau khi chốt hợp đồng dữ liệu."
+    },
+    {
+      "id": "API-51",
+      "method": "PATCH",
+      "path": "/admin/reports/{id}/resolve",
+      "name": "Xử lý và ghi nhận giải quyết báo cáo vi phạm",
+      "allow": [
+        "ADMIN"
+      ],
+      "state": "PLANNED",
+      "condition": "Theo danh mục API README; chỉ triển khai sau khi chốt hợp đồng dữ liệu."
+    },
+    {
+      "id": "API-52",
+      "method": "POST",
+      "path": "/admin/categories",
+      "name": "Thêm danh mục gây quỹ mới",
+      "allow": [
+        "ADMIN"
+      ],
+      "state": "PLANNED",
+      "condition": "Theo danh mục API README; chỉ triển khai sau khi chốt hợp đồng dữ liệu."
+    },
+    {
+      "id": "API-53",
+      "method": "PUT",
+      "path": "/admin/categories/{id}",
+      "name": "Cập nhật thông tin danh mục",
+      "allow": [
+        "ADMIN"
+      ],
+      "state": "PLANNED",
+      "condition": "Theo danh mục API README; chỉ triển khai sau khi chốt hợp đồng dữ liệu."
+    },
+    {
+      "id": "API-54",
+      "method": "DELETE",
+      "path": "/admin/categories/{id}",
+      "name": "Xóa hoặc ẩn danh mục",
+      "allow": [
+        "ADMIN"
+      ],
+      "state": "PLANNED",
+      "condition": "Theo danh mục API README; chỉ triển khai sau khi chốt hợp đồng dữ liệu."
+    },
+    {
+      "id": "API-55",
+      "method": "GET",
+      "path": "/admin/analytics/overview",
+      "name": "Dashboard thống kê tổng dòng tiền, tỷ lệ thành công",
+      "allow": [
+        "ADMIN"
+      ],
+      "state": "PLANNED",
+      "condition": "Theo danh mục API README; chỉ triển khai sau khi chốt hợp đồng dữ liệu."
+    },
+    {
+      "id": "API-56",
+      "method": "GET",
+      "path": "/admin/audit-logs",
+      "name": "Tra cứu nhật ký kiểm toán hệ thống (Audit Logs)",
+      "allow": [
+        "ADMIN"
+      ],
+      "state": "PLANNED",
+      "condition": "Theo danh mục API README; chỉ triển khai sau khi chốt hợp đồng dữ liệu."
+    },
+    {
+      "id": "API-57",
+      "method": "GET",
+      "path": "/notifications",
+      "name": "Lấy danh sách thông báo của tôi (có phân trang)",
+      "allow": [
+        "USER",
+        "FUNDRAISER",
+        "ADMIN"
+      ],
+      "state": "PLANNED",
+      "condition": "Chỉ dữ liệu của principal đăng nhập; bỏ qua/từ chối userId do client gửi. Không có quyền đọc hộ kể cả Admin."
+    },
+    {
+      "id": "API-58",
+      "method": "PATCH",
+      "path": "/notifications/{id}/read",
+      "name": "Đánh dấu một thông báo là đã đọc",
+      "allow": [
+        "USER",
+        "FUNDRAISER",
+        "ADMIN"
+      ],
+      "state": "PLANNED",
+      "condition": "Chỉ dữ liệu của principal đăng nhập; bỏ qua/từ chối userId do client gửi. Không có quyền đọc hộ kể cả Admin."
+    },
+    {
+      "id": "API-59",
+      "method": "PATCH",
+      "path": "/notifications/read-all",
+      "name": "Đánh dấu tất cả thông báo là đã đọc",
+      "allow": [
+        "USER",
+        "FUNDRAISER",
+        "ADMIN"
+      ],
+      "state": "PLANNED",
+      "condition": "Chỉ dữ liệu của principal đăng nhập; bỏ qua/từ chối userId do client gửi. Không có quyền đọc hộ kể cả Admin."
+    },
+    {
+      "id": "KYC-SUPPLEMENT",
+      "method": "PATCH",
+      "path": "/verifications/{id}/supplement",
+      "name": "Yêu cầu bổ sung KYC",
+      "allow": [
+        "ADMIN"
+      ],
+      "state": "PLANNED",
+      "condition": "UC02/03, YCCN09; đường dẫn đề xuất, V3 cần chốt. Enum hiện chưa có NEEDS_ADDITION."
+    },
+    {
+      "id": "CAMPAIGN-REVISION",
+      "method": "PATCH",
+      "path": "/admin/campaigns/{id}/revision",
+      "name": "Yêu cầu chỉnh sửa chiến dịch",
+      "allow": [
+        "ADMIN"
+      ],
+      "state": "PLANNED",
+      "condition": "UC05/YCCN16; đường dẫn đề xuất, chưa có trong README hoặc backend."
+    },
+    {
+      "id": "PAY-STATUS",
+      "method": "GET",
+      "path": "/donations/{id}/status",
+      "name": "Theo dõi trạng thái giao dịch của mình",
+      "allow": [
+        "USER",
+        "FUNDRAISER",
+        "ADMIN"
+      ],
+      "state": "PLANNED",
+      "condition": "YCCN21; đường dẫn đề xuất. Phải kiểm tra ownership; API quản trị tách riêng."
+    },
+    {
+      "id": "PAY-ADMIN",
+      "method": "GET",
+      "path": "/admin/donations",
+      "name": "Tra soát Donation/Payment",
+      "allow": [
+        "ADMIN"
+      ],
+      "state": "PLANNED",
+      "condition": "YCCN32; đường dẫn đề xuất. Không cấp quyền sửa tùy ý giao dịch đã xác nhận."
+    },
+    {
+      "id": "EXPENSE-EVIDENCE",
+      "method": "POST",
+      "path": "/disbursements/{id}/attachments",
+      "name": "Bổ sung chứng từ khoản chi",
+      "allow": [
+        "FUNDRAISER"
+      ],
+      "state": "PLANNED",
+      "condition": "UC08/YCCN25; đường dẫn đề xuất. Chỉ chủ chiến dịch; tối thiểu 1 chứng từ JPG/PNG/PDF <=5MB."
+    },
+    {
+      "id": "SOCIAL-LIKE",
+      "method": "POST",
+      "path": "/comments/{id}/likes",
+      "name": "Thích bình luận",
+      "allow": [
+        "USER",
+        "FUNDRAISER",
+        "ADMIN"
+      ],
+      "state": "DEFERRED",
+      "condition": "YCCN29; chưa chốt phạm vi/endpoint. Không triển khai mạng xã hội độc lập."
+    }
+  ],
+  "requirements": {
+    "YCCN01": [
+      "AUTH-REGISTER"
+    ],
+    "YCCN02": [
+      "AUTH-LOGIN",
+      "API-03"
+    ],
+    "YCCN03": [
+      "AUTH-ME",
+      "API-09",
+      "API-10",
+      "API-11"
+    ],
+    "YCCN04": [
+      "API-07",
+      "API-10"
+    ],
+    "YCCN05": [
+      "API-04"
+    ],
+    "YCCN06": [
+      "KYC-SUBMIT"
+    ],
+    "YCCN07": [
+      "KYC-SUBMIT"
+    ],
+    "YCCN08": [
+      "KYC-ME"
+    ],
+    "YCCN09": [
+      "KYC-LIST",
+      "KYC-DETAIL",
+      "KYC-REVIEW",
+      "KYC-SUPPLEMENT"
+    ],
+    "YCCN10": [
+      "API-47",
+      "KYC-REVIEW"
+    ],
+    "YCCN11": [
+      "API-21",
+      "API-22"
+    ],
+    "YCCN12": [
+      "API-21",
+      "API-22"
+    ],
+    "YCCN13": [
+      "API-21",
+      "API-22"
+    ],
+    "YCCN14": [
+      "API-24"
+    ],
+    "YCCN15": [
+      "API-23"
+    ],
+    "YCCN16": [
+      "API-48",
+      "CAMPAIGN-REVISION"
+    ],
+    "YCCN17": [
+      "API-18",
+      "API-19"
+    ],
+    "YCCN18": [
+      "API-27"
+    ],
+    "YCCN19": [
+      "API-27"
+    ],
+    "YCCN20": [
+      "API-28",
+      "PAY-WEBHOOK"
+    ],
+    "YCCN21": [
+      "PAY-STATUS"
+    ],
+    "YCCN22": [
+      "API-31",
+      "API-32"
+    ],
+    "YCCN23": [
+      "API-18",
+      "API-19"
+    ],
+    "YCCN24": [
+      "API-33",
+      "API-34",
+      "API-35",
+      "EXPENSE-EVIDENCE"
+    ],
+    "YCCN25": [
+      "EXPENSE-EVIDENCE",
+      "API-33",
+      "API-34",
+      "API-35"
+    ],
+    "YCCN26": [
+      "API-33",
+      "API-34",
+      "API-35",
+      "API-36",
+      "EXPENSE-EVIDENCE"
+    ],
+    "YCCN27": [
+      "API-25",
+      "API-26"
+    ],
+    "YCCN28": [
+      "API-40",
+      "API-41",
+      "API-42",
+      "API-43",
+      "API-44"
+    ],
+    "YCCN29": [
+      "API-37",
+      "API-38",
+      "API-43",
+      "API-44",
+      "SOCIAL-LIKE"
+    ],
+    "YCCN30": [
+      "API-49",
+      "API-50",
+      "API-51"
+    ],
+    "YCCN31": [
+      "API-45",
+      "API-46",
+      "API-47"
+    ],
+    "YCCN32": [
+      "PAY-ADMIN"
+    ],
+    "YCCN33": [
+      "API-46",
+      "API-48",
+      "API-50",
+      "API-51"
+    ],
+    "YCCN34": [
+      "SYSTEM-NOTIFICATION",
+      "API-57",
+      "API-58",
+      "API-59"
+    ],
+    "YCCN35": [
+      "SYSTEM-AUDIT",
+      "API-56"
+    ]
+  }
+}

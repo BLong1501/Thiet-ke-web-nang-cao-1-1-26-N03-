@@ -1,0 +1,34 @@
+{
+  "checkedAt": "2026-09-22T14:41:05.520Z",
+  "action": "inspect",
+  "environment": "local",
+  "tlsRequired": false,
+  "mysqlVersion": "8.0.46",
+  "tables": [
+    "audit_logs",
+    "campaign_media",
+    "campaign_updates",
+    "campaigns",
+    "categories",
+    "comments",
+    "communities",
+    "community_members",
+    "community_posts",
+    "disbursements",
+    "donations",
+    "notifications",
+    "reports",
+    "users",
+    "verifications"
+  ],
+  "expectedTableCount": 15,
+  "missingTables": [],
+  "foreignKeysChecked": 24,
+  "violations": [],
+  "seedCounts": {
+    "users": 1,
+    "categories": 5
+  },
+  "passed": true,
+  "limitation": "Remote host is not by itself proof of online deployment. Capture authenticated provider table list as Anh 02. This check does not prove two-machine execution or every column/index matches Prisma."
+}
