@@ -38,4 +38,6 @@ Mở `http://127.0.0.1:8081`. Swagger dùng tài nguyên cục bộ và có th�
 
 ## Giới hạn xác nhận
 
-Đã có sản phẩm thiết kế không có nghĩa là mọi API tương lai đã chạy được. Không đánh dấu triển khai online, kiểm thử trên hai máy, người chứng kiến hoặc đóng góp Git riêng nếu chưa có bằng chứng tương ứng. Trạng thái thực tế nằm trong checklist và evidence.
+Đã có sản phẩm thiết kế không có nghĩa là mọi API tương lai đã chạy được. Ngày 23/09/2026, người dùng xác nhận các mục ngoài CSDL; checklist phân biệt xác nhận này với bằng chứng thực thi. Phần CSDL vẫn chưa xác nhận đầy đủ. Trạng thái thực tế nằm trong checklist và evidence.
+
+Bài nộp cá nhân theo cấu trúc Nhóm 9: [Phạm Đình Trường — V4/V5](../lecture/buoi3/Nhóm_9_Crowdfunding/Pham_Dinh_Truong_V4_V5/README.md). Sau khi cập nhật hồ sơ, chạy `node docs/scripts/package-submission.cjs` từ gốc repository để đồng bộ bản nộp.

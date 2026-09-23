@@ -1,0 +1,102 @@
+{
+  "student": "Phạm Đình Trường",
+  "group": 9,
+  "session": 3,
+  "roles": [
+    "V4",
+    "V5"
+  ],
+  "hashConvention": "SHA-256; PNG raw bytes; UTF-8 text normalized from CRLF to LF for Git portability",
+  "files": [
+    {
+      "file": "openapi.json",
+      "source": "docs/openapi.json",
+      "sha256": "8e376450321ca4c76ffd96d5dfe478a8179b97357806fe97df2708f74332a020"
+    },
+    {
+      "file": "security/authorization-matrix.md",
+      "source": "docs/security/authorization-matrix.md",
+      "sha256": "36364adb4f8d7163ed841b4fdb19e4210f6332ff2ee820c39e8e86e96bcbf93e"
+    },
+    {
+      "file": "security/authorization-policy.json",
+      "source": "docs/security/authorization-policy.json",
+      "sha256": "3a2fa892f677a1aa4c19a27729c521b1a88b4de9a4dfaef8e592767b3313d56d"
+    },
+    {
+      "file": "security/authorization-test-cases.md",
+      "source": "docs/security/authorization-test-cases.md",
+      "sha256": "9b46a3669fcf094819580bb6570339e52511d5c28d3e54362997b675f3db6886"
+    },
+    {
+      "file": "security/authorization-test-cases.json",
+      "source": "docs/security/authorization-test-cases.json",
+      "sha256": "32acc743a5697d1e09908e50412faa61b7ca4ac74e2c1d3a3b6f82fe61b819ef"
+    },
+    {
+      "file": "security/additional-test-cases.md",
+      "source": "docs/security/additional-test-cases.md",
+      "sha256": "805596676cfeec9e6f395bd6e906cf2f6443d4565a7bb08deba8fe0dc15509aa"
+    },
+    {
+      "file": "security/fixtures.md",
+      "source": "docs/security/fixtures.md",
+      "sha256": "cc09dc9aaf30c828f2cfbd36fdfcaa023313684439c3d541888726ddd8962b8d"
+    },
+    {
+      "file": "security/security-evidence.md",
+      "source": "docs/security/security-evidence.md",
+      "sha256": "53cb0ecf09d42187d6ed013562460a9e5f5875bf956395f559c97d5a594dcfaa"
+    },
+    {
+      "file": "session03/checklist.md",
+      "source": "docs/session03/checklist.md",
+      "sha256": "f745be6a7552b08a7184e196d7b8f3403dd3f2d53034a5cb92831164eb249621"
+    },
+    {
+      "file": "session03/source-review.md",
+      "source": "docs/session03/source-review.md",
+      "sha256": "4fb32eef9c2c4b375704fcf2040e50bfd23cad4e807d1e8ba61c6bbac19e1c9d"
+    },
+    {
+      "file": "deployment/README.md",
+      "source": "docs/deployment/README.md",
+      "sha256": "aa8a8d9ed5432cc1b0f5f75f11d7ab2f518551d873b5f4117451215b08a0a869"
+    },
+    {
+      "file": "evidence/authorization-run.json",
+      "source": "docs/evidence/authorization-run.json",
+      "sha256": "3b0bea2a65e9afc8292d97a60ae7890dec756d21fbf25ce3cb470335e86a2a90"
+    },
+    {
+      "file": "evidence/document-validation.json",
+      "source": "docs/evidence/document-validation.json",
+      "sha256": "ed7a0720f50f5bbee185d08e960a3a6e36ba838948e0bc81d1892d9e304f4006"
+    },
+    {
+      "file": "evidence/openapi-viewer.png",
+      "source": "docs/evidence/openapi-viewer.png",
+      "sha256": "99b8e05c3b2aa216af5447c54d2b6be534116935640ef0cd70ebf658e5caf8c4"
+    },
+    {
+      "file": "evidence/openapi-viewer-kyc.png",
+      "source": "docs/evidence/openapi-viewer-kyc.png",
+      "sha256": "485a1e4580417c8301616a46cac4efc4f6687af1c76067378d0b0a8d30b71d11"
+    },
+    {
+      "file": "evidence/database-apply-1790088065317.json",
+      "source": "docs/evidence/database-apply-1790088065317.json",
+      "sha256": "ab9ba4cc51fe408f8153b6c05caf33cc18b72cc0676b2ff81904d99a5e2f09a3"
+    },
+    {
+      "file": "evidence/database-inspect-1790088065521.json",
+      "source": "docs/evidence/database-inspect-1790088065521.json",
+      "sha256": "1822eb5ccc7c9b0129de1c39b929c2a49b31da25e953f09a4e888a0030c57cd5"
+    },
+    {
+      "file": "evidence/database-refusal.txt",
+      "source": "docs/evidence/database-refusal.txt",
+      "sha256": "13e1bda60ac33a07236f05f61396f2604d3612bcfeaf66c2ab0ef71be574b766"
+    }
+  ]
+}
