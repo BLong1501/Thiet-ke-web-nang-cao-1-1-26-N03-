@@ -1,0 +1,1363 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Crowdfunding CĐ09 — API hiện có",
+    "version": "1.0.0",
+    "description": "Đặc tả Buổi 03 cho 9 API đã đăng ký trong backend. API tương lai nằm trong ma trận phân quyền. LIVE chỉ có nghĩa route tồn tại. Validation review đã giới hạn APPROVED/REJECTED (ISSUE-01). Health dùng cấu trúc riêng. Cookie refreshToken đã được cấp nhưng chưa có API refresh/logout. Không đưa token hoặc dữ liệu CCCD thật vào tài liệu."
+  },
+  "servers": [
+    {
+      "url": "http://localhost:5000/api/v1",
+      "description": "Backend cục bộ; chưa xác nhận máy chủ trực tuyến"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Health"
+    },
+    {
+      "name": "Auth"
+    },
+    {
+      "name": "KYC"
+    }
+  ],
+  "paths": {
+    "/health": {
+      "get": {
+        "operationId": "health",
+        "summary": "Kiểm tra tiến trình API",
+        "description": "Chỉ phản ánh tiến trình Express; không kiểm tra kết nối DB.",
+        "tags": [
+          "Health"
+        ],
+        "x-authorization-id": "HEALTH",
+        "x-roles": [
+          "GUEST",
+          "USER",
+          "FUNDRAISER",
+          "ADMIN"
+        ],
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "Thành công",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/register": {
+      "post": {
+        "operationId": "register",
+        "summary": "Đăng ký tài khoản mới (Email, Password, Name)",
+        "description": "Theo danh mục API README; chỉ triển khai sau khi chốt hợp đồng dữ liệu.",
+        "tags": [
+          "Auth"
+        ],
+        "x-authorization-id": "AUTH-REGISTER",
+        "x-roles": [
+          "GUEST",
+          "USER",
+          "FUNDRAISER",
+          "ADMIN"
+        ],
+        "security": [],
+        "responses": {
+          "201": {
+            "description": "Thành công",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthResponse"
+                }
+              }
+            },
+            "headers": {
+              "Set-Cookie": {
+                "description": "refreshToken: HttpOnly, SameSite=Lax, Secure khi NODE_ENV=production, Max-Age 30 ngày. Chưa có route refresh/logout.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "409": {
+            "$ref": "#/components/responses/409"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegisterInput"
+              },
+              "example": {
+                "email": "user@example.test",
+                "password": "Example123!",
+                "fullName": "Người dùng kiểm thử"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/login": {
+      "post": {
+        "operationId": "login",
+        "summary": "Đăng nhập hệ thống, trả về JWT & Refresh Cookie",
+        "description": "Theo danh mục API README; chỉ triển khai sau khi chốt hợp đồng dữ liệu.",
+        "tags": [
+          "Auth"
+        ],
+        "x-authorization-id": "AUTH-LOGIN",
+        "x-roles": [
+          "GUEST",
+          "USER",
+          "FUNDRAISER",
+          "ADMIN"
+        ],
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "Thành công",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthResponse"
+                }
+              }
+            },
+            "headers": {
+              "Set-Cookie": {
+                "description": "refreshToken: HttpOnly, SameSite=Lax, Secure khi NODE_ENV=production, Max-Age 30 ngày. Chưa có route refresh/logout.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "403": {
+            "$ref": "#/components/responses/403"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginInput"
+              },
+              "example": {
+                "email": "user@example.test",
+                "password": "Example123!"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/me": {
+      "get": {
+        "operationId": "getProfile",
+        "summary": "Lấy thông tin tài khoản hiện tại",
+        "description": "Chỉ dữ liệu của principal đăng nhập; bỏ qua/từ chối userId do client gửi. Không có quyền đọc hộ kể cả Admin.",
+        "tags": [
+          "Auth"
+        ],
+        "x-authorization-id": "AUTH-ME",
+        "x-roles": [
+          "USER",
+          "FUNDRAISER",
+          "ADMIN"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "accessCookie": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Thành công",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProfileResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
+      }
+    },
+    "/verifications/request": {
+      "post": {
+        "operationId": "submitVerification",
+        "summary": "Nộp hồ sơ KYC xin quyền gây quỹ (ảnh CCCD, bệnh án)",
+        "description": "UC02: USER nộp lần đầu hoặc gửi lại hồ sơ REJECTED. FUNDRAISER/ADMIN hiện bị service trả 400; PENDING/APPROVED không được nộp lại.",
+        "tags": [
+          "KYC"
+        ],
+        "x-authorization-id": "KYC-SUBMIT",
+        "x-roles": [
+          "USER"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "accessCookie": []
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Thành công",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VerificationResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SubmitVerificationInput"
+              },
+              "example": {
+                "idCardNumber": "000000000001",
+                "frontCardImage": "https://example.test/front.jpg",
+                "backCardImage": "https://example.test/back.jpg",
+                "portraitImage": "https://example.test/portrait.jpg"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/verifications/my-status": {
+      "get": {
+        "operationId": "getVerificationStatus",
+        "summary": "Xem trạng thái/kết quả hồ sơ KYC của bản thân",
+        "description": "Chỉ hồ sơ của req.user.userId; chưa nộp trả hasSubmitted=false, status=null, verification=null.",
+        "tags": [
+          "KYC"
+        ],
+        "x-authorization-id": "KYC-ME",
+        "x-roles": [
+          "USER",
+          "FUNDRAISER",
+          "ADMIN"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "accessCookie": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Thành công",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VerificationStatusResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
+      }
+    },
+    "/verifications/pending": {
+      "get": {
+        "operationId": "listPendingVerifications",
+        "summary": "Danh sách hồ sơ KYC đang chờ duyệt (phân trang)",
+        "description": "Middleware authorize(ADMIN). Review chỉ hồ sơ PENDING; chỉ nhận quyết định APPROVED hoặc REJECTED.",
+        "tags": [
+          "KYC"
+        ],
+        "x-authorization-id": "KYC-LIST",
+        "x-roles": [
+          "ADMIN"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "accessCookie": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Thành công",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VerificationListResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "403": {
+            "$ref": "#/components/responses/403"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        },
+        "parameters": [
+          {
+            "in": "query",
+            "name": "page",
+            "schema": {
+              "type": "integer",
+              "default": 1
+            },
+            "description": "Backend dùng parseInt và giá trị mặc định; hiện chưa giới hạn số âm/kích thước trang (ISSUE-05)."
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "schema": {
+              "type": "integer",
+              "default": 10
+            },
+            "description": "Backend dùng parseInt và giá trị mặc định; hiện chưa giới hạn số âm/kích thước trang (ISSUE-05)."
+          }
+        ]
+      }
+    },
+    "/verifications/{id}": {
+      "get": {
+        "operationId": "getVerification",
+        "summary": "Xem chi tiết giấy tờ hồ sơ KYC của người dùng",
+        "description": "Middleware authorize(ADMIN). Review chỉ hồ sơ PENDING; chỉ nhận quyết định APPROVED hoặc REJECTED.",
+        "tags": [
+          "KYC"
+        ],
+        "x-authorization-id": "KYC-DETAIL",
+        "x-roles": [
+          "ADMIN"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "accessCookie": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Thành công",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VerificationResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "403": {
+            "$ref": "#/components/responses/403"
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        },
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "ID hồ sơ xác minh. Hiện backend không validate định dạng UUID."
+          }
+        ]
+      }
+    },
+    "/verifications/{id}/review": {
+      "patch": {
+        "operationId": "reviewVerification",
+        "summary": "Phê duyệt (APPROVED) hoặc Từ chối (REJECTED)",
+        "description": "Middleware authorize(ADMIN). Review chỉ hồ sơ PENDING; chỉ nhận quyết định APPROVED hoặc REJECTED.",
+        "tags": [
+          "KYC"
+        ],
+        "x-authorization-id": "KYC-REVIEW",
+        "x-roles": [
+          "ADMIN"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "accessCookie": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Thành công",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReviewResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "403": {
+            "$ref": "#/components/responses/403"
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReviewVerificationInput"
+              },
+              "example": {
+                "status": "REJECTED",
+                "rejectionReason": "Ảnh minh chứng chưa rõ"
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "ID hồ sơ xác minh. Hiện backend không validate định dạng UUID."
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      },
+      "accessCookie": {
+        "type": "apiKey",
+        "in": "cookie",
+        "name": "accessToken",
+        "description": "Middleware cũng nhận cookie accessToken. Login hiện chỉ đặt refreshToken; hai cookie này không thay thế nhau."
+      }
+    },
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "enum": [
+              false
+            ]
+          },
+          "message": {
+            "type": "string"
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "field": {
+                  "type": "string"
+                },
+                "message": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "field",
+                "message"
+              ]
+            }
+          }
+        },
+        "required": [
+          "success",
+          "message"
+        ]
+      },
+      "User": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "fullName": {
+            "type": "string"
+          },
+          "phoneNumber": {
+            "type": "string",
+            "nullable": true
+          },
+          "avatarUrl": {
+            "type": "string",
+            "nullable": true
+          },
+          "bio": {
+            "type": "string",
+            "nullable": true
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "ADMIN",
+              "FUNDRAISER",
+              "USER"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "ACTIVE",
+              "SUSPENDED",
+              "BANNED"
+            ]
+          },
+          "isEmailVerified": {
+            "type": "boolean"
+          },
+          "emailVerifiedAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "email",
+          "fullName",
+          "phoneNumber",
+          "avatarUrl",
+          "bio",
+          "role",
+          "status",
+          "isEmailVerified",
+          "emailVerifiedAt",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "Verification": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "userId": {
+            "type": "string"
+          },
+          "idCardNumber": {
+            "type": "string"
+          },
+          "frontCardImage": {
+            "type": "string"
+          },
+          "backCardImage": {
+            "type": "string"
+          },
+          "portraitImage": {
+            "type": "string"
+          },
+          "cardIssuedPlace": {
+            "type": "string",
+            "nullable": true
+          },
+          "rejectionReason": {
+            "type": "string",
+            "nullable": true
+          },
+          "reviewedBy": {
+            "type": "string",
+            "nullable": true
+          },
+          "cardIssuedDate": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "supportingDocuments": {
+            "nullable": true,
+            "description": "Dữ liệu JSON theo Prisma; chưa có kiểm tra cấu trúc nghiệp vụ riêng."
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "PENDING",
+              "APPROVED",
+              "REJECTED"
+            ]
+          },
+          "reviewedAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "user": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "email": {
+                "type": "string"
+              },
+              "fullName": {
+                "type": "string"
+              },
+              "phoneNumber": {
+                "type": "string",
+                "nullable": true
+              },
+              "role": {
+                "type": "string",
+                "enum": [
+                  "ADMIN",
+                  "FUNDRAISER",
+                  "USER"
+                ]
+              },
+              "avatarUrl": {
+                "type": "string",
+                "nullable": true
+              }
+            },
+            "required": [
+              "id",
+              "email",
+              "fullName",
+              "role"
+            ]
+          },
+          "reviewer": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "fullName": {
+                "type": "string"
+              },
+              "email": {
+                "type": "string"
+              }
+            },
+            "nullable": true
+          }
+        },
+        "required": [
+          "id",
+          "userId",
+          "idCardNumber",
+          "frontCardImage",
+          "backCardImage",
+          "portraitImage",
+          "status",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "RegisterInput": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email",
+            "maxLength": 255
+          },
+          "password": {
+            "type": "string",
+            "minLength": 6,
+            "maxLength": 100,
+            "format": "password"
+          },
+          "fullName": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 150
+          },
+          "phoneNumber": {
+            "type": "string",
+            "description": "Không bắt buộc, cho phép chuỗi rỗng; kiểm tra regex số điện thoại trong backend."
+          }
+        },
+        "required": [
+          "email",
+          "password",
+          "fullName"
+        ],
+        "description": "Không nhận role; backend bỏ trường không khai báo và tạo USER theo mặc định DB. Không thể đăng ký trực tiếp FUNDRAISER/ADMIN."
+      },
+      "LoginInput": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email"
+          },
+          "password": {
+            "type": "string",
+            "minLength": 1,
+            "format": "password"
+          }
+        },
+        "required": [
+          "email",
+          "password"
+        ]
+      },
+      "SubmitVerificationInput": {
+        "type": "object",
+        "properties": {
+          "idCardNumber": {
+            "type": "string",
+            "minLength": 9,
+            "maxLength": 20,
+            "pattern": "^[0-9]+$"
+          },
+          "cardIssuedDate": {
+            "type": "string",
+            "description": "YYYY-MM-DD hoặc datetime ISO có múi giờ; không bắt buộc."
+          },
+          "cardIssuedPlace": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "frontCardImage": {
+            "type": "string",
+            "format": "uri",
+            "maxLength": 500
+          },
+          "backCardImage": {
+            "type": "string",
+            "format": "uri",
+            "maxLength": 500
+          },
+          "portraitImage": {
+            "type": "string",
+            "format": "uri",
+            "maxLength": 500
+          },
+          "supportingDocuments": {
+            "description": "JSON tùy ý; backend dùng z.any(). Không phải endpoint upload file."
+          }
+        },
+        "required": [
+          "idCardNumber",
+          "frontCardImage",
+          "backCardImage",
+          "portraitImage"
+        ]
+      },
+      "ReviewVerificationInput": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "APPROVED",
+              "REJECTED"
+            ],
+            "description": "Chỉ nhận APPROVED hoặc REJECTED. PENDING bị validation từ chối."
+          },
+          "rejectionReason": {
+            "type": "string",
+            "maxLength": 1000,
+            "description": "Bắt buộc ít nhất 5 ký tự sau trim nếu REJECTED."
+          }
+        },
+        "required": [
+          "status"
+        ],
+        "oneOf": [
+          {
+            "type": "object",
+            "properties": {
+              "status": {
+                "type": "string",
+                "enum": [
+                  "APPROVED"
+                ]
+              }
+            }
+          },
+          {
+            "type": "object",
+            "properties": {
+              "status": {
+                "type": "string",
+                "enum": [
+                  "REJECTED"
+                ]
+              },
+              "rejectionReason": {
+                "type": "string",
+                "minLength": 5,
+                "maxLength": 1000
+              }
+            },
+            "required": [
+              "rejectionReason"
+            ]
+          }
+        ]
+      },
+      "Pagination": {
+        "type": "object",
+        "properties": {
+          "page": {
+            "type": "integer"
+          },
+          "limit": {
+            "type": "integer"
+          },
+          "total": {
+            "type": "integer"
+          },
+          "totalPages": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "page",
+          "limit",
+          "total",
+          "totalPages"
+        ]
+      },
+      "AuthResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "enum": [
+              true
+            ]
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "type": "object",
+            "properties": {
+              "user": {
+                "$ref": "#/components/schemas/User"
+              },
+              "accessToken": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "user",
+              "accessToken"
+            ]
+          }
+        },
+        "required": [
+          "success",
+          "message",
+          "data"
+        ]
+      },
+      "ProfileResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "enum": [
+              true
+            ]
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/User"
+          }
+        },
+        "required": [
+          "success",
+          "message",
+          "data"
+        ]
+      },
+      "VerificationResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "enum": [
+              true
+            ]
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/Verification"
+          }
+        },
+        "required": [
+          "success",
+          "message",
+          "data"
+        ]
+      },
+      "VerificationStatusResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "enum": [
+              true
+            ]
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "type": "object",
+            "properties": {
+              "hasSubmitted": {
+                "type": "boolean"
+              },
+              "status": {
+                "type": "string",
+                "enum": [
+                  "PENDING",
+                  "APPROVED",
+                  "REJECTED",
+                  null
+                ],
+                "nullable": true
+              },
+              "verification": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "userId": {
+                    "type": "string"
+                  },
+                  "idCardNumber": {
+                    "type": "string"
+                  },
+                  "frontCardImage": {
+                    "type": "string"
+                  },
+                  "backCardImage": {
+                    "type": "string"
+                  },
+                  "portraitImage": {
+                    "type": "string"
+                  },
+                  "cardIssuedPlace": {
+                    "type": "string",
+                    "nullable": true
+                  },
+                  "rejectionReason": {
+                    "type": "string",
+                    "nullable": true
+                  },
+                  "reviewedBy": {
+                    "type": "string",
+                    "nullable": true
+                  },
+                  "cardIssuedDate": {
+                    "type": "string",
+                    "format": "date-time",
+                    "nullable": true
+                  },
+                  "supportingDocuments": {
+                    "nullable": true,
+                    "description": "Dữ liệu JSON theo Prisma; chưa có kiểm tra cấu trúc nghiệp vụ riêng."
+                  },
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "PENDING",
+                      "APPROVED",
+                      "REJECTED"
+                    ]
+                  },
+                  "reviewedAt": {
+                    "type": "string",
+                    "format": "date-time",
+                    "nullable": true
+                  },
+                  "createdAt": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "updatedAt": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "user": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string"
+                      },
+                      "email": {
+                        "type": "string"
+                      },
+                      "fullName": {
+                        "type": "string"
+                      },
+                      "phoneNumber": {
+                        "type": "string",
+                        "nullable": true
+                      },
+                      "role": {
+                        "type": "string",
+                        "enum": [
+                          "ADMIN",
+                          "FUNDRAISER",
+                          "USER"
+                        ]
+                      },
+                      "avatarUrl": {
+                        "type": "string",
+                        "nullable": true
+                      }
+                    },
+                    "required": [
+                      "id",
+                      "email",
+                      "fullName",
+                      "role"
+                    ]
+                  },
+                  "reviewer": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string"
+                      },
+                      "fullName": {
+                        "type": "string"
+                      },
+                      "email": {
+                        "type": "string"
+                      }
+                    },
+                    "nullable": true
+                  }
+                },
+                "required": [
+                  "id",
+                  "userId",
+                  "idCardNumber",
+                  "frontCardImage",
+                  "backCardImage",
+                  "portraitImage",
+                  "status",
+                  "createdAt",
+                  "updatedAt"
+                ],
+                "nullable": true
+              }
+            },
+            "required": [
+              "hasSubmitted",
+              "status",
+              "verification"
+            ]
+          }
+        },
+        "required": [
+          "success",
+          "message",
+          "data"
+        ]
+      },
+      "VerificationListResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "enum": [
+              true
+            ]
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Verification"
+            }
+          },
+          "meta": {
+            "$ref": "#/components/schemas/Pagination"
+          }
+        },
+        "required": [
+          "success",
+          "message",
+          "data"
+        ]
+      },
+      "ReviewResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "enum": [
+              true
+            ]
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "type": "object",
+            "properties": {
+              "message": {
+                "type": "string"
+              },
+              "verification": {
+                "$ref": "#/components/schemas/Verification"
+              },
+              "user": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "email": {
+                    "type": "string"
+                  },
+                  "fullName": {
+                    "type": "string"
+                  },
+                  "role": {
+                    "type": "string",
+                    "enum": [
+                      "ADMIN",
+                      "FUNDRAISER",
+                      "USER"
+                    ]
+                  }
+                }
+              }
+            },
+            "required": [
+              "message",
+              "verification"
+            ]
+          }
+        },
+        "required": [
+          "success",
+          "message",
+          "data"
+        ]
+      },
+      "HealthResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "success"
+            ]
+          },
+          "message": {
+            "type": "string"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "status",
+          "message",
+          "timestamp"
+        ]
+      }
+    },
+    "responses": {
+      "400": {
+        "description": "Dữ liệu không hợp lệ hoặc điều kiện nghiệp vụ không cho phép.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "401": {
+        "description": "Thiếu, sai hoặc hết hạn access token; đăng nhập sai thông tin.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "403": {
+        "description": "Không đủ vai trò; hoặc tài khoản bị khóa/cấm khi đăng nhập.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "404": {
+        "description": "Không tìm thấy hồ sơ/tài khoản.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "409": {
+        "description": "Email đã được đăng ký.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "500": {
+        "description": "Lỗi máy chủ. Backend hiện chưa che toàn bộ err.message; xem ISSUE-04.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      }
+    }
+  }
+}

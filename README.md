@@ -1,5 +1,12 @@
 # Dự án Hệ thống Gây quỹ Cộng đồng (  ) - CĐ09
 
+> **Sản phẩm Buổi 03 — V4/V5:** xem [hướng dẫn và trạng thái nộp](docs/README.md),
+> [ma trận phân quyền](docs/security/authorization-matrix.md),
+> [ca kiểm thử dự kiến](docs/security/authorization-test-cases.md),
+> [đặc tả OpenAPI](docs/openapi.json) và [triển khai CSDL](docs/deployment/README.md).
+> Backend hiện có 9 API Health/Auth/KYC. Danh mục API và kiến trúc bên dưới còn gồm
+> các chức năng dự kiến; các khác biệt đã được ghi tại [đối chiếu nguồn](docs/session03/source-review.md).
+
 Dự án này sử dụng mô hình kiến trúc **Modular Monolith** kết hợp MVC cho Backend và cấu trúc phân rã theo Component cho Frontend. Cấu trúc này giúp dễ dàng mở rộng, quản lý code theo từng nhóm tính năng (Feature-driven) và hạn chế xung đột khi làm việc nhóm.
 
 ## 🏗️ Cấu trúc Tổng thể & Kiến trúc Backend (Modular Monolith)

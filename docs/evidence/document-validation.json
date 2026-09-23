@@ -1,0 +1,14 @@
+{
+  "checkedAt": "2026-09-22T14:40:42.692Z",
+  "openapi": "3.0.3",
+  "syntaxAndReferences": "PASS",
+  "routeCoverage": "PASS",
+  "operations": 9,
+  "matrixOperations": 66,
+  "deniedCells": 149,
+  "plannedDenyCases": 149,
+  "deniedCellCoverage": "100%",
+  "requirementMappings": 35,
+  "result": "PASS",
+  "limitation": "Static contract and traceability checks, not proof of passing authorization requests or cloud deployment."
+}
