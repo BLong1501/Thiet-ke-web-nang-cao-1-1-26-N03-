@@ -1,0 +1,65 @@
+{
+  "checkedAt": "2026-09-23T04:28:24.102Z",
+  "action": "inspect",
+  "environment": "local",
+  "tlsRequired": false,
+  "mysqlVersion": "8.0.46",
+  "tables": [
+    "audit_logs",
+    "campaign_media",
+    "campaign_updates",
+    "campaigns",
+    "categories",
+    "comments",
+    "communities",
+    "community_members",
+    "community_posts",
+    "disbursements",
+    "donations",
+    "notifications",
+    "reports",
+    "users",
+    "verifications"
+  ],
+  "expectedTableCount": 15,
+  "missingTables": [],
+  "foreignKeysChecked": 24,
+  "violations": [
+    {
+      "table": "audit_logs",
+      "column": "user_id",
+      "count": 1
+    },
+    {
+      "table": "campaigns",
+      "column": "fundraiser_id",
+      "count": 3
+    },
+    {
+      "table": "disbursements",
+      "column": "created_by",
+      "count": 1
+    },
+    {
+      "table": "notifications",
+      "column": "user_id",
+      "count": 2
+    },
+    {
+      "table": "verifications",
+      "column": "reviewed_by",
+      "count": 1
+    },
+    {
+      "table": "verifications",
+      "column": "user_id",
+      "count": 1
+    }
+  ],
+  "seedCounts": {
+    "users": 11,
+    "categories": 5
+  },
+  "passed": false,
+  "limitation": "Remote host is not by itself proof of online deployment. Capture authenticated provider table list as Anh 02. This check does not prove two-machine execution or every column/index matches Prisma."
+}
