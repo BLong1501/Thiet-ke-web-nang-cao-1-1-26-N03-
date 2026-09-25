@@ -429,6 +429,160 @@
           }
         }
       ]
+    },
+    {
+      "name": "5. Campaigns & Categories",
+      "item": [
+        {
+          "name": "5.1 Get Categories (Public)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/campaigns/categories",
+              "host": ["{{baseUrl}}"],
+              "path": ["campaigns", "categories"]
+            }
+          }
+        },
+        {
+          "name": "5.2 Create Category (Admin)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Hỗ Trợ Mổ Tim Trẻ Em\",\n  \"description\": \"Các hoàn cảnh trẻ em cần mổ tim\",\n  \"isActive\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/campaigns/categories",
+              "host": ["{{baseUrl}}"],
+              "path": ["campaigns", "categories"]
+            }
+          }
+        },
+        {
+          "name": "5.3 Create Campaign (Fundraiser)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Chung tay mổ tim cứu sống bé An 5 tháng tuổi\",\n  \"categoryId\": \"CATEGORY_UUID_HERE\",\n  \"shortDescription\": \"Bé An mắc bệnh tim bẩm sinh, gia đình khó khăn\",\n  \"story\": \"Cháu Nguyễn Văn An sinh ngày 10/10/2025 cần được phẫu thuật sớm để giành lại sự sống tại Bệnh viện Tim Hà Nội.\",\n  \"coverImageUrl\": \"https://images.unsplash.com/photo-1516627145497-ae6968895b74?w=1000\",\n  \"targetAmount\": 80000000,\n  \"endDate\": \"2026-11-25T23:59:59.000Z\",\n  \"bankAccountNumber\": \"19035678901234\",\n  \"bankName\": \"Techcombank\",\n  \"bankAccountName\": \"NGUYEN VAN A\",\n  \"status\": \"PENDING_APPROVAL\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/campaigns",
+              "host": ["{{baseUrl}}"],
+              "path": ["campaigns"]
+            }
+          }
+        },
+        {
+          "name": "5.4 Get Public Campaigns List",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/campaigns?page=1&limit=10&sortBy=newest",
+              "host": ["{{baseUrl}}"],
+              "path": ["campaigns"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "10" },
+                { "key": "sortBy", "value": "newest" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "5.5 Get Campaign Detail (by Slug or ID)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/campaigns/:idOrSlug",
+              "host": ["{{baseUrl}}"],
+              "path": ["campaigns", ":idOrSlug"],
+              "variable": [
+                {
+                  "key": "idOrSlug",
+                  "value": "chung-tay-mo-tim-cuu-song-be-an-5-thang-tuoi"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "5.6 Get Pending Campaigns (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/campaigns/admin/pending?page=1&limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["campaigns", "admin", "pending"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "10" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "5.7 Review Campaign (Admin: ACTIVE / REJECTED)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"ACTIVE\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/campaigns/:id/review",
+              "host": ["{{baseUrl}}"],
+              "path": ["campaigns", ":id", "review"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": ""
+                }
+              ]
+            }
+          }
+        }
+      ]
     }
   ]
 }

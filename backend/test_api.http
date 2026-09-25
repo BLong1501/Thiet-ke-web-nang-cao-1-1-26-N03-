@@ -167,3 +167,130 @@ Authorization: Bearer {{adminToken}}
 {
   "status": "APPROVED"
 }
+
+### ================================================================
+### PHÂN HỆ CHIẾN DỊCH GÂY QUỸ (MODULE CAMPAIGNS & CATEGORIES)
+### ================================================================
+
+### 18. LẤY DANH SÁCH DANH MỤC CHIẾN DỊCH (Public)
+GET {{baseUrl}}/campaigns/categories
+Content-Type: application/json
+
+### 19. ADMIN TẠO DANH MỤC MỚI
+# @name createCategory
+POST {{baseUrl}}/campaigns/categories
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+  "name": "Hỗ Trợ Mổ Tim Trẻ Em",
+  "description": "Các hoàn cảnh trẻ sơ sinh và trẻ em có hoàn cảnh khó khăn cần phẫu thuật tim",
+  "iconUrl": "https://img.icons8.com/heart-with-pulse",
+  "isActive": true
+}
+
+### 20. FUNDRAISER KHỞI TẠO CHIẾN DỊCH GÂY QUỸ (Role: FUNDRAISER hoặc ADMIN)
+@fundraiserToken = YOUR_FUNDRAISER_TOKEN_HERE
+@categoryId = YOUR_CATEGORY_ID_HERE
+
+# @name createCampaign
+POST {{baseUrl}}/campaigns
+Content-Type: application/json
+Authorization: Bearer {{fundraiserToken}}
+
+{
+  "title": "Chung tay mổ tim cứu sống bé An 5 tháng tuổi tại Hà Giang",
+  "categoryId": "{{categoryId}}",
+  "shortDescription": "Bé An mắc bệnh tim bẩm sinh tứ chứng Fallot, gia đình hộ nghèo không đủ chi phí phẫu thuật.",
+  "story": "Cháu Nguyễn Văn An sinh ngày 10/10/2025 tại Mèo Vạc, Hà Giang. Khi sinh ra cháu có biểu hiện tím tái, khó thở. Bác sĩ Bệnh viện Tim Hà Nội chẩn đoán cháu bị tứ chứng Fallot, cần được phẫu thuật sớm để giành lại sự sống. Bố mẹ cháu làm nương rẫy, thu nhập bấp bênh không có khả năng chi trả viện phí 80.000.000 VNĐ.",
+  "coverImageUrl": "https://images.unsplash.com/photo-1516627145497-ae6968895b74?w=1000",
+  "targetAmount": 80000000,
+  "startDate": "2026-09-25T00:00:00.000Z",
+  "endDate": "2026-11-25T23:59:59.000Z",
+  "bankAccountNumber": "19035678901234",
+  "bankName": "Techcombank",
+  "bankAccountName": "NGUYEN VAN A",
+  "beneficiaryInfo": "Bé Nguyễn Văn An (Mèo Vạc, Hà Giang)",
+  "status": "PENDING_APPROVAL",
+  "media": [
+    {
+      "mediaType": "IMAGE",
+      "url": "https://images.unsplash.com/photo-1584515979956-d9f6e5d09982?w=800",
+      "caption": "Giấy chứng nhận hộ nghèo và bệnh án phẫu thuật tim"
+    }
+  ]
+}
+
+### 21. LẤY DANH SÁCH CHIẾN DỊCH ĐANG CHẠY (Public - Lọc, Tìm kiếm, Sắp xếp, Phân trang)
+GET {{baseUrl}}/campaigns?page=1&limit=10&sortBy=newest
+Content-Type: application/json
+
+### 22. TÌM KIẾM CHIẾN DỊCH THEO TỪ KHÓA
+GET {{baseUrl}}/campaigns?search=tim&page=1&limit=10
+Content-Type: application/json
+
+### 23. XEM CHI TIẾT CHIẾN DỊCH THEO ID HOẶC SLUG (Public)
+@campaignSlug = chung-tay-mo-tim-cuu-song-be-an-5-thang-tuoi-tai-ha-giang
+GET {{baseUrl}}/campaigns/{{campaignSlug}}
+Content-Type: application/json
+
+### 24. FUNDRAISER XEM DANH SÁCH CHIẾN DỊCH DO MÌNH TẠO
+GET {{baseUrl}}/campaigns/my/list?page=1&limit=10
+Authorization: Bearer {{fundraiserToken}}
+
+### 25. FUNDRAISER CẬP NHẬT CHIẾN DỊCH CỦA MÌNH
+@campaignId = YOUR_CAMPAIGN_ID_HERE
+PUT {{baseUrl}}/campaigns/{{campaignId}}
+Content-Type: application/json
+Authorization: Bearer {{fundraiserToken}}
+
+{
+  "shortDescription": "Cập nhật mô tả khẩn cấp: Bé An đã nhập viện chuẩn bị tiền phẫu."
+}
+
+### 26. FUNDRAISER BỔ SUNG MINH CHỨNG (Hóa đơn viện phí, ảnh chụp...)
+POST {{baseUrl}}/campaigns/{{campaignId}}/media
+Content-Type: application/json
+Authorization: Bearer {{fundraiserToken}}
+
+{
+  "mediaType": "IMAGE",
+  "url": "https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=800",
+  "caption": "Biên lai tạm ứng viện phí đợt 1"
+}
+
+### 27. FUNDRAISER ĐĂNG BẢN TIN CẬP NHẬT TIẾN ĐỘ CHIẾN DỊCH
+POST {{baseUrl}}/campaigns/{{campaignId}}/updates
+Content-Type: application/json
+Authorization: Bearer {{fundraiserToken}}
+
+{
+  "title": "Thông báo: Ca phẫu thuật của bé An đã thành công tốt đẹp!",
+  "content": "Sáng nay ngày 28/09, đội ngũ y bác sĩ Bệnh viện Tim Hà Nội đã thực hiện thành công ca phẫu thuật cho cháu An. Hiện sức khỏe cháu ổn định và đang được theo dõi tại phòng hồi sức.",
+  "attachments": [
+    "https://images.unsplash.com/photo-1584515979956-d9f6e5d09982?w=800"
+  ]
+}
+
+### 28. ADMIN XEM DANH SÁCH CHIẾN DỊCH CHỜ PHÊ DUYỆT
+GET {{baseUrl}}/campaigns/admin/pending?page=1&limit=10
+Authorization: Bearer {{adminToken}}
+
+### 29. ADMIN PHÊ DUYỆT CHIẾN DỊCH (Trở thành ACTIVE và bắt đầu nhận tiền quyên góp)
+PATCH {{baseUrl}}/campaigns/{{campaignId}}/review
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+  "status": "ACTIVE"
+}
+
+### 30. HOẶC ADMIN TỪ CHỐI CHIẾN DỊCH (Kèm lý do)
+# PATCH {{baseUrl}}/campaigns/{{campaignId}}/review
+# Content-Type: application/json
+# Authorization: Bearer {{adminToken}}
+#
+# {
+#   "status": "REJECTED",
+#   "rejectionReason": "Giấy chứng nhận viện phí mờ, không rõ con dấu đỏ của bệnh viện."
+# }

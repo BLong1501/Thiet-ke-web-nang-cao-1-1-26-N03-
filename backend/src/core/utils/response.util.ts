@@ -25,6 +25,15 @@ export const sendSuccess = <T>(
   return res.status(statusCode).json(responsePayload);
 };
 
+export const sendCreated = <T>(
+  res: Response,
+  message: string = "Tạo thành công",
+  data?: T,
+  meta?: any
+): Response => {
+  return sendSuccess(res, 201, message, data, meta);
+};
+
 export const sendError = (
   res: Response,
   statusCode: number = 400,

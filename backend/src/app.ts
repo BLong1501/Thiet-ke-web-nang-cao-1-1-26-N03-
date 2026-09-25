@@ -20,6 +20,7 @@ app.use(cookieParser(process.env.COOKIE_SECRET));
 import authRouter from "./modules/auth/auth.routes";
 import { verificationRouter } from "./modules/verifications/verification.routes";
 import { profileRouter } from "./modules/profile/profile.routes";
+import { campaignRouter } from "./modules/campaigns/campaign.routes";
 
 // Health check endpoint
 app.get("/api/v1/health", (_req: Request, res: Response) => {
@@ -34,6 +35,7 @@ app.get("/api/v1/health", (_req: Request, res: Response) => {
 app.use("/api/v1/auth", authRouter);
 app.use("/api/v1/verifications", verificationRouter);
 app.use("/api/v1/profile", profileRouter);
+app.use("/api/v1/campaigns", campaignRouter);
 
 import { sendError } from "./core/utils/response.util";
 
