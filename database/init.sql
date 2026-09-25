@@ -42,6 +42,8 @@ CREATE TABLE `users` (
     `phone_number` VARCHAR(20) NULL,
     `avatar_url` VARCHAR(500) NULL,
     `bio` TEXT NULL,
+    `google_id` VARCHAR(255) NULL,
+    `auth_provider` ENUM('LOCAL', 'GOOGLE') NOT NULL DEFAULT 'LOCAL',
     `role` ENUM('ADMIN', 'FUNDRAISER', 'USER') NOT NULL DEFAULT 'USER',
     `status` ENUM('ACTIVE', 'SUSPENDED', 'BANNED') NOT NULL DEFAULT 'ACTIVE',
     `is_email_verified` BOOLEAN NOT NULL DEFAULT FALSE,
@@ -50,6 +52,7 @@ CREATE TABLE `users` (
     `updated_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
     PRIMARY KEY (`id`),
     UNIQUE INDEX `idx_users_email` (`email`),
+    UNIQUE INDEX `idx_users_google_id` (`google_id`),
     INDEX `idx_users_role` (`role`),
     INDEX `idx_users_status` (`status`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

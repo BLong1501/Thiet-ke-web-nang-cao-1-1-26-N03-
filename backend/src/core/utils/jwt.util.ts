@@ -8,7 +8,7 @@ export interface JwtPayload {
 }
 
 const JWT_SECRET = process.env.JWT_SECRET || "default_jwt_secret_dev_key_cd09";
-const JWT_EXPIRES_IN = (process.env.JWT_EXPIRES_IN || "7d") as any;
+const JWT_EXPIRES_IN = (process.env.JWT_EXPIRES_IN || "15m") as any;
 
 const JWT_REFRESH_SECRET =
   process.env.JWT_REFRESH_SECRET || "default_jwt_refresh_secret_dev_key_cd09";
@@ -16,19 +16,21 @@ const JWT_REFRESH_EXPIRES_IN = (process.env.JWT_REFRESH_EXPIRES_IN || "30d") as 
 
 export const generateAccessToken = (payload: JwtPayload): string => {
   return jwt.sign(payload, JWT_SECRET, {
+    algorithm: "HS256",
     expiresIn: JWT_EXPIRES_IN,
   });
 };
 
 export const generateRefreshToken = (payload: JwtPayload): string => {
   return jwt.sign(payload, JWT_REFRESH_SECRET, {
+    algorithm: "HS256",
     expiresIn: JWT_REFRESH_EXPIRES_IN,
   });
 };
 
 export const verifyAccessToken = (token: string): JwtPayload | null => {
   try {
-    return jwt.verify(token, JWT_SECRET) as JwtPayload;
+    return jwt.verify(token, JWT_SECRET, { algorithms: ["HS256"] }) as JwtPayload;
   } catch (error) {
     return null;
   }
@@ -36,7 +38,7 @@ export const verifyAccessToken = (token: string): JwtPayload | null => {
 
 export const verifyRefreshToken = (token: string): JwtPayload | null => {
   try {
-    return jwt.verify(token, JWT_REFRESH_SECRET) as JwtPayload;
+    return jwt.verify(token, JWT_REFRESH_SECRET, { algorithms: ["HS256"] }) as JwtPayload;
   } catch (error) {
     return null;
   }
