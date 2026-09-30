@@ -25,6 +25,7 @@ router.post("/reset-password", validate(resetPasswordSchema), authController.res
 
 // 3. Đăng nhập truyền thống & Đăng nhập Google (Account Linking)
 router.post("/login", validate(loginSchema), authController.login);
+router.post("/refresh-token", authController.refreshToken);
 router.post("/google", validate(googleAuthSchema), authController.loginWithGoogle);
 
 // 4. Các routes yêu cầu đăng nhập

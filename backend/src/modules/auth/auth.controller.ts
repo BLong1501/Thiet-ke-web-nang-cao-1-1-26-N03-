@@ -77,6 +77,26 @@ export class AuthController {
     }
   };
 
+  refreshToken = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const token = req.cookies?.refreshToken || req.body?.refreshToken;
+      const result = await this.service.refreshToken(token);
+
+      res.cookie("refreshToken", result.refreshToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "strict",
+        maxAge: 30 * 24 * 60 * 60 * 1000,
+      });
+
+      return sendSuccess(res, 200, "Làm mới mã truy cập (Access Token) thành công", {
+        accessToken: result.accessToken,
+      });
+    } catch (error) {
+      return next(error);
+    }
+  };
+
   loginWithGoogle = async (req: Request, res: Response, next: NextFunction) => {
     try {
       const { idToken } = req.body;

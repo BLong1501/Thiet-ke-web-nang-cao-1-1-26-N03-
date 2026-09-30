@@ -1,9 +1,16 @@
+import dotenv from "dotenv";
+dotenv.config();
+
 import nodemailer, { Transporter } from "nodemailer";
 
 export class MailService {
   private transporter: Transporter | null = null;
 
   constructor() {
+    this.initTransporter();
+  }
+
+  private initTransporter() {
     const host = process.env.SMTP_HOST;
     const user = process.env.SMTP_USER;
     const pass = process.env.SMTP_PASS;
@@ -17,6 +24,13 @@ export class MailService {
         auth: { user, pass },
       });
     }
+  }
+
+  private getTransporter(): Transporter | null {
+    if (!this.transporter) {
+      this.initTransporter();
+    }
+    return this.transporter;
   }
 
   /**
@@ -81,17 +95,19 @@ export class MailService {
     console.log(`🔑 MÃ OTP: >>> ${otp} <<< (Hạn 10 phút)`);
     console.log(`======================================================\n`);
 
-    if (this.transporter) {
+    const transporter = this.getTransporter();
+    if (transporter) {
       try {
-        await this.transporter.sendMail({
+        const info = await transporter.sendMail({
           from: `"Crowdfunding Platform" <${process.env.SMTP_FROM || process.env.SMTP_USER}>`,
           to,
           subject,
           html,
         });
+        console.log(`✅ [GMAIL SMTP] Đã gửi email thực tế thành công tới: ${to} (MessageId: ${info.messageId})\n`);
         return true;
       } catch (error) {
-        console.error("Gửi email thực tế qua SMTP thất bại:", error);
+        console.error("❌ Gửi email thực tế qua SMTP thất bại:", error);
         return false;
       }
     }

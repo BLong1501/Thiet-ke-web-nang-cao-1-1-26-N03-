@@ -10,7 +10,7 @@ import {
   ForgotPasswordInput,
   ResetPasswordInput,
 } from "./auth.validation";
-import { generateAccessToken, generateRefreshToken } from "../../core/utils/jwt.util";
+import { generateAccessToken, generateRefreshToken, verifyRefreshToken } from "../../core/utils/jwt.util";
 import { redisService } from "../../core/database/redis";
 import { mailService } from "../../core/services/mail.service";
 import { OAuth2Client } from "google-auth-library";
@@ -261,6 +261,42 @@ export class AuthService {
       user: safeUser,
       accessToken,
       refreshToken,
+    };
+  }
+
+  async refreshToken(rawRefreshToken: string) {
+    if (!rawRefreshToken) {
+      const error: any = new Error("Yêu cầu Refresh Token để làm mới phiên đăng nhập");
+      error.statusCode = 401;
+      throw error;
+    }
+
+    const decoded = verifyRefreshToken(rawRefreshToken);
+    if (!decoded) {
+      const error: any = new Error("Refresh Token không hợp lệ hoặc đã hết hạn. Vui lòng đăng nhập lại.");
+      error.statusCode = 401;
+      throw error;
+    }
+
+    const user = await this.repo.findById(decoded.userId);
+    if (!user || user.status === UserStatus.BANNED || user.status === UserStatus.SUSPENDED) {
+      const error: any = new Error("Tài khoản người dùng không tồn tại hoặc đã bị khóa.");
+      error.statusCode = 403;
+      throw error;
+    }
+
+    const tokenPayload = {
+      userId: user.id,
+      email: user.email,
+      role: user.role,
+    };
+
+    const newAccessToken = generateAccessToken(tokenPayload);
+    const newRefreshToken = generateRefreshToken(tokenPayload);
+
+    return {
+      accessToken: newAccessToken,
+      refreshToken: newRefreshToken,
     };
   }
 

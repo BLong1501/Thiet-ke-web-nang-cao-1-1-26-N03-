@@ -80,6 +80,15 @@ Content-Type: application/json
 ### LƯU Ý: Sau khi đăng nhập, copy trường "accessToken" dán vào biến @token bên dưới:
 @token = YOUR_ACCESS_TOKEN_HERE
 
+### 7.1 LÀM MỚI MÃ TRUY CẬP (REFRESH TOKEN)
+# Tự động đọc Refresh Token từ HttpOnly Cookie hoặc truyền qua Body JSON:
+POST {{baseUrl}}/auth/refresh-token
+Content-Type: application/json
+
+{
+  "refreshToken": "YOUR_REFRESH_TOKEN_HERE"
+}
+
 ### 8. ĐĂNG NHẬP BẰNG GOOGLE (Hợp nhất tài khoản nếu trùng Email)
 # Có thể truyền Mock ID Token dạng: mock_google_token_{tên_email} để test không cần Google API Key thật
 POST {{baseUrl}}/auth/google
