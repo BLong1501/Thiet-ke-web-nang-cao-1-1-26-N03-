@@ -1,0 +1,351 @@
+{
+  "checkedAt": "2026-10-02T09:05:30.410Z",
+  "environment": "local isolated MySQL + real HTTP; simulated money",
+  "database": "crowdfunding_session06_test",
+  "campaignId": "c4c874c2-3756-4717-a97a-7716233ba661",
+  "cases": [
+    {
+      "name": "B6-01 create PENDING + idempotent replay",
+      "passed": true
+    },
+    {
+      "name": "B6-02 missing token 401; USER confirm 403; cross-owner detail 403",
+      "passed": true
+    },
+    {
+      "name": "B6-03 invalid amount 400; key reused with changed payload 409; pending refund 422",
+      "passed": true
+    },
+    {
+      "name": "B6-04 rollback on injected notification/audit failure",
+      "passed": true
+    },
+    {
+      "name": "B6-05 ADMIN confirm + repeated confirm 422 + reconciliation",
+      "passed": true
+    },
+    {
+      "name": "B6-06 active campaign refund 422; admin cancellation",
+      "passed": true
+    },
+    {
+      "name": "B6-07 real DB rejects refund exceeding receipt",
+      "passed": true
+    },
+    {
+      "name": "B6-08 50 concurrent HTTP refunds: exactly 1 success, 49 rejected",
+      "passed": true
+    },
+    {
+      "name": "B6-09 direct DB duplicate refund and ledger editing rejected",
+      "passed": true
+    },
+    {
+      "name": "B6-10 expiry task closes campaign without HTTP access",
+      "passed": true
+    }
+  ],
+  "parallel": [
+    {
+      "request": 1,
+      "httpStatus": 422,
+      "durationMs": 153,
+      "message": "Chỉ hoàn khoản SUCCESS chưa được hoàn tiền"
+    },
+    {
+      "request": 2,
+      "httpStatus": 200,
+      "durationMs": 142,
+      "message": "Hoàn tiền mô phỏng thành công"
+    },
+    {
+      "request": 3,
+      "httpStatus": 422,
+      "durationMs": 193,
+      "message": "Chỉ hoàn khoản SUCCESS chưa được hoàn tiền"
+    },
+    {
+      "request": 4,
+      "httpStatus": 422,
+      "durationMs": 181,
+      "message": "Chỉ hoàn khoản SUCCESS chưa được hoàn tiền"
+    },
+    {
+      "request": 5,
+      "httpStatus": 422,
+      "durationMs": 168,
+      "message": "Chỉ hoàn khoản SUCCESS chưa được hoàn tiền"
+    },
+    {
+      "request": 6,
+      "httpStatus": 422,
+      "durationMs": 203,
+      "message": "Chỉ hoàn khoản SUCCESS chưa được hoàn tiền"
+    },
+    {
+      "request": 7,
+      "httpStatus": 422,
+      "durationMs": 213,
+      "message": "Chỉ hoàn khoản SUCCESS chưa được hoàn tiền"
+    },
+    {
+      "request": 8,
+      "httpStatus": 422,
+      "durationMs": 245,
+      "message": "Chỉ hoàn khoản SUCCESS chưa được hoàn tiền"
+    },
+    {
+      "request": 9,
+      "httpStatus": 422,
+      "durationMs": 223,
+      "message": "Chỉ hoàn khoản SUCCESS chưa được hoàn tiền"
+    },
+    {
+      "request": 10,
+      "httpStatus": 422,
+      "durationMs": 232,
+      "message": "Chỉ hoàn khoản SUCCESS chưa được hoàn tiền"
+    },
+    {
+      "request": 11,
+      "httpStatus": 422,
+      "durationMs": 257,
+      "message": "Chỉ hoàn khoản SUCCESS chưa được hoàn tiền"
+    },
+    {
+      "request": 12,
+      "httpStatus": 422,
+      "durationMs": 266,
+      "message": "Chỉ hoàn khoản SUCCESS chưa được hoàn tiền"
+    },
+    {
+      "request": 13,
+      "httpStatus": 422,
+      "durationMs": 295,
+      "message": "Chỉ hoàn khoản SUCCESS chưa được hoàn tiền"
+    },
+    {
+      "request": 14,
+      "httpStatus": 422,
+      "durationMs": 307,
+      "message": "Chỉ hoàn khoản SUCCESS chưa được hoàn tiền"
+    },
+    {
+      "request": 15,
+      "httpStatus": 422,
+      "durationMs": 317,
+      "message": "Chỉ hoàn khoản SUCCESS chưa được hoàn tiền"
+    },
+    {
+      "request": 16,
+      "httpStatus": 422,
+      "durationMs": 331,
+      "message": "Chỉ hoàn khoản SUCCESS chưa được hoàn tiền"
+    },
+    {
+      "request": 17,
+      "httpStatus": 422,
+      "durationMs": 342,
+      "message": "Chỉ hoàn khoản SUCCESS chưa được hoàn tiền"
+    },
+    {
+      "request": 18,
+      "httpStatus": 422,
+      "durationMs": 353,
+      "message": "Chỉ hoàn khoản SUCCESS chưa được hoàn tiền"
+    },
+    {
+      "request": 19,
+      "httpStatus": 422,
+      "durationMs": 370,
+      "message": "Chỉ hoàn khoản SUCCESS chưa được hoàn tiền"
+    },
+    {
+      "request": 20,
+      "httpStatus": 422,
+      "durationMs": 380,
+      "message": "Chỉ hoàn khoản SUCCESS chưa được hoàn tiền"
+    },
+    {
+      "request": 21,
+      "httpStatus": 422,
+      "durationMs": 389,
+      "message": "Chỉ hoàn khoản SUCCESS chưa được hoàn tiền"
+    },
+    {
+      "request": 22,
+      "httpStatus": 422,
+      "durationMs": 398,
+      "message": "Chỉ hoàn khoản SUCCESS chưa được hoàn tiền"
+    },
+    {
+      "request": 23,
+      "httpStatus": 422,
+      "durationMs": 408,
+      "message": "Chỉ hoàn khoản SUCCESS chưa được hoàn tiền"
+    },
+    {
+      "request": 24,
+      "httpStatus": 422,
+      "durationMs": 420,
+      "message": "Chỉ hoàn khoản SUCCESS chưa được hoàn tiền"
+    },
+    {
+      "request": 25,
+      "httpStatus": 422,
+      "durationMs": 430,
+      "message": "Chỉ hoàn khoản SUCCESS chưa được hoàn tiền"
+    },
+    {
+      "request": 26,
+      "httpStatus": 422,
+      "durationMs": 445,
+      "message": "Chỉ hoàn khoản SUCCESS chưa được hoàn tiền"
+    },
+    {
+      "request": 27,
+      "httpStatus": 422,
+      "durationMs": 456,
+      "message": "Chỉ hoàn khoản SUCCESS chưa được hoàn tiền"
+    },
+    {
+      "request": 28,
+      "httpStatus": 422,
+      "durationMs": 467,
+      "message": "Chỉ hoàn khoản SUCCESS chưa được hoàn tiền"
+    },
+    {
+      "request": 29,
+      "httpStatus": 422,
+      "durationMs": 480,
+      "message": "Chỉ hoàn khoản SUCCESS chưa được hoàn tiền"
+    },
+    {
+      "request": 30,
+      "httpStatus": 422,
+      "durationMs": 493,
+      "message": "Chỉ hoàn khoản SUCCESS chưa được hoàn tiền"
+    },
+    {
+      "request": 31,
+      "httpStatus": 422,
+      "durationMs": 506,
+      "message": "Chỉ hoàn khoản SUCCESS chưa được hoàn tiền"
+    },
+    {
+      "request": 32,
+      "httpStatus": 422,
+      "durationMs": 518,
+      "message": "Chỉ hoàn khoản SUCCESS chưa được hoàn tiền"
+    },
+    {
+      "request": 33,
+      "httpStatus": 422,
+      "durationMs": 531,
+      "message": "Chỉ hoàn khoản SUCCESS chưa được hoàn tiền"
+    },
+    {
+      "request": 34,
+      "httpStatus": 422,
+      "durationMs": 547,
+      "message": "Chỉ hoàn khoản SUCCESS chưa được hoàn tiền"
+    },
+    {
+      "request": 35,
+      "httpStatus": 422,
+      "durationMs": 560,
+      "message": "Chỉ hoàn khoản SUCCESS chưa được hoàn tiền"
+    },
+    {
+      "request": 36,
+      "httpStatus": 422,
+      "durationMs": 575,
+      "message": "Chỉ hoàn khoản SUCCESS chưa được hoàn tiền"
+    },
+    {
+      "request": 37,
+      "httpStatus": 422,
+      "durationMs": 591,
+      "message": "Chỉ hoàn khoản SUCCESS chưa được hoàn tiền"
+    },
+    {
+      "request": 38,
+      "httpStatus": 422,
+      "durationMs": 610,
+      "message": "Chỉ hoàn khoản SUCCESS chưa được hoàn tiền"
+    },
+    {
+      "request": 39,
+      "httpStatus": 422,
+      "durationMs": 626,
+      "message": "Chỉ hoàn khoản SUCCESS chưa được hoàn tiền"
+    },
+    {
+      "request": 40,
+      "httpStatus": 422,
+      "durationMs": 650,
+      "message": "Chỉ hoàn khoản SUCCESS chưa được hoàn tiền"
+    },
+    {
+      "request": 41,
+      "httpStatus": 422,
+      "durationMs": 672,
+      "message": "Chỉ hoàn khoản SUCCESS chưa được hoàn tiền"
+    },
+    {
+      "request": 42,
+      "httpStatus": 422,
+      "durationMs": 694,
+      "message": "Chỉ hoàn khoản SUCCESS chưa được hoàn tiền"
+    },
+    {
+      "request": 43,
+      "httpStatus": 422,
+      "durationMs": 717,
+      "message": "Chỉ hoàn khoản SUCCESS chưa được hoàn tiền"
+    },
+    {
+      "request": 44,
+      "httpStatus": 422,
+      "durationMs": 740,
+      "message": "Chỉ hoàn khoản SUCCESS chưa được hoàn tiền"
+    },
+    {
+      "request": 45,
+      "httpStatus": 422,
+      "durationMs": 756,
+      "message": "Chỉ hoàn khoản SUCCESS chưa được hoàn tiền"
+    },
+    {
+      "request": 46,
+      "httpStatus": 422,
+      "durationMs": 774,
+      "message": "Chỉ hoàn khoản SUCCESS chưa được hoàn tiền"
+    },
+    {
+      "request": 47,
+      "httpStatus": 422,
+      "durationMs": 790,
+      "message": "Chỉ hoàn khoản SUCCESS chưa được hoàn tiền"
+    },
+    {
+      "request": 48,
+      "httpStatus": 422,
+      "durationMs": 805,
+      "message": "Chỉ hoàn khoản SUCCESS chưa được hoàn tiền"
+    },
+    {
+      "request": 49,
+      "httpStatus": 422,
+      "durationMs": 819,
+      "message": "Chỉ hoàn khoản SUCCESS chưa được hoàn tiền"
+    },
+    {
+      "request": 50,
+      "httpStatus": 422,
+      "durationMs": 833,
+      "message": "Chỉ hoàn khoản SUCCESS chưa được hoàn tiền"
+    }
+  ],
+  "passed": true
+}

@@ -257,12 +257,32 @@ model Donation {
   // Quan hệ
   campaign Campaign @relation("CampaignDonations", fields: [campaignId], references: [id], onDelete: Restrict)
   donor    User?    @relation("UserDonations", fields: [donorId], references: [id], onDelete: SetNull)
+  ledgerEntries LedgerEntry[]
 
   @@index([campaignId])
   @@index([donorId])
   @@index([paymentStatus])
   @@index([createdAt])
   @@map("donations")
+}
+
+// Session 06: one receipt and at most one FULL refund per donation.
+// MySQL CHECKs/triggers are installed by scripts/session06-schema.cjs.
+enum LedgerKind {
+  RECEIPT
+  REFUND
+}
+
+model LedgerEntry {
+  id         String     @id @default(uuid()) @db.VarChar(36)
+  donationId String     @map("donation_id") @db.VarChar(36)
+  kind       LedgerKind
+  amount     Decimal    @db.Decimal(15, 2)
+  createdAt  DateTime   @default(now()) @map("created_at")
+  donation   Donation   @relation(fields: [donationId], references: [id], onDelete: Restrict)
+
+  @@unique([donationId, kind])
+  @@map("ledger_entries")
 }
 
 model Disbursement {

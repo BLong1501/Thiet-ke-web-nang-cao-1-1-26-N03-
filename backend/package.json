@@ -4,6 +4,9 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "session06:prepare": "node scripts/session06-schema.cjs",
+    "test:session06:local": "node scripts/session06-local-check.cjs",
+    "test:session06": "tsx scripts/session06-check.ts",
     "dev": "tsx watch src/server.ts",
     "build": "tsc",
     "start": "node dist/server.js",

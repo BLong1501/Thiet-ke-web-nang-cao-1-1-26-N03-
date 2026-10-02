@@ -19,11 +19,16 @@ export class CampaignService {
   /**
    * Tính toán các chỉ số bổ sung: % tiến độ, số ngày còn lại, đã kết thúc chưa
    */
-  private formatCampaign(campaign: any) {
+  private async formatCampaign(campaign: any) {
     if (!campaign) return null;
 
     const target = Number(campaign.targetAmount);
-    const current = Number(campaign.currentAmount);
+    const ledger = await prisma.ledgerEntry.groupBy({
+      by: ['kind'], where: { donation: { campaignId: campaign.id } }, _sum: { amount: true },
+    });
+    const received = ledger.find(row => row.kind === 'RECEIPT')?._sum.amount ?? new Prisma.Decimal(0);
+    const refunded = ledger.find(row => row.kind === 'REFUND')?._sum.amount ?? new Prisma.Decimal(0);
+    const current = Number(received.minus(refunded));
     const progressPercentage = target > 0 ? Math.min(100, Math.round((current / target) * 100)) : 0;
     const now = new Date();
     const end = new Date(campaign.endDate);
@@ -76,7 +81,7 @@ export class CampaignService {
     const totalPages = Math.ceil(total / limit);
 
     return {
-      items: items.map((item) => this.formatCampaign(item)),
+      items: await Promise.all(items.map((item) => this.formatCampaign(item))),
       meta: {
         page,
         limit,
@@ -122,7 +127,7 @@ export class CampaignService {
     ]);
 
     return {
-      items: items.map((item) => this.formatCampaign(item)),
+      items: await Promise.all(items.map((item) => this.formatCampaign(item))),
       meta: {
         page,
         limit,
@@ -219,7 +224,7 @@ export class CampaignService {
     ]);
 
     return {
-      items: items.map((item) => this.formatCampaign(item)),
+      items: await Promise.all(items.map((item) => this.formatCampaign(item))),
       meta: {
         page,
         limit,
@@ -288,7 +293,7 @@ export class CampaignService {
         input.status === CampaignStatus.ACTIVE
           ? "Phê duyệt chiến dịch thành công"
           : "Từ chối chiến dịch thành công",
-      campaign: this.formatCampaign(result),
+      campaign: await this.formatCampaign(result),
     };
   }
 

@@ -19,7 +19,15 @@ export const validateRequest = (schema: ZodSchema | RequestValidationSchema) => 
           req.body = await composite.body.parseAsync(req.body);
         }
         if (composite.query) {
-          req.query = (await composite.query.parseAsync(req.query)) as any;
+          // Express 5 exposes query through a getter without a setter.
+          // Preserve parsed numbers/defaults for downstream controllers.
+          const query = await composite.query.parseAsync(req.query);
+          Object.defineProperty(req, "query", {
+            value: query,
+            writable: true,
+            configurable: true,
+            enumerable: true,
+          });
         }
         if (composite.params) {
           req.params = (await composite.params.parseAsync(req.params)) as any;
