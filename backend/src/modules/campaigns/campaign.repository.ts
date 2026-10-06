@@ -1,6 +1,14 @@
 import { prisma } from "../../core/database/prisma";
 import { CampaignStatus, Prisma } from "@prisma/client";
-import { CreateCampaignInput, UpdateCampaignInput, AddMediaInput, CreateUpdateInput, CategoryInput } from "./campaign.validation";
+import {
+  CreateCampaignInput,
+  UpdateCampaignInput,
+  AddMediaInput,
+  CreateUpdateInput,
+  CategoryInput,
+  CreateDisbursementInput,
+} from "./campaign.validation";
+
 
 export class CampaignRepository {
   /**
@@ -256,6 +264,24 @@ export class CampaignRepository {
       },
     });
   }
+
+  /**
+   * Fundraiser thêm minh chứng giải ngân minh bạch
+   */
+  async addDisbursement(campaignId: string, createdBy: string, input: CreateDisbursementInput) {
+    return prisma.disbursement.create({
+      data: {
+        campaignId,
+        createdBy,
+        title: input.title,
+        amount: input.amount,
+        disbursementDate: new Date(input.disbursementDate),
+        proofDocuments: input.proofDocuments as Prisma.InputJsonValue,
+        note: input.note || null,
+      },
+    });
+  }
+
 
   // ==========================================
   // CATEGORIES REPOSITORY METHODS

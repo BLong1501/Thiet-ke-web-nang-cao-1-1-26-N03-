@@ -19,32 +19,47 @@ export const validateRequest = (schema: ZodSchema | RequestValidationSchema) => 
           req.body = await composite.body.parseAsync(req.body);
         }
         if (composite.query) {
-          // Express 5 exposes query through a getter without a setter.
-          // Preserve parsed numbers/defaults for downstream controllers.
-          const query = await composite.query.parseAsync(req.query);
-          Object.defineProperty(req, "query", {
-            value: query,
-            writable: true,
-            configurable: true,
-            enumerable: true,
-          });
+          const parsedQuery = await composite.query.parseAsync(req.query);
+          try {
+            req.query = parsedQuery as any;
+          } catch {
+            Object.defineProperty(req, "query", {
+              value: parsedQuery,
+              writable: true,
+              configurable: true,
+              enumerable: true,
+            });
+          }
         }
         if (composite.params) {
-          req.params = (await composite.params.parseAsync(req.params)) as any;
+          const parsedParams = await composite.params.parseAsync(req.params);
+          try {
+            req.params = parsedParams as any;
+          } catch {
+            Object.defineProperty(req, "params", {
+              value: parsedParams,
+              writable: true,
+              configurable: true,
+              enumerable: true,
+            });
+          }
         }
       }
       return next();
-    } catch (error) {
-      if (error instanceof ZodError) {
-        const formattedErrors = error.issues.map((err) => ({
+
+    } catch (error: any) {
+      if (error instanceof ZodError || error?.name === "ZodError" || Array.isArray(error?.issues)) {
+        const formattedErrors = error.issues.map((err: any) => ({
           field: err.path.join("."),
           message: err.message,
         }));
         return sendError(res, 400, "Dữ liệu gửi lên không hợp lệ", formattedErrors);
       }
-      return sendError(res, 500, "Lỗi kiểm thực dữ liệu");
+      console.error("[VALIDATE MIDDLEWARE ERROR]:", error);
+      return sendError(res, 500, error?.message || "Lỗi kiểm thực dữ liệu");
     }
   };
 };
+
 
 export const validate = validateRequest;

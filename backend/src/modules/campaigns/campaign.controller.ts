@@ -146,6 +146,21 @@ export class CampaignController {
     }
   }
 
+  /**
+   * [POST /api/v1/campaigns/:id/disbursements] Đăng minh chứng giải ngân minh bạch
+   */
+  async addDisbursement(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { userId, role } = (req as any).user;
+      const id = String(req.params.id);
+      const disbursement = await campaignService.addDisbursement(userId, role, id, req.body);
+      return sendCreated(res, "Đăng thông tin giải ngân thành công", disbursement);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+
   // ==========================================
   // CATEGORIES CONTROLLER METHODS
   // ==========================================

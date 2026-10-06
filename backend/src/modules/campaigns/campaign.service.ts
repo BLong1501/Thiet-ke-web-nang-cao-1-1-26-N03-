@@ -7,7 +7,9 @@ import {
   AddMediaInput,
   CreateUpdateInput,
   CategoryInput,
+  CreateDisbursementInput,
 } from "./campaign.validation";
+
 import { generateUniqueSlug, slugify } from "../../core/utils/slug.util";
 import { AppError } from "../../core/errors/app.error";
 import { CampaignStatus, Prisma, UserRole } from "@prisma/client";
@@ -324,6 +326,43 @@ export class CampaignService {
 
     return this.repo.addUpdate(campaignId, input);
   }
+
+  /**
+   * Đăng chứng từ minh chứng giải ngân minh bạch
+   */
+  async addDisbursement(
+    userId: string,
+    userRole: string,
+    campaignId: string,
+    input: CreateDisbursementInput
+  ) {
+    const campaign = await this.repo.findById(campaignId);
+    if (!campaign) throw new AppError("Chiến dịch không tồn tại", 404);
+
+    if (userRole !== UserRole.ADMIN && campaign.fundraiserId !== userId) {
+      throw new AppError("Chỉ chủ chiến dịch mới có quyền cập nhật thông tin giải ngân", 403);
+    }
+
+    const disbursement = await this.repo.addDisbursement(campaignId, userId, input);
+
+    // Ghi AuditLog
+    await prisma.auditLog.create({
+      data: {
+        userId,
+        action: "CREATE_DISBURSEMENT",
+        entityName: "Disbursement",
+        entityId: disbursement.id,
+        details: {
+          campaignId,
+          amount: input.amount,
+          title: input.title,
+        },
+      },
+    });
+
+    return disbursement;
+  }
+
 
   // ==========================================
   // CATEGORIES SERVICES

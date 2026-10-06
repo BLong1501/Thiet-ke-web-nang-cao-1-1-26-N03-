@@ -134,6 +134,15 @@ export const categorySchema = z.object({
   isActive: z.boolean().default(true),
 });
 
+// Schema tạo minh chứng giải ngân
+export const createDisbursementSchema = z.object({
+  title: z.string().trim().min(5, "Tiêu đề giải ngân tối thiểu 5 ký tự").max(255),
+  amount: z.number().min(10000, "Số tiền giải ngân tối thiểu 10.000 VNĐ"),
+  disbursementDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Ngày giải ngân phải có định dạng YYYY-MM-DD"),
+  proofDocuments: z.array(z.string().url("Đường dẫn chứng từ không hợp lệ")).min(1, "Cần tối thiểu 1 chứng từ minh chứng"),
+  note: z.string().max(1000).optional(),
+});
+
 export type CreateCampaignInput = z.infer<typeof createCampaignSchema>;
 export type UpdateCampaignInput = z.infer<typeof updateCampaignSchema>;
 export type CampaignQueryInput = z.infer<typeof campaignQuerySchema>;
@@ -141,3 +150,5 @@ export type ReviewCampaignInput = z.infer<typeof reviewCampaignSchema>;
 export type AddMediaInput = z.infer<typeof addMediaSchema>;
 export type CreateUpdateInput = z.infer<typeof createUpdateSchema>;
 export type CategoryInput = z.infer<typeof categorySchema>;
+export type CreateDisbursementInput = z.infer<typeof createDisbursementSchema>;
+

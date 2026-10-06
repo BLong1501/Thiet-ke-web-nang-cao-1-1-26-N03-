@@ -382,19 +382,20 @@ ON DUPLICATE KEY UPDATE `name` = VALUES(`name`);
 INSERT INTO `users` (`id`, `email`, `password_hash`, `full_name`, `phone_number`, `avatar_url`, `bio`, `role`, `status`, `is_email_verified`, `email_verified_at`, `created_at`, `updated_at`)
 VALUES 
     -- Kịch bản 1: Quản trị viên (Admin)
-    ('a0000000-0000-0000-0000-000000000001', 'admin@crowdfunding.vn', '$2b$10$V..Aowez9GPQlsSOie0ZQO7Z23uhDj.LWBVBwYjd7H/KzhB2q5sYS', 'Quản trị viên Hệ thống', '0901234567', 'https://i.pravatar.cc/300?img=1', 'Quản trị viên phụ trách xét duyệt và an toàn quỹ', 'ADMIN', 'ACTIVE', TRUE, NOW(), NOW(), NOW()),
+    ('a0000000-0000-0000-0000-000000000001', 'admin@crowdfunding.vn', '$2b$10$abryA3D1toO2hYz2n4tyaO0L3H7RLowmPQWI/WxJ1Iu8gpu9MWs/e', 'Quản trị viên Hệ thống', '0901234567', 'https://i.pravatar.cc/300?img=1', 'Quản trị viên phụ trách xét duyệt và an toàn quỹ', 'ADMIN', 'ACTIVE', TRUE, NOW(), NOW(), NOW()),
     
     -- Kịch bản 2: Người gây quỹ đã xác minh KYC (Verified Fundraiser)
-    ('u0000000-0000-0000-0000-000000000002', 'fundraiser@gmail.com', '$2b$10$V..Aowez9GPQlsSOie0ZQO7Z23uhDj.LWBVBwYjd7H/KzhB2q5sYS', 'Lê Hoàng Nam (Tình nguyện viên)', '0912345678', 'https://i.pravatar.cc/300?img=12', 'Trưởng nhóm thiện nguyện Cầu Vồng Yêu Thương', 'FUNDRAISER', 'ACTIVE', TRUE, NOW(), NOW(), NOW()),
+    ('u0000000-0000-0000-0000-000000000002', 'fundraiser@gmail.com', '$2b$10$abryA3D1toO2hYz2n4tyaO0L3H7RLowmPQWI/WxJ1Iu8gpu9MWs/e', 'Lê Hoàng Nam (Tình nguyện viên)', '0912345678', 'https://i.pravatar.cc/300?img=12', 'Trưởng nhóm thiện nguyện Cầu Vồng Yêu Thương', 'FUNDRAISER', 'ACTIVE', TRUE, NOW(), NOW(), NOW()),
     
     -- Kịch bản 3: Người dùng nộp hồ sơ KYC đang chờ Admin duyệt (Pending KYC)
-    ('u0000000-0000-0000-0000-000000000003', 'pending_kyc@gmail.com', '$2b$10$V..Aowez9GPQlsSOie0ZQO7Z23uhDj.LWBVBwYjd7H/KzhB2q5sYS', 'Phạm Thị Cúc', '0987654321', 'https://i.pravatar.cc/300?img=5', 'Cần gây quỹ hỗ trợ viện phí cho cháu gái', 'USER', 'ACTIVE', TRUE, NOW(), NOW(), NOW()),
+    ('u0000000-0000-0000-0000-000000000003', 'pending_kyc@gmail.com', '$2b$10$abryA3D1toO2hYz2n4tyaO0L3H7RLowmPQWI/WxJ1Iu8gpu9MWs/e', 'Phạm Thị Cúc', '0987654321', 'https://i.pravatar.cc/300?img=5', 'Cần gây quỹ hỗ trợ viện phí cho cháu gái', 'USER', 'ACTIVE', TRUE, NOW(), NOW(), NOW()),
     
     -- Kịch bản 4: Nhà hảo tâm tích cực (Donor 1)
-    ('u0000000-0000-0000-0000-000000000004', 'donor1@gmail.com', '$2b$10$V..Aowez9GPQlsSOie0ZQO7Z23uhDj.LWBVBwYjd7H/KzhB2q5sYS', 'Nguyễn Văn An', '0933333333', 'https://i.pravatar.cc/300?img=60', 'Ủng hộ các hoàn cảnh trẻ em vùng cao', 'USER', 'ACTIVE', TRUE, NOW(), NOW(), NOW()),
+    ('u0000000-0000-0000-0000-000000000004', 'donor1@gmail.com', '$2b$10$abryA3D1toO2hYz2n4tyaO0L3H7RLowmPQWI/WxJ1Iu8gpu9MWs/e', 'Nguyễn Văn An', '0933333333', 'https://i.pravatar.cc/300?img=60', 'Ủng hộ các hoàn cảnh trẻ em vùng cao', 'USER', 'ACTIVE', TRUE, NOW(), NOW(), NOW()),
 
     -- Kịch bản 5: Nhà hảo tâm 2 (Donor 2)
-    ('u0000000-0000-0000-0000-000000000005', 'donor2@gmail.com', '$2b$10$V..Aowez9GPQlsSOie0ZQO7Z23uhDj.LWBVBwYjd7H/KzhB2q5sYS', 'Trần Thị Bình', '0944444444', 'https://i.pravatar.cc/300?img=47', 'Lan tỏa tinh thần tương thân tương ái', 'USER', 'ACTIVE', TRUE, NOW(), NOW(), NOW())
+    ('u0000000-0000-0000-0000-000000000005', 'donor2@gmail.com', '$2b$10$abryA3D1toO2hYz2n4tyaO0L3H7RLowmPQWI/WxJ1Iu8gpu9MWs/e', 'Trần Thị Bình', '0944444444', 'https://i.pravatar.cc/300?img=47', 'Lan tỏa tinh thần tương thân tương ái', 'USER', 'ACTIVE', TRUE, NOW(), NOW(), NOW())
+
 ON DUPLICATE KEY UPDATE `full_name` = VALUES(`full_name`);
 
 -- 3. Hồ sơ xác minh KYC (Verifications)

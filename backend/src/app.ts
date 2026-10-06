@@ -22,6 +22,7 @@ import { verificationRouter } from "./modules/verifications/verification.routes"
 import { profileRouter } from "./modules/profile/profile.routes";
 import { campaignRouter } from "./modules/campaigns/campaign.routes";
 import { donationRouter } from "./modules/donations/donation.routes";
+import { userRouter } from "./modules/users/user.routes";
 
 // Health check endpoint
 app.get("/api/v1/health", (_req: Request, res: Response) => {
@@ -38,6 +39,7 @@ app.use("/api/v1/verifications", verificationRouter);
 app.use("/api/v1/profile", profileRouter);
 app.use("/api/v1/campaigns", campaignRouter);
 app.use("/api/v1/donations", donationRouter);
+app.use("/api/v1/users", userRouter);
 
 import { sendError } from "./core/utils/response.util";
 

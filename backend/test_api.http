@@ -303,3 +303,93 @@ Authorization: Bearer {{adminToken}}
 #   "status": "REJECTED",
 #   "rejectionReason": "Giấy chứng nhận viện phí mờ, không rõ con dấu đỏ của bệnh viện."
 # }
+
+### ================================================================
+### PHÂN HỆ QUYÊN GÓP (DONATIONS) & MÔ PHỎNG THANH TOÁN
+### ================================================================
+
+### 31. TẠO LƯỢT QUYÊN GÓP MỚI (Khách vãng lai hoặc Người dùng đã đăng nhập)
+# @name createDonation
+POST {{baseUrl}}/donations
+Content-Type: application/json
+# Authorization: Bearer {{token}}
+
+{
+  "campaignId": "{{campaignId}}",
+  "amount": 200000,
+  "donorName": "Mạnh thường quân hảo tâm",
+  "donorEmail": "donor@example.com",
+  "donorPhone": "0987654321",
+  "message": "Chúc bé An mau chóng bình phục và khỏe mạnh!",
+  "isAnonymous": false,
+  "paymentMethod": "BANK_TRANSFER"
+}
+
+### 32. MÔ PHỎNG XÁC NHẬN THANH TOÁN THÀNH CÔNG (Webhook / Cổng thanh toán)
+# Khi thanh toán thành công: Tiền được cộng dồn vào chiến dịch, donorCount tăng 1 (ACID Transaction)
+@donationId = YOUR_DONATION_ID_HERE
+POST {{baseUrl}}/donations/{{donationId}}/confirm
+Content-Type: application/json
+
+{
+  "note": "Xác nhận chuyển khoản ngân hàng thành công qua mã đối soát"
+}
+
+### 33. XEM DANH SÁCH NHÀ HẢO TÂM CỦA MỘT CHIẾN DỊCH (Public)
+GET {{baseUrl}}/donations/campaign/{{campaignId}}?page=1&limit=10
+Content-Type: application/json
+
+### 34. XEM LỊCH SỬ QUYÊN GÓP CỦA TÔI
+GET {{baseUrl}}/donations/my/history?page=1&limit=10
+Authorization: Bearer {{token}}
+
+### 35. XEM CHI TIẾT GIAO DỊCH QUYÊN GÓP
+GET {{baseUrl}}/donations/{{donationId}}
+Authorization: Bearer {{token}}
+
+### 36. ADMIN ĐỐI SOÁT TOÀN BỘ GIAO DỊCH QUYÊN GÓP TRÊN HỆ THỐNG
+GET {{baseUrl}}/donations/admin/all?page=1&limit=20&status=SUCCESS
+Authorization: Bearer {{adminToken}}
+
+### ================================================================
+### PHÂN HỆ QUẢN TRỊ NGƯỜI DÙNG (ADMIN USER MANAGEMENT)
+### ================================================================
+
+### 37. ADMIN XEM DANH SÁCH TẤT CẢ NGƯỜI DÙNG (Phân trang, tìm kiếm, lọc vai trò/trạng thái)
+GET {{baseUrl}}/users?page=1&limit=10&role=USER&status=ACTIVE
+Authorization: Bearer {{adminToken}}
+
+### 38. ADMIN XEM CHI TIẾT MỘT NGƯỜI DÙNG
+@targetUserId = YOUR_TARGET_USER_ID_HERE
+GET {{baseUrl}}/users/{{targetUserId}}
+Authorization: Bearer {{adminToken}}
+
+### 39. ADMIN KHÓA / ĐỔI TRẠNG THÁI NGƯỜI DÙNG (ACTIVE / SUSPENDED / BANNED)
+PATCH {{baseUrl}}/users/{{targetUserId}}/status
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+  "status": "SUSPENDED",
+  "reason": "Tài khoản có dấu hiệu vi phạm điều khoản gây quỹ"
+}
+
+### ================================================================
+### PHÂN HỆ MINH BẠCH GIẢI NGÂN (DISBURSEMENTS)
+### ================================================================
+
+### 40. FUNDRAISER ĐĂNG CHỨNG TỪ MINH CHỨNG GIẢI NGÂN TIỀN QUYÊN GÓP
+POST {{baseUrl}}/campaigns/{{campaignId}}/disbursements
+Content-Type: application/json
+Authorization: Bearer {{fundraiserToken}}
+
+{
+  "title": "Thanh toán viện phí đợt 1 cho Bệnh viện Tim Hà Nội",
+  "amount": 35000000,
+  "disbursementDate": "2026-09-30",
+  "proofDocuments": [
+    "https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?w=800"
+  ],
+  "note": "Đã chuyển khoản trực tiếp vào tài khoản bệnh viện số phiếu thu viện phí #BV-9821."
+}
+

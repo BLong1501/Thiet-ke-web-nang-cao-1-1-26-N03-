@@ -10,8 +10,10 @@ import {
   addMediaSchema,
   createUpdateSchema,
   categorySchema,
+  createDisbursementSchema,
 } from "./campaign.validation";
 import { UserRole } from "@prisma/client";
+
 
 const router = Router();
 
@@ -72,6 +74,16 @@ router.post(
   validate(createUpdateSchema),
   campaignController.addUpdate
 );
+
+// Đăng chứng từ minh chứng giải ngân minh bạch
+router.post(
+  "/:id/disbursements",
+  authenticate,
+  authorize(UserRole.FUNDRAISER, UserRole.ADMIN),
+  validate(createDisbursementSchema),
+  campaignController.addDisbursement
+);
+
 
 // ==========================================
 // 3. ADMIN ROUTES (Dành riêng cho Quản trị viên)

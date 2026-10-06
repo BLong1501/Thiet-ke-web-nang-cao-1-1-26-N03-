@@ -1,8 +1,8 @@
 {
   "info": {
     "_postman_id": "crowdfunding-api-v2",
-    "name": "Crowdfunding Platform API - Full Auth, Profile & KYC",
-    "description": "Bộ API kiểm thử hệ thống Crowdfunding Platform (Module Auth, Google Account Linking, Quên mật khẩu, Profile & KYC)",
+    "name": "Crowdfunding Platform API - Full System Test Suite",
+    "description": "Bộ API kiểm thử hệ thống Crowdfunding Platform bao gồm đầy đủ 6 thực thể chính: Auth & Security, Profile, KYC Verifications, Categories, Campaigns & Disbursements, Donations & Payment Webhook, Admin User Management",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
@@ -15,6 +15,21 @@
       "key": "accessToken",
       "value": "",
       "type": "string"
+    },
+    {
+      "key": "campaignId",
+      "value": "c0000000-0000-0000-0000-000000000001",
+      "type": "string"
+    },
+    {
+      "key": "donationId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "targetUserId",
+      "value": "u0000000-0000-0000-0000-000000000003",
+      "type": "string"
     }
   ],
   "item": [
@@ -25,8 +40,12 @@
         "header": [],
         "url": {
           "raw": "{{baseUrl}}/health",
-          "host": ["{{baseUrl}}"],
-          "path": ["health"]
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "health"
+          ]
         }
       }
     },
@@ -49,8 +68,13 @@
             },
             "url": {
               "raw": "{{baseUrl}}/auth/register",
-              "host": ["{{baseUrl}}"],
-              "path": ["auth", "register"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "register"
+              ]
             }
           }
         },
@@ -85,8 +109,13 @@
             },
             "url": {
               "raw": "{{baseUrl}}/auth/verify-email",
-              "host": ["{{baseUrl}}"],
-              "path": ["auth", "verify-email"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "verify-email"
+              ]
             }
           }
         },
@@ -106,8 +135,13 @@
             },
             "url": {
               "raw": "{{baseUrl}}/auth/resend-otp",
-              "host": ["{{baseUrl}}"],
-              "path": ["auth", "resend-otp"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "resend-otp"
+              ]
             }
           }
         },
@@ -127,8 +161,13 @@
             },
             "url": {
               "raw": "{{baseUrl}}/auth/forgot-password",
-              "host": ["{{baseUrl}}"],
-              "path": ["auth", "forgot-password"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "forgot-password"
+              ]
             }
           }
         },
@@ -148,8 +187,13 @@
             },
             "url": {
               "raw": "{{baseUrl}}/auth/reset-password",
-              "host": ["{{baseUrl}}"],
-              "path": ["auth", "reset-password"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "reset-password"
+              ]
             }
           }
         },
@@ -183,8 +227,13 @@
             },
             "url": {
               "raw": "{{baseUrl}}/auth/login",
-              "host": ["{{baseUrl}}"],
-              "path": ["auth", "login"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
             }
           }
         },
@@ -218,8 +267,13 @@
             },
             "url": {
               "raw": "{{baseUrl}}/auth/refresh-token",
-              "host": ["{{baseUrl}}"],
-              "path": ["auth", "refresh-token"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "refresh-token"
+              ]
             }
           }
         },
@@ -253,8 +307,13 @@
             },
             "url": {
               "raw": "{{baseUrl}}/auth/google",
-              "host": ["{{baseUrl}}"],
-              "path": ["auth", "google"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "google"
+              ]
             }
           }
         },
@@ -270,8 +329,13 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/auth/me",
-              "host": ["{{baseUrl}}"],
-              "path": ["auth", "me"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "me"
+              ]
             }
           }
         },
@@ -287,8 +351,13 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/auth/logout",
-              "host": ["{{baseUrl}}"],
-              "path": ["auth", "logout"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "logout"
+              ]
             }
           }
         }
@@ -309,8 +378,13 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/profile/me",
-              "host": ["{{baseUrl}}"],
-              "path": ["profile", "me"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "profile",
+                "me"
+              ]
             }
           }
         },
@@ -334,8 +408,13 @@
             },
             "url": {
               "raw": "{{baseUrl}}/profile/me",
-              "host": ["{{baseUrl}}"],
-              "path": ["profile", "me"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "profile",
+                "me"
+              ]
             }
           }
         },
@@ -359,8 +438,13 @@
             },
             "url": {
               "raw": "{{baseUrl}}/profile/change-password",
-              "host": ["{{baseUrl}}"],
-              "path": ["profile", "change-password"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "profile",
+                "change-password"
+              ]
             }
           }
         }
@@ -389,8 +473,13 @@
             },
             "url": {
               "raw": "{{baseUrl}}/verifications/request",
-              "host": ["{{baseUrl}}"],
-              "path": ["verifications", "request"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "verifications",
+                "request"
+              ]
             }
           }
         },
@@ -406,8 +495,13 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/verifications/my-status",
-              "host": ["{{baseUrl}}"],
-              "path": ["verifications", "my-status"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "verifications",
+                "my-status"
+              ]
             }
           }
         },
@@ -423,11 +517,22 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/verifications/pending?page=1&limit=10",
-              "host": ["{{baseUrl}}"],
-              "path": ["verifications", "pending"],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "verifications",
+                "pending"
+              ],
               "query": [
-                { "key": "page", "value": "1" },
-                { "key": "limit", "value": "10" }
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
               ]
             }
           }
@@ -452,8 +557,14 @@
             },
             "url": {
               "raw": "{{baseUrl}}/verifications/:id/review",
-              "host": ["{{baseUrl}}"],
-              "path": ["verifications", ":id", "review"],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "verifications",
+                ":id",
+                "review"
+              ],
               "variable": [
                 {
                   "key": "id",
@@ -466,22 +577,27 @@
       ]
     },
     {
-      "name": "5. Campaigns & Categories",
+      "name": "4. Chiến dịch & Danh mục (Campaigns & Categories)",
       "item": [
         {
-          "name": "5.1 Get Categories (Public)",
+          "name": "4.1 Get Categories (Public)",
           "request": {
             "method": "GET",
             "header": [],
             "url": {
               "raw": "{{baseUrl}}/campaigns/categories",
-              "host": ["{{baseUrl}}"],
-              "path": ["campaigns", "categories"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "campaigns",
+                "categories"
+              ]
             }
           }
         },
         {
-          "name": "5.2 Create Category (Admin)",
+          "name": "4.2 Create Category (Admin)",
           "request": {
             "method": "POST",
             "header": [
@@ -500,13 +616,18 @@
             },
             "url": {
               "raw": "{{baseUrl}}/campaigns/categories",
-              "host": ["{{baseUrl}}"],
-              "path": ["campaigns", "categories"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "campaigns",
+                "categories"
+              ]
             }
           }
         },
         {
-          "name": "5.3 Create Campaign (Fundraiser)",
+          "name": "4.3 Create Campaign (Fundraiser)",
           "request": {
             "method": "POST",
             "header": [
@@ -525,37 +646,59 @@
             },
             "url": {
               "raw": "{{baseUrl}}/campaigns",
-              "host": ["{{baseUrl}}"],
-              "path": ["campaigns"]
-            }
-          }
-        },
-        {
-          "name": "5.4 Get Public Campaigns List",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/campaigns?page=1&limit=10&sortBy=newest",
-              "host": ["{{baseUrl}}"],
-              "path": ["campaigns"],
-              "query": [
-                { "key": "page", "value": "1" },
-                { "key": "limit", "value": "10" },
-                { "key": "sortBy", "value": "newest" }
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "campaigns"
               ]
             }
           }
         },
         {
-          "name": "5.5 Get Campaign Detail (by Slug or ID)",
+          "name": "4.4 Get Public Campaigns List",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/campaigns?page=1&limit=10&sortBy=newest",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "campaigns"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                },
+                {
+                  "key": "sortBy",
+                  "value": "newest"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "4.5 Get Campaign Detail (by Slug or ID)",
           "request": {
             "method": "GET",
             "header": [],
             "url": {
               "raw": "{{baseUrl}}/campaigns/:idOrSlug",
-              "host": ["{{baseUrl}}"],
-              "path": ["campaigns", ":idOrSlug"],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "campaigns",
+                ":idOrSlug"
+              ],
               "variable": [
                 {
                   "key": "idOrSlug",
@@ -566,7 +709,7 @@
           }
         },
         {
-          "name": "5.6 Get Pending Campaigns (Admin)",
+          "name": "4.6 Get Pending Campaigns (Admin)",
           "request": {
             "method": "GET",
             "header": [
@@ -577,17 +720,29 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/campaigns/admin/pending?page=1&limit=10",
-              "host": ["{{baseUrl}}"],
-              "path": ["campaigns", "admin", "pending"],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "campaigns",
+                "admin",
+                "pending"
+              ],
               "query": [
-                { "key": "page", "value": "1" },
-                { "key": "limit", "value": "10" }
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
               ]
             }
           }
         },
         {
-          "name": "5.7 Review Campaign (Admin: ACTIVE / REJECTED)",
+          "name": "4.7 Review Campaign (Admin: ACTIVE / REJECTED)",
           "request": {
             "method": "PATCH",
             "header": [
@@ -606,12 +761,587 @@
             },
             "url": {
               "raw": "{{baseUrl}}/campaigns/:id/review",
-              "host": ["{{baseUrl}}"],
-              "path": ["campaigns", ":id", "review"],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "campaigns",
+                ":id",
+                "review"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "{{campaignId}}"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "4.8 Get My Campaigns (Fundraiser)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/campaigns/my/list?page=1&limit=10",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "campaigns",
+                "my",
+                "list"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "4.9 Update Campaign (Fundraiser)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"shortDescription\": \"Cập nhật mô tả khẩn cấp: Bé An đã nhập viện chuẩn bị tiền phẫu.\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/campaigns/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "campaigns",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "{{campaignId}}"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "4.10 Add Campaign Media (Fundraiser)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"mediaType\": \"IMAGE\",\n  \"url\": \"https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=800\",\n  \"caption\": \"Biên lai tạm ứng viện phí đợt 1\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/campaigns/:id/media",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "campaigns",
+                ":id",
+                "media"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "{{campaignId}}"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "4.11 Add Campaign Progress Update (Fundraiser)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Thông báo: Ca phẫu thuật của bé An đã thành công tốt đẹp!\",\n  \"content\": \"Sáng nay ngày 28/09, đội ngũ y bác sĩ Bệnh viện Tim Hà Nội đã thực hiện thành công ca phẫu thuật cho cháu An. Hiện sức khỏe cháu ổn định.\",\n  \"attachments\": [\n    \"https://images.unsplash.com/photo-1584515979956-d9f6e5d09982?w=800\"\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/campaigns/:id/updates",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "campaigns",
+                ":id",
+                "updates"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "{{campaignId}}"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "4.12 Add Disbursement Proof (Fundraiser / Admin)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Thanh toán viện phí đợt 1 cho Bệnh viện Tim Hà Nội\",\n  \"amount\": 35000000,\n  \"disbursementDate\": \"2026-09-30\",\n  \"proofDocuments\": [\n    \"https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?w=800\"\n  ],\n  \"note\": \"Đã chuyển khoản trực tiếp vào tài khoản bệnh viện số phiếu thu viện phí #BV-9821.\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/campaigns/:id/disbursements",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "campaigns",
+                ":id",
+                "disbursements"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "{{campaignId}}"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "4.13 Update Category (Admin)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Hỗ Trợ Mổ Tim & Cứu Trợ Trẻ Em\",\n  \"description\": \"Cập nhật mô tả danh mục viện trợ\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/campaigns/categories/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "campaigns",
+                "categories",
+                ":id"
+              ],
               "variable": [
                 {
                   "key": "id",
                   "value": ""
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "4.14 Delete Category (Admin)",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/campaigns/categories/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "campaigns",
+                "categories",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": ""
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "5. Quyên góp & Thanh toán (Donations)",
+      "item": [
+        {
+          "name": "5.1. Tạo lượt quyên góp mới (Public / User)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const response = pm.response.json();",
+                  "if (response && response.data && response.data.id) {",
+                  "    pm.collectionVariables.set('donationId', response.data.id);",
+                  "    console.log('Saved donationId to collection variable:', response.data.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"campaignId\": \"{{campaignId}}\",\n  \"amount\": 200000,\n  \"donorName\": \"Mạnh thường quân hảo tâm\",\n  \"donorEmail\": \"donor@example.com\",\n  \"donorPhone\": \"0987654321\",\n  \"message\": \"Chúc bé An mau chóng bình phục và khỏe mạnh!\",\n  \"isAnonymous\": false,\n  \"paymentMethod\": \"BANK_TRANSFER\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/donations",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "donations"
+              ]
+            }
+          }
+        },
+        {
+          "name": "5.2. Xác nhận thanh toán (Mô phỏng Webhook / IPN - ACID Transaction)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"note\": \"Xác nhận chuyển khoản ngân hàng thành công qua mã đối soát\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/donations/:id/confirm",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "donations",
+                ":id",
+                "confirm"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "{{donationId}}"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "5.3. Danh sách nhà hảo tâm của chiến dịch (Public)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/donations/campaign/:campaignId?page=1&limit=10",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "donations",
+                "campaign",
+                ":campaignId"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ],
+              "variable": [
+                {
+                  "key": "campaignId",
+                  "value": "{{campaignId}}"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "5.4. Lịch sử quyên góp của tôi (User)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/donations/my/history?page=1&limit=10",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "donations",
+                "my",
+                "history"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "5.5. Chi tiết giao dịch quyên góp",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/donations/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "donations",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "{{donationId}}"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "5.6. [ADMIN] Đối soát toàn bộ giao dịch quyên góp",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/donations/admin/all?page=1&limit=20&status=SUCCESS",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "donations",
+                "admin",
+                "all"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                },
+                {
+                  "key": "status",
+                  "value": "SUCCESS"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "6. Quản trị Người dùng (Admin Users)",
+      "item": [
+        {
+          "name": "6.1. [ADMIN] Danh sách tất cả người dùng (Lọc & Phân trang)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users?page=1&limit=10&role=USER&status=ACTIVE",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                },
+                {
+                  "key": "role",
+                  "value": "USER"
+                },
+                {
+                  "key": "status",
+                  "value": "ACTIVE"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "6.2. [ADMIN] Xem chi tiết người dùng",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "{{targetUserId}}"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "6.3. [ADMIN] Khóa / Đổi trạng thái người dùng (ACTIVE / SUSPENDED / BANNED)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"SUSPENDED\",\n  \"reason\": \"Tài khoản có dấu hiệu vi phạm điều khoản gây quỹ\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users/:id/status",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                ":id",
+                "status"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "{{targetUserId}}"
                 }
               ]
             }
