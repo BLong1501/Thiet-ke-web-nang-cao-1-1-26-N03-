@@ -35,18 +35,29 @@ export const CategoryFilter: React.FC<CategoryFilterProps> = ({ selected, onChan
               gap: 6,
               padding: '8px 16px',
               borderRadius: 'var(--radius-full)',
-              border: `1.5px solid ${isActive ? 'transparent' : 'rgba(255,255,255,0.1)'}`,
+              border: `1px solid ${isActive ? 'var(--primary-container)' : 'var(--outline-variant)'}`,
               background: isActive
-                ? 'linear-gradient(135deg, #7c3aed, #4f46e5)'
-                : 'rgba(26,26,46,0.6)',
-              color: isActive ? '#ffffff' : 'var(--text-secondary)',
+                ? 'var(--primary-container)'
+                : 'var(--surface-container-lowest)',
+              color: isActive ? '#ffffff' : 'var(--on-surface-variant)',
               cursor: 'pointer',
               fontFamily: 'var(--font-body)',
-              fontSize: '0.85rem',
-              fontWeight: isActive ? 700 : 500,
-              transition: 'all 0.2s ease',
-              boxShadow: isActive ? '0 4px 16px rgba(124,58,237,0.35)' : 'none',
-              backdropFilter: 'blur(8px)',
+              fontSize: '0.875rem',
+              fontWeight: isActive ? 600 : 500,
+              transition: 'all 0.18s ease',
+              boxShadow: isActive ? '0 2px 8px rgba(37,99,235,0.25)' : 'var(--shadow-xs)',
+            }}
+            onMouseEnter={(e) => {
+              if (!isActive) {
+                (e.currentTarget as HTMLButtonElement).style.background = 'var(--surface-container-low)';
+                (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--outline)';
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (!isActive) {
+                (e.currentTarget as HTMLButtonElement).style.background = 'var(--surface-container-lowest)';
+                (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--outline-variant)';
+              }
             }}
           >
             <span style={{ fontSize: '1rem' }}>{icon}</span>
