@@ -1,0 +1,57 @@
+services:
+  # ============================================================
+  # BACKEND - Node.js + Express + Prisma
+  # ============================================================
+  - type: web
+    name: crowdfunding-backend
+    runtime: node
+    region: singapore
+    plan: free
+    rootDir: backend
+    buildCommand: npm install && npx prisma generate && npm run build
+    startCommand: npm run start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: DATABASE_URL
+        sync: false   # Nhập tay trên Render Dashboard
+      - key: REDIS_URL
+        sync: false   # Nhập tay trên Render Dashboard (Upstash URL)
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_EXPIRES_IN
+        value: 7d
+      - key: JWT_REFRESH_SECRET
+        generateValue: true
+      - key: JWT_REFRESH_EXPIRES_IN
+        value: 30d
+      - key: COOKIE_SECRET
+        generateValue: true
+      - key: CLIENT_URL
+        sync: false   # URL Vercel frontend sau khi deploy
+      - key: APP_URL
+        sync: false   # URL Render backend sau khi deploy
+      - key: SMTP_HOST
+        sync: false
+      - key: SMTP_PORT
+        value: 587
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASS
+        sync: false
+      - key: SMTP_FROM
+        sync: false
+      - key: MINIO_ENDPOINT
+        sync: false
+      - key: MINIO_PORT
+        sync: false
+      - key: MINIO_USE_SSL
+        sync: false
+      - key: MINIO_ROOT_USER
+        sync: false
+      - key: MINIO_ROOT_PASSWORD
+        sync: false
+      - key: MINIO_BUCKET_NAME
+        value: crowdfunding-media
