@@ -91,6 +91,17 @@ export const communityApi = {
   getPosts: (id: string) => api.get(`/communities/${id}/posts`),
 };
 
+// --- Activity Log APIs (Admin) ---
+export const activityLogApi = {
+  getLogs: (params?: Record<string, unknown>) =>
+    api.get('/activity-logs', { params }),
+  getStats: (params?: { from?: string; to?: string }) =>
+    api.get('/activity-logs/stats', { params }),
+  getLogById: (id: string) => api.get(`/activity-logs/${id}`),
+  getUserLogs: (userId: string, params?: Record<string, unknown>) =>
+    api.get(`/activity-logs/user/${userId}`, { params }),
+};
+
 // --- Helper ---
 export const formatCurrency = (amount: number): string => {
   return new Intl.NumberFormat('vi-VN', {

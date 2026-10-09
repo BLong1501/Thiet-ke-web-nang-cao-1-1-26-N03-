@@ -1,0 +1,170 @@
+# BÁO CÁO NGHIỆP VỤ V3: TÌM KIẾM, LỌC, PHÂN TRANG & NHẬT KÝ HỆ THỐNG (AUDIT LOG)
+
+---
+
+## 1. Tổng quan phân hệ đã hoàn thành
+
+Trong đợt phát triển này, toàn bộ yêu cầu nghiệp vụ của **V3** đã được hiện thực trọn vẹn từ **Backend (Kiến trúc Layered Clean Architecture + Prisma ORM + Zod + Audit Middleware)** đến **Frontend (React Hook useSearch + Reusable Pagination + Trang Quản trị Kiểm toán AdminActivityLogsPage)**.
+
+```
+┌────────────────────────────────────────────────────────────────────────┐
+│                        KIẾN TRÚC TỔNG THỂ V3                          │
+├────────────────────────────────────────────────────────────────────────┤
+│                                                                        │
+│   [ Client Browser ]                                                   │
+│          │                                                             │
+│          ├──► [ useSearch Hook ] ───► Đồng bộ 2 chiều URL Query Params │
+│          │                                                             │
+│          ├──► [ Pagination UI ] ────► Hiển thị phân trang thông minh   │
+│          │                                                             │
+│          └──► [ Admin Activity Log Page ]                              │
+│                      │                                                 │
+│                      ▼ (REST API)                                      │
+│   [ Backend Express API ]                                              │
+│          │                                                             │
+│          ├──► [ auditLogMiddleware ] ──► Tự động bắt mọi thay đổi      │
+│          │                                (POST/PUT/PATCH/DELETE)      │
+│          │                                                             │
+│          ├──► [ ActivityLogController ] ──► Controller tầng HTTP       │
+│          │                                                             │
+│          ├──► [ ActivityLogService ] ────► Xử lý tìm kiếm, lọc, stats  │
+│          │                                                             │
+│          ├──► [ ActivityLogRepository ] ──► Prisma Query Builder       │
+│          │                                                             │
+│          └──► [ MySQL Database (Table: audit_logs) ]                   │
+│                                                                        │
+└────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## 2. Chi tiết các thành phần đã triển khai
+
+### 2.1. Backend: Phân hệ Nhật ký hệ thống (Audit Log Module)
+
+| Tập tin | Vai trò & Chức năng |
+|---|---|
+| `backend/src/modules/activity-logs/activity-log.validation.ts` | Schema Zod kiểm định tham số đầu vào (`page`, `limit`, `search`, `action`, `entityName`, `from`, `to`, `sortBy`). |
+| `backend/src/modules/activity-logs/activity-log.repository.ts` | Tương tác CSDL qua Prisma: `findLogs`, `countLogs`, `findById`, `findByUserId`, `getActionStats`, `create`. |
+| `backend/src/modules/activity-logs/activity-log.service.ts` | Nghiệp vụ tìm kiếm đa trường (full-text OR), lọc theo khoảng ngày, phân trang chuẩn và tổng hợp số liệu. |
+| `backend/src/modules/activity-logs/activity-log.controller.ts` | Xử lý request/response HTTP, bóc tách query và trả về định dạng response chuẩn. |
+| `backend/src/modules/activity-logs/activity-log.routes.ts` | Khai báo API router (`/api/v1/activity-logs`), áp dụng phân quyền `ADMIN` và validation middleware. |
+| `backend/src/core/middleware/audit-log.middleware.ts` | **Middleware tự động**: Bắt sự kiện `res.on('finish')` cho mọi yêu cầu làm thay đổi trạng thái (POST, PUT, PATCH, DELETE) mà không làm chậm luồng chính (Non-blocking). |
+| `backend/src/app.ts` | Kích hoạt middleware toàn cục và ánh xạ route `/api/v1/activity-logs`. |
+
+### 2.2. Frontend: Phân hệ Tìm kiếm, Lọc, Phân trang & Quản trị Log
+
+| Tập tin | Vai trò & Chức năng |
+|---|---|
+| `frontend/src/hooks/useSearch.ts` | **Custom Hook `useSearch`**: Quản lý state tìm kiếm, lọc, phân trang; tự động debounce gõ phím; đồng bộ 2 chiều với URL Search Params. |
+| `frontend/src/components/ui/Pagination.tsx` | **Component `Pagination`**: Hiển thị nút phân trang thông minh với dấu ba chấm (`...`), nút Trước/Sau, truy cập tiếp cận (Accessibility). |
+| `frontend/src/pages/AdminActivityLogsPage.tsx` | **Giao diện Quản trị Nhật ký**: 4 KPI cards (Tổng lượt, Đăng nhập, Chiến dịch, KYC), thanh tìm kiếm & lọc kết hợp, bảng dữ liệu, Modal xem chi tiết payload JSON, xuất file JSON. |
+| `frontend/src/pages/CampaignsPage.tsx` | Nâng cấp trang Chiến dịch sử dụng hook `useSearch` + component `Pagination`, tích hợp gọi Backend API kết hợp Mock Data dự phòng. |
+| `frontend/src/services/api.ts` | Thêm các hàm `activityLogApi.getLogs`, `getStats`, `getLogById`, `getUserLogs`. |
+| `frontend/src/App.tsx` | Đăng ký route `/admin/activity-logs` và `/activity-logs`. |
+| `frontend/src/components/layout/Navbar.tsx` | Thêm menu dẫn nhanh đến trang "Nhật ký hệ thống" trên thanh điều hướng và menu cá nhân. |
+| `frontend/src/index.css` | Bổ sung Design System styles cho Pagination và Audit Log. |
+
+---
+
+## 3. Mã giả & Phân tích Thuật toán (Pseudo-code)
+
+### 3.1. Thuật toán Tự động Ghi Nhật ký Phi Chặn (Non-blocking Audit Logging)
+
+```text
+ALGORITHM AuditLogMiddleware(Request req, Response res, NextFunction next)
+BEGIN
+    IF req.method NOT IN ['POST', 'PUT', 'PATCH', 'DELETE'] THEN
+        RETURN next()
+    END IF
+
+    matchedRule = FIND_MATCHING_ROUTE(req.method, req.path)
+    IF matchedRule IS NULL THEN
+        RETURN next()
+    END IF
+
+    // Hook vào sự kiện hoàn tất Response
+    res.ON("finish", ASYNC FUNCTION()
+        IF res.statusCode < 200 OR res.statusCode >= 300 THEN
+            RETURN // Chỉ ghi vết các giao dịch/thao tác thành công
+        END IF
+
+        TRY
+            currentUser = req.user
+            clientIp = GET_CLIENT_IP(req.headers, req.socket)
+            userAgent = req.headers['user-agent']
+            entityId = EXTRACT_ENTITY_ID(req.params, req.body)
+
+            AWAIT ActivityLogRepository.create({
+                userId: currentUser.id,
+                action: matchedRule.action,
+                entityName: matchedRule.entityName,
+                entityId: entityId,
+                details: {
+                    method: req.method,
+                    path: req.path,
+                    statusCode: res.statusCode,
+                    bodySnapshot: SANITIZE_SENSITIVE_DATA(req.body)
+                },
+                ipAddress: clientIp,
+                userAgent: userAgent
+            })
+        CATCH error
+            LOG_ERROR("Không thể ghi log: ", error) // Không ném lỗi ra client
+        END TRY
+    )
+
+    next() // Tiếp tục chuỗi middleware mà không bị tắc nghẽn
+END
+```
+
+*Phân tích*: Việc lắng nghe sự kiện `finish` của HTTP Response đảm bảo mã phản hồi đã được gửi trả cho người dùng ngay lập tức, tác vụ lưu log xuống CSDL chạy bất đồng bộ trong background, giảm thiểu độ trễ (latency = 0ms thêm vào vòng đời request).
+
+---
+
+### 3.2. Thuật toán Sinh Dãy Số Phân trang Thông minh (Smart Ellipsis Pagination)
+
+```text
+ALGORITHM BuildPageRange(currentPage, totalPages, delta = 2)
+BEGIN
+    IF totalPages <= 7 THEN
+        RETURN [1, 2, ..., totalPages]
+    END IF
+
+    range = [1]
+    left = MAX(2, currentPage - delta)
+    right = MIN(totalPages - 1, currentPage + delta)
+
+    IF left > 2 THEN
+        range.APPEND(NULL) // Dấu ba chấm bên trái
+    END IF
+
+    FOR i FROM left TO right DO
+        range.APPEND(i)
+    END FOR
+
+    IF right < totalPages - 1 THEN
+        range.APPEND(NULL) // Dấu ba chấm bên phải
+    END IF
+
+    range.APPEND(totalPages)
+    RETURN range
+END
+```
+
+*Phân tích*: Luôn giới hạn số lượng nút hiển thị trên màn hình tối đa khoảng 7-9 phần tử ngay cả khi cơ sở dữ liệu có hàng ngàn trang, mang lại trải nghiệm người dùng gọn gàng và tránh vỡ giao diện trên thiết bị di động.
+
+---
+
+## 4. Kiểm thử thực tế qua Browser
+
+Browser Subagent đã chạy kiểm thử tự động trên `http://localhost:5173`:
+1. **Kiểm tra `/admin/activity-logs`**:
+   - Header, 4 thẻ thống kê KPI tải dữ liệu chính xác.
+   - Thanh tìm kiếm debounce hoạt động mượt mà khi tìm kiếm từ khóa `"LOGIN"`.
+   - Nút `"Chi tiết"` mở Modal hiển thị đúng định dạng JSON payload và nút `"Đóng"` hoạt động tức thì.
+   - Component phân trang hiển thị đầy đủ tổng số dòng và số trang.
+2. **Kiểm tra `/campaigns`**:
+   - Bộ lọc danh mục ("Giáo dục", "Y tế & Sức khỏe",...) cập nhật danh sách tức thì.
+   - Tìm kiếm từ khóa cập nhật kết quả và hiển thị nút `"Xóa tất cả bộ lọc"`.
+   - Phân trang hoạt động chính xác với kích thước trang chuẩn.

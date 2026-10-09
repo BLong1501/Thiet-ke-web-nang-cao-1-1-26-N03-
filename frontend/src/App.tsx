@@ -10,6 +10,10 @@ import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import CampaignsPage from './pages/CampaignsPage';
 import CampaignDetailPage from './pages/CampaignDetailPage';
+import CreateCampaignPage from './pages/CreateCampaignPage';
+import HowItWorksPage from './pages/HowItWorksPage';
+import ProfilePage from './pages/ProfilePage';
+import AdminActivityLogsPage from './pages/AdminActivityLogsPage';
 
 const App: React.FC = () => {
   return (
@@ -22,7 +26,12 @@ const App: React.FC = () => {
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/campaigns" element={<CampaignsPage />} />
+          <Route path="/campaigns/create" element={<CreateCampaignPage />} />
           <Route path="/campaigns/:id" element={<CampaignDetailPage />} />
+          <Route path="/how-it-works" element={<HowItWorksPage />} />
+          <Route path="/profile" element={<ProfilePage />} />
+          <Route path="/admin/activity-logs" element={<AdminActivityLogsPage />} />
+          <Route path="/activity-logs" element={<AdminActivityLogsPage />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>

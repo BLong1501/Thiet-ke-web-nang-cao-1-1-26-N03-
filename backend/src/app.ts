@@ -2,6 +2,7 @@ import express, { Express, Request, Response, NextFunction } from "express";
 import cors from "cors";
 import helmet from "helmet";
 import cookieParser from "cookie-parser";
+import { auditLogMiddleware } from "./core/middleware/audit-log.middleware";
 
 const app: Express = express();
 
@@ -21,6 +22,7 @@ import authRouter from "./modules/auth/auth.routes";
 import { verificationRouter } from "./modules/verifications/verification.routes";
 import { profileRouter } from "./modules/profile/profile.routes";
 import { campaignRouter } from "./modules/campaigns/campaign.routes";
+import { activityLogRouter } from "./modules/activity-logs/activity-log.routes";
 
 // Health check endpoint
 app.get("/api/v1/health", (_req: Request, res: Response) => {
@@ -31,11 +33,15 @@ app.get("/api/v1/health", (_req: Request, res: Response) => {
   });
 });
 
+// Middleware ghi nhật ký tự động cho các request thay đổi trạng thái
+app.use(auditLogMiddleware);
+
 // Đăng ký các phân hệ Routes v1
 app.use("/api/v1/auth", authRouter);
 app.use("/api/v1/verifications", verificationRouter);
 app.use("/api/v1/profile", profileRouter);
 app.use("/api/v1/campaigns", campaignRouter);
+app.use("/api/v1/activity-logs", activityLogRouter);
 
 import { sendError } from "./core/utils/response.util";
 

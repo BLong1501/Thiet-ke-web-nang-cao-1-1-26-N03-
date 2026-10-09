@@ -7,6 +7,7 @@ const NAV_LINKS = [
   { to: '/campaigns', label: 'Chiến dịch' },
   { to: '/how-it-works', label: 'Cách hoạt động' },
   { to: '/dashboard', label: 'Minh bạch tài chính' },
+  { to: '/admin/activity-logs', label: 'Nhật ký hệ thống' },
 ];
 
 export const Navbar: React.FC = () => {
@@ -223,6 +224,7 @@ export const Navbar: React.FC = () => {
                       { to: '/dashboard', label: '📊 Dashboard', icon: '' },
                       { to: '/profile', label: '👤 Hồ sơ cá nhân', icon: '' },
                       { to: '/campaigns/create', label: '🚀 Tạo chiến dịch', icon: '' },
+                      { to: '/admin/activity-logs', label: '📜 Nhật ký hệ thống', icon: '' },
                     ].map(item => (
                       <Link key={item.to} to={item.to} style={{
                         display: 'block', padding: '9px 12px',
