@@ -2,215 +2,282 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 
-const LoginPage: React.FC = () => {
+export const LoginPage: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
-  const [focusedField, setFocusedField] = useState<string | null>(null);
   const { setUser, isAuthenticated } = useAuthStore();
   const navigate = useNavigate();
 
   useEffect(() => {
-    document.title = 'Đăng nhập - FundVN';
+    document.title = 'Đăng nhập - FundTrust';
     if (isAuthenticated) navigate('/dashboard');
   }, [isAuthenticated, navigate]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleLogin = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
     setError('');
     setIsLoading(true);
-    await new Promise(r => setTimeout(r, 1500));
+    await new Promise((r) => setTimeout(r, 600));
 
-    if (email === 'demo@fundvn.com' || email.includes('@')) {
-      setUser({
-        id: '1', name: 'Nguyễn Văn An', email,
-        avatar: 'https://i.pravatar.cc/150?img=1',
-        role: email.includes('admin') ? 'admin' : 'fundraiser',
-        isVerified: true, joinedAt: '2024-01-15',
-        totalRaised: 150000000,
-      }, 'demo-token-123');
+    if (email.includes('@')) {
+      const role = email.includes('admin') ? 'admin' : email.includes('user') ? 'user' : 'fundraiser';
+      setUser(
+        {
+          id: '1',
+          name: email.includes('admin') ? 'Quản trị viên Hệ thống' : email.includes('user') ? 'Trần Thị Bình' : 'Nguyễn Văn An',
+          email,
+          avatar: 'https://i.pravatar.cc/150?img=1',
+          role: role as any,
+          isVerified: true,
+          joinedAt: '2024-01-15',
+          totalRaised: 150000000,
+          totalDonated: 5000000,
+        },
+        'token-demo-xyz-123'
+      );
       navigate('/dashboard');
     } else {
-      setError('Email hoặc mật khẩu không chính xác. Thử demo@fundvn.com');
+      setError('Vui lòng nhập định dạng email hợp lệ (hoặc chọn tài khoản demo)');
     }
     setIsLoading(false);
   };
 
-  return (
-    <div style={{
-      minHeight: '100vh',
-      background: 'linear-gradient(135deg, #0a0a14, #1a0a2e)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      position: 'relative',
-      overflow: 'hidden',
-      padding: '24px',
-    }}>
-      {/* Background orbs */}
-      {[
-        { w: 400, h: 400, top: '-5%', left: '-10%', color: 'rgba(124,58,237,0.12)' },
-        { w: 300, h: 300, bottom: '5%', right: '-5%', color: 'rgba(79,70,229,0.1)' },
-      ].map((orb, i) => (
-        <div key={i} style={{
-          position: 'absolute',
-          width: orb.w, height: orb.h,
-          top: orb.top, left: (orb as any).left, right: (orb as any).right, bottom: (orb as any).bottom,
-          background: orb.color, borderRadius: '50%', filter: 'blur(60px)',
-          pointerEvents: 'none',
-        }} />
-      ))}
+  const handleQuickLogin = (role: 'fundraiser' | 'admin' | 'user') => {
+    const emailMap = {
+      fundraiser: 'fundraiser@fundtrust.vn',
+      admin: 'admin@fundtrust.vn',
+      user: 'donor@fundtrust.vn',
+    };
+    setEmail(emailMap[role]);
+    setPassword('demo123456');
+    setUser(
+      {
+        id: '1',
+        name: role === 'admin' ? 'Quản trị viên Hệ thống' : role === 'fundraiser' ? 'Nguyễn Văn An' : 'Trần Thị Bình',
+        email: emailMap[role],
+        avatar: role === 'user' ? 'https://i.pravatar.cc/150?img=5' : 'https://i.pravatar.cc/150?img=1',
+        role,
+        isVerified: true,
+        joinedAt: '2024-01-15',
+        totalRaised: role === 'fundraiser' ? 150000000 : 0,
+        totalDonated: role === 'user' ? 8000000 : 2000000,
+      },
+      'token-demo-xyz-123'
+    );
+    navigate('/dashboard');
+  };
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 0, maxWidth: 920, width: '100%', borderRadius: 'var(--radius-2xl)', overflow: 'hidden', boxShadow: '0 30px 80px rgba(0,0,0,0.7)' }}>
-        {/* Left: Branding */}
-        <div style={{
-          background: 'linear-gradient(135deg, #7c3aed, #4f46e5, #06b6d4)',
-          padding: '48px 40px',
-          display: 'flex', flexDirection: 'column',
-          justifyContent: 'space-between',
-          position: 'relative', overflow: 'hidden',
-        }}>
-          <div style={{
-            position: 'absolute', inset: 0,
-            backgroundImage: `linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px)`,
-            backgroundSize: '40px 40px',
-          }} />
-          <div style={{ position: 'relative' }}>
-            <Link to="/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 10, marginBottom: 48 }}>
-              <div style={{ width: 40, height: 40, background: 'rgba(255,255,255,0.2)', borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.3rem' }}>💚</div>
-              <span style={{ fontFamily: 'var(--font-heading)', fontWeight: 800, fontSize: '1.4rem', color: '#fff' }}>FundVN</span>
+  return (
+    <div
+      className="page-enter"
+      style={{
+        minHeight: '100vh',
+        background: 'var(--background)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '32px 16px',
+      }}
+    >
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: '1fr 1fr',
+          maxWidth: 920,
+          width: '100%',
+          background: 'var(--surface-container-lowest)',
+          border: '1px solid var(--outline-variant)',
+          borderRadius: 'var(--radius-xl)',
+          overflow: 'hidden',
+          boxShadow: 'var(--shadow-lg)',
+        }}
+      >
+        {/* Left Side: Brand Visual */}
+        <div
+          style={{
+            background: 'linear-gradient(135deg, var(--primary) 0%, var(--primary-container) 100%)',
+            padding: '48px 40px',
+            color: '#fff',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'space-between',
+            position: 'relative',
+          }}
+        >
+          <div>
+            <Link to="/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 10, marginBottom: 36 }}>
+              <div style={{ width: 36, height: 36, background: '#fff', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--primary)', fontWeight: 800, fontSize: '1.2rem' }}>
+                ⟡
+              </div>
+              <span style={{ fontSize: '1.35rem', fontWeight: 800, color: '#fff', letterSpacing: '-0.02em' }}>
+                FundTrust
+              </span>
             </Link>
-            <h2 style={{ fontFamily: 'var(--font-heading)', color: '#fff', marginBottom: 16, fontSize: '1.8rem', lineHeight: 1.3 }}>
-              Chào mừng trở lại! 👋
+
+            <h2 style={{ fontSize: '1.85rem', fontWeight: 800, color: '#fff', letterSpacing: '-0.03em', lineHeight: 1.3, marginBottom: 16 }}>
+              Chào mừng trở lại với nền tảng gây quỹ minh bạch
             </h2>
-            <p style={{ color: 'rgba(255,255,255,0.75)', lineHeight: 1.7 }}>
-              Đăng nhập để quản lý chiến dịch, theo dõi quyên góp và kết nối với cộng đồng.
+            <p style={{ color: 'rgba(255,255,255,0.85)', fontSize: '0.9375rem', lineHeight: 1.6, margin: 0 }}>
+              Đăng nhập để theo dõi dòng tiền ủng hộ, cập nhật tiến độ chiến dịch và kiểm toán sao kê thời gian thực.
             </p>
           </div>
 
-          <div style={{ position: 'relative' }}>
-            {[
-              { icon: '🔒', text: 'Bảo mật tuyệt đối với SSL' },
-              { icon: '💳', text: 'Đa dạng phương thức thanh toán' },
-              { icon: '📊', text: 'Minh bạch 100% tài chính' },
-            ].map(({ icon, text }) => (
-              <div key={text} style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14 }}>
-                <div style={{ width: 32, height: 32, background: 'rgba(255,255,255,0.15)', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.9rem', flexShrink: 0 }}>{icon}</div>
-                <span style={{ color: 'rgba(255,255,255,0.85)', fontSize: '0.875rem' }}>{text}</span>
-              </div>
-            ))}
+          <div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 40 }}>
+              {[
+                { icon: '🛡️', text: '100% người gây quỹ xác minh danh tính KYC' },
+                { icon: '🏦', text: 'Tài khoản ký quỹ bảo lãnh đối soát ngân hàng' },
+                { icon: '🧾', text: 'Sao kê tự động đính kèm hóa đơn đỏ' },
+              ].map((item, idx) => (
+                <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 12, fontSize: '0.875rem' }}>
+                  <span style={{ fontSize: '1.1rem' }}>{item.icon}</span>
+                  <span style={{ opacity: 0.95 }}>{item.text}</span>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
 
-        {/* Right: Form */}
-        <div style={{
-          background: 'rgba(15,15,26,0.98)',
-          backdropFilter: 'blur(20px)',
-          padding: '48px 40px',
-        }}>
-          <h3 style={{ fontFamily: 'var(--font-heading)', marginBottom: 8, fontSize: '1.5rem' }}>Đăng nhập</h3>
-          <p style={{ color: 'var(--text-muted)', marginBottom: 28, fontSize: '0.875rem' }}>
+        {/* Right Side: Login Form */}
+        <div style={{ padding: '48px 40px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+          <h3 style={{ margin: '0 0 8px', fontSize: '1.5rem', fontWeight: 800, color: 'var(--on-surface)', letterSpacing: '-0.02em' }}>
+            Đăng nhập tài khoản
+          </h3>
+          <p style={{ margin: '0 0 24px', fontSize: '0.875rem', color: 'var(--on-surface-variant)' }}>
             Chưa có tài khoản?{' '}
-            <Link to="/register" style={{ color: 'var(--primary-400)', fontWeight: 600, textDecoration: 'none' }}>
-              Đăng ký ngay
+            <Link to="/register" style={{ color: 'var(--primary)', fontWeight: 600, textDecoration: 'none' }}>
+              Đăng ký thành viên
             </Link>
           </p>
 
-          {/* Social login */}
-          <div style={{ display: 'flex', gap: 10, marginBottom: 24 }}>
-            {[{ icon: '🇬', label: 'Google' }, { icon: '📘', label: 'Facebook' }].map(({ icon, label }) => (
-              <button key={label} style={{
-                flex: 1, padding: '11px',
-                background: 'rgba(255,255,255,0.04)',
-                border: '1px solid rgba(255,255,255,0.1)',
-                borderRadius: 'var(--radius-md)', color: 'var(--text-secondary)',
-                cursor: 'pointer', fontSize: '0.875rem',
-                fontFamily: 'var(--font-body)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-              }}>
-                {icon} {label}
+          {/* Quick Demo Logins */}
+          <div style={{ marginBottom: 24, padding: '14px', background: 'var(--surface-container-low)', borderRadius: 12, border: '1px solid var(--outline-variant)' }}>
+            <span style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--on-surface-variant)', textTransform: 'uppercase', marginBottom: 8 }}>
+              ⚡ Đăng nhập nhanh 1 chạm (Tài khoản mẫu):
+            </span>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
+              <button
+                type="button"
+                onClick={() => handleQuickLogin('fundraiser')}
+                style={{
+                  padding: '8px 4px',
+                  borderRadius: 8,
+                  border: '1px solid var(--outline-variant)',
+                  background: 'var(--surface-container-lowest)',
+                  color: 'var(--primary)',
+                  fontSize: '0.75rem',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                }}
+              >
+                🎯 Fundraiser
               </button>
-            ))}
+              <button
+                type="button"
+                onClick={() => handleQuickLogin('admin')}
+                style={{
+                  padding: '8px 4px',
+                  borderRadius: 8,
+                  border: '1px solid var(--outline-variant)',
+                  background: 'var(--surface-container-lowest)',
+                  color: '#dc2626',
+                  fontSize: '0.75rem',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                }}
+              >
+                🛡️ Admin
+              </button>
+              <button
+                type="button"
+                onClick={() => handleQuickLogin('user')}
+                style={{
+                  padding: '8px 4px',
+                  borderRadius: 8,
+                  border: '1px solid var(--outline-variant)',
+                  background: 'var(--surface-container-lowest)',
+                  color: '#059669',
+                  fontSize: '0.75rem',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                }}
+              >
+                ❤️ Nhà hảo tâm
+              </button>
+            </div>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24 }}>
-            <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,0.08)' }} />
-            <span style={{ fontSize: '0.78rem', color: 'var(--text-disabled)' }}>hoặc</span>
-            <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,0.08)' }} />
-          </div>
+          {error && (
+            <div style={{ padding: '10px 14px', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 8, color: '#dc2626', fontSize: '0.8125rem', marginBottom: 16 }}>
+              {error}
+            </div>
+          )}
 
-          <form onSubmit={handleSubmit}>
-            {error && (
-              <div style={{
-                padding: '12px 16px', marginBottom: 18,
-                background: 'rgba(239,68,68,0.1)',
-                border: '1px solid rgba(239,68,68,0.3)',
-                borderRadius: 'var(--radius-md)',
-                color: '#f87171', fontSize: '0.85rem',
-                display: 'flex', alignItems: 'center', gap: 8,
-              }}>
-                ⚠️ {error}
-              </div>
-            )}
-
+          <form onSubmit={handleLogin}>
             <div style={{ marginBottom: 16 }}>
-              <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 6 }}>
-                Email
+              <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, color: 'var(--on-surface)', marginBottom: 6 }}>
+                Email đăng nhập
               </label>
               <input
                 type="email"
+                placeholder="example@fundtrust.vn"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                onFocus={() => setFocusedField('email')}
-                onBlur={() => setFocusedField(null)}
-                placeholder="email@example.com"
                 required
                 style={{
-                  width: '100%', padding: '12px 16px',
-                  background: focusedField === 'email' ? 'rgba(124,58,237,0.08)' : 'rgba(18,18,42,0.8)',
-                  border: `1.5px solid ${focusedField === 'email' ? 'rgba(124,58,237,0.5)' : 'rgba(255,255,255,0.1)'}`,
-                  borderRadius: 'var(--radius-md)',
-                  color: 'var(--text-primary)', fontSize: '0.9rem', outline: 'none',
-                  fontFamily: 'var(--font-body)', boxSizing: 'border-box',
-                  transition: 'all 0.2s ease',
-                  boxShadow: focusedField === 'email' ? '0 0 0 3px rgba(124,58,237,0.12)' : 'none',
+                  width: '100%',
+                  boxSizing: 'border-box',
+                  padding: '11px 14px',
+                  borderRadius: 10,
+                  border: '1px solid var(--outline-variant)',
+                  fontSize: '0.9rem',
+                  outline: 'none',
                 }}
               />
             </div>
 
             <div style={{ marginBottom: 20 }}>
-              <label style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 6 }}>
-                <span>Mật khẩu</span>
-                <a href="#" style={{ color: 'var(--primary-400)', fontWeight: 400, textDecoration: 'none' }}>Quên mật khẩu?</a>
-              </label>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+                <label style={{ fontSize: '0.8125rem', fontWeight: 600, color: 'var(--on-surface)' }}>
+                  Mật khẩu
+                </label>
+                <a href="#forgot" onClick={(e) => { e.preventDefault(); alert('Vui lòng sử dụng tính năng Đăng nhập nhanh 1 chạm!'); }} style={{ fontSize: '0.75rem', color: 'var(--primary)', textDecoration: 'none' }}>
+                  Quên mật khẩu?
+                </a>
+              </div>
               <div style={{ position: 'relative' }}>
                 <input
                   type={showPassword ? 'text' : 'password'}
+                  placeholder="••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  onFocus={() => setFocusedField('password')}
-                  onBlur={() => setFocusedField(null)}
-                  placeholder="••••••••"
                   required
                   style={{
-                    width: '100%', padding: '12px 48px 12px 16px',
-                    background: focusedField === 'password' ? 'rgba(124,58,237,0.08)' : 'rgba(18,18,42,0.8)',
-                    border: `1.5px solid ${focusedField === 'password' ? 'rgba(124,58,237,0.5)' : 'rgba(255,255,255,0.1)'}`,
-                    borderRadius: 'var(--radius-md)',
-                    color: 'var(--text-primary)', fontSize: '0.9rem', outline: 'none',
-                    fontFamily: 'var(--font-body)', boxSizing: 'border-box',
-                    transition: 'all 0.2s ease',
+                    width: '100%',
+                    boxSizing: 'border-box',
+                    padding: '11px 40px 11px 14px',
+                    borderRadius: 10,
+                    border: '1px solid var(--outline-variant)',
+                    fontSize: '0.9rem',
+                    outline: 'none',
                   }}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
                   style={{
-                    position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)',
-                    background: 'none', border: 'none', cursor: 'pointer',
-                    color: 'var(--text-muted)', fontSize: '1rem',
+                    position: 'absolute',
+                    right: 12,
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    fontSize: '0.9rem',
+                    color: 'var(--outline)',
                   }}
                 >
                   {showPassword ? '🙈' : '👁️'}
@@ -222,45 +289,24 @@ const LoginPage: React.FC = () => {
               type="submit"
               disabled={isLoading}
               style={{
-                width: '100%', padding: '14px',
-                background: isLoading ? 'rgba(124,58,237,0.5)' : 'linear-gradient(135deg, #7c3aed, #4f46e5)',
-                border: 'none', borderRadius: 'var(--radius-md)',
-                color: '#fff', cursor: isLoading ? 'not-allowed' : 'pointer',
-                fontSize: '1rem', fontWeight: 700,
-                fontFamily: 'var(--font-heading)',
-                boxShadow: isLoading ? 'none' : '0 6px 24px rgba(124,58,237,0.4)',
-                transition: 'all 0.3s ease',
-                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                width: '100%',
+                padding: '12px',
+                borderRadius: 10,
+                border: 'none',
+                background: 'var(--primary-container)',
+                color: '#fff',
+                fontSize: '0.9375rem',
+                fontWeight: 600,
+                cursor: isLoading ? 'not-allowed' : 'pointer',
+                boxShadow: '0 2px 10px rgba(37,99,235,0.3)',
+                transition: 'all 0.18s ease',
               }}
             >
-              {isLoading ? (
-                <>
-                  <div style={{ width: 18, height: 18, border: '2px solid rgba(255,255,255,0.3)', borderTopColor: '#fff', borderRadius: '50%', animation: 'spin 0.7s linear infinite' }} />
-                  Đang đăng nhập...
-                </>
-              ) : '🚀 Đăng nhập'}
+              {isLoading ? 'Đang xác thực...' : 'Đăng nhập vào hệ thống'}
             </button>
           </form>
-
-          {/* Demo hint */}
-          <div style={{
-            marginTop: 20, padding: '12px', textAlign: 'center',
-            background: 'rgba(6,182,212,0.08)',
-            border: '1px solid rgba(6,182,212,0.2)',
-            borderRadius: 'var(--radius-md)',
-            fontSize: '0.78rem', color: 'var(--cyan-400)',
-          }}>
-            💡 Demo: nhập bất kỳ email hợp lệ + mật khẩu bất kỳ
-          </div>
         </div>
       </div>
-
-      <style>{`
-        @media (max-width: 700px) {
-          .login-grid { grid-template-columns: 1fr !important; }
-          .login-left { display: none !important; }
-        }
-      `}</style>
     </div>
   );
 };

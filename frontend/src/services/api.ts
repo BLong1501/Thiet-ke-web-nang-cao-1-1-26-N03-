@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { useAuthStore } from '../store/authStore';
 
-const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api/v1';
+const BASE_URL = (import.meta as any).env.VITE_API_URL || 'http://localhost:3000/api/v1';
 
 export const api = axios.create({
   baseURL: BASE_URL,
@@ -89,6 +89,17 @@ export const communityApi = {
   join: (id: string) => api.post(`/communities/${id}/join`),
   leave: (id: string) => api.post(`/communities/${id}/leave`),
   getPosts: (id: string) => api.get(`/communities/${id}/posts`),
+};
+
+// --- Activity Log APIs (Admin) ---
+export const activityLogApi = {
+  getLogs: (params?: Record<string, unknown>) =>
+    api.get('/activity-logs', { params }),
+  getStats: (params?: { from?: string; to?: string }) =>
+    api.get('/activity-logs/stats', { params }),
+  getLogById: (id: string) => api.get(`/activity-logs/${id}`),
+  getUserLogs: (userId: string, params?: Record<string, unknown>) =>
+    api.get(`/activity-logs/user/${userId}`, { params }),
 };
 
 // --- Helper ---

@@ -2,193 +2,202 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 
 const FOOTER_LINKS = {
-  'Về FundVN': [
-    { label: 'Giới thiệu', to: '#' },
-    { label: 'Đội ngũ', to: '#' },
-    { label: 'Điều khoản', to: '#' },
-    { label: 'Chính sách bảo mật', to: '#' },
+  'Khám phá': [
+    { label: 'Tất cả chiến dịch', to: '/campaigns' },
+    { label: 'Y tế & Sức khỏe', to: '/campaigns?category=y-te' },
+    { label: 'Giáo dục', to: '/campaigns?category=giao-duc' },
+    { label: 'Môi trường', to: '/campaigns?category=moi-truong' },
+    { label: 'Cứu trợ khẩn cấp', to: '/campaigns?category=cuu-tro' },
   ],
-  'Cho người quyên góp': [
-    { label: 'Cách quyên góp', to: '#' },
-    { label: 'Bảo đảm an toàn', to: '#' },
-    { label: 'Câu hỏi thường gặp', to: '#' },
+  'Về FundTrust': [
+    { label: 'Câu chuyện của chúng tôi', to: '/about' },
+    { label: 'Quy trình xác minh A-to-Z', to: '/verification' },
+    { label: 'Báo cáo minh bạch', to: '/transparency' },
+    { label: 'Đối tác kiểm toán', to: '/partners' },
+    { label: 'Báo cáo tác động hàng năm', to: '/impact' },
   ],
-  'Cho người gây quỹ': [
-    { label: 'Bắt đầu chiến dịch', to: '/campaigns/create' },
-    { label: 'Xác minh tài khoản', to: '#' },
-    { label: 'Hướng dẫn gây quỹ', to: '#' },
+  'Minh bạch & Bảo mật': [
+    { label: 'Sổ cái tài chính công khai', to: '/ledger' },
+    { label: 'Chính sách bảo vệ người dùng', to: '/privacy' },
+    { label: 'Cơ chế hoàn tiền', to: '/refund' },
+    { label: 'Điều khoản sử dụng', to: '/terms' },
+    { label: 'Hỏi đáp thường gặp', to: '/faq' },
   ],
 };
 
 export const Footer: React.FC = () => {
   return (
     <footer style={{
-      background: 'linear-gradient(180deg, var(--bg-base) 0%, #0a0a18 100%)',
-      borderTop: '1px solid rgba(255,255,255,0.06)',
-      paddingTop: 64,
+      background: 'var(--surface-container-lowest)',
+      borderTop: '1px solid var(--outline-variant)',
     }}>
-      <div style={{ maxWidth: 1280, margin: '0 auto', padding: '0 24px' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr', gap: 40, marginBottom: 48 }}>
-          {/* Brand */}
-          <div>
-            <Link to="/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
-              <div style={{
-                width: 40, height: 40,
-                background: 'linear-gradient(135deg, #7c3aed, #4f46e5)',
-                borderRadius: 12,
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: '1.4rem',
-              }}>💚</div>
-              <span style={{
-                fontFamily: 'var(--font-heading)',
-                fontWeight: 800, fontSize: '1.5rem',
-                background: 'linear-gradient(135deg, #a78bfa, #6366f1, #22d3ee)',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-                backgroundClip: 'text',
-              }}>FundVN</span>
-            </Link>
-            <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', lineHeight: 1.7, maxWidth: 280 }}>
-              Nền tảng gây quỹ cộng đồng hàng đầu Việt Nam. Kết nối những tấm lòng vàng với các chiến dịch ý nghĩa.
-            </p>
-            <div style={{ display: 'flex', gap: 10, marginTop: 20 }}>
-              {['Facebook', 'Twitter', 'Instagram', 'YouTube'].map((social) => (
-                <a key={social} href="#" style={{
-                  width: 36, height: 36,
-                  background: 'rgba(255,255,255,0.05)',
-                  border: '1px solid rgba(255,255,255,0.1)',
-                  borderRadius: 'var(--radius-md)',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  textDecoration: 'none', color: 'var(--text-muted)',
-                  fontSize: '0.75rem', fontWeight: 600,
-                  transition: 'all 0.2s ease',
-                }}>
-                  {social[0]}
-                </a>
-              ))}
-            </div>
-          </div>
-
-          {/* Links */}
-          {Object.entries(FOOTER_LINKS).map(([category, links]) => (
-            <div key={category}>
-              <h4 style={{
-                fontFamily: 'var(--font-heading)',
-                fontSize: '0.85rem', fontWeight: 700,
-                color: 'var(--text-primary)',
-                marginBottom: 16,
-                textTransform: 'uppercase',
-                letterSpacing: '0.05em',
-              }}>
-                {category}
+      {/* Newsletter CTA */}
+      <div style={{
+        borderBottom: '1px solid var(--outline-variant)',
+        padding: '40px 0',
+        background: 'var(--surface-container-low)',
+      }}>
+        <div className="container">
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 32, flexWrap: 'wrap' }}>
+            <div>
+              <h4 style={{ marginBottom: 6, color: 'var(--on-surface)', letterSpacing: '-0.015em' }}>
+                📩 Nhận thông tin chiến dịch mới nhất
               </h4>
-              <ul style={{ listStyle: 'none', padding: 0, display: 'flex', flexDirection: 'column', gap: 10 }}>
-                {links.map(({ label, to }) => (
-                  <li key={label}>
-                    <Link to={to} style={{
-                      textDecoration: 'none',
-                      color: 'var(--text-muted)',
-                      fontSize: '0.875rem',
-                      transition: 'color 0.2s ease',
-                    }}
-                      onMouseEnter={e => (e.currentTarget.style.color = 'var(--primary-400)')}
-                      onMouseLeave={e => (e.currentTarget.style.color = 'var(--text-muted)')}
-                    >
-                      {label}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
+              <p style={{ margin: 0, fontSize: '0.875rem', color: 'var(--on-surface-variant)' }}>
+                Cập nhật ngay các chiến dịch cần sự hỗ trợ khẩn cấp.
+              </p>
             </div>
-          ))}
-        </div>
-
-        {/* Newsletter */}
-        <div style={{
-          background: 'linear-gradient(135deg, rgba(124,58,237,0.1), rgba(79,70,229,0.05))',
-          border: '1px solid rgba(124,58,237,0.2)',
-          borderRadius: 'var(--radius-xl)',
-          padding: '28px 32px',
-          marginBottom: 40,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          gap: 20,
-          flexWrap: 'wrap',
-        }}>
-          <div>
-            <h3 style={{ fontFamily: 'var(--font-heading)', marginBottom: 6, fontSize: '1.1rem' }}>
-              📩 Nhận thông tin chiến dịch mới nhất
-            </h3>
-            <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', margin: 0 }}>
-              Cập nhật ngay các chiến dịch cần sự hỗ trợ khẩn cấp.
-            </p>
-          </div>
-          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-            <input
-              type="email"
-              placeholder="Email của bạn..."
-              style={{
-                padding: '10px 16px', background: 'rgba(18,18,42,0.8)',
-                border: '1px solid rgba(255,255,255,0.1)', borderRadius: 'var(--radius-md)',
-                color: 'var(--text-primary)', fontSize: '0.875rem', outline: 'none',
-                fontFamily: 'var(--font-body)', minWidth: 220,
+            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+              <input
+                type="email"
+                placeholder="Email của bạn..."
+                style={{
+                  height: 44, padding: '0 16px',
+                  background: 'var(--surface-container-lowest)',
+                  border: '1px solid var(--outline-variant)', borderRadius: 10,
+                  color: 'var(--on-surface)', fontSize: '0.9rem',
+                  fontFamily: 'var(--font-body)', outline: 'none',
+                  minWidth: 240,
+                  transition: 'border-color 0.18s ease',
+                }}
+                onFocus={e => (e.currentTarget as HTMLInputElement).style.borderColor = 'var(--primary-container)'}
+                onBlur={e => (e.currentTarget as HTMLInputElement).style.borderColor = 'var(--outline-variant)'}
+              />
+              <button style={{
+                height: 44, padding: '0 20px',
+                background: 'var(--primary-container)',
+                border: 'none', borderRadius: 10,
+                color: '#fff', fontFamily: 'var(--font-body)',
+                fontSize: '0.875rem', fontWeight: 600, cursor: 'pointer',
+                boxShadow: '0 2px 8px rgba(37,99,235,0.25)',
+                transition: 'all 0.18s ease',
               }}
-            />
-            <button style={{
-              padding: '10px 20px',
-              background: 'linear-gradient(135deg, #7c3aed, #4f46e5)',
-              border: 'none', borderRadius: 'var(--radius-md)',
-              color: '#fff', cursor: 'pointer', fontSize: '0.875rem', fontWeight: 600,
-              fontFamily: 'var(--font-body)',
-              boxShadow: '0 4px 16px rgba(124,58,237,0.35)',
-            }}>
-              Đăng ký
-            </button>
-          </div>
-        </div>
-
-        {/* Bottom bar */}
-        <div style={{
-          borderTop: '1px solid rgba(255,255,255,0.06)',
-          padding: '20px 0',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          flexWrap: 'wrap',
-          gap: 12,
-        }}>
-          <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', margin: 0 }}>
-            © 2026 FundVN. Được xây dựng với ❤️ tại Việt Nam. Nhóm N03 - CĐ09.
-          </p>
-          <div style={{ display: 'flex', gap: 16 }}>
-            {['Điều khoản', 'Bảo mật', 'Cookie'].map((item) => (
-              <a key={item} href="#" style={{
-                fontSize: '0.82rem', color: 'var(--text-muted)',
-                textDecoration: 'none', transition: 'color 0.2s',
-              }}
-                onMouseEnter={e => (e.currentTarget.style.color = 'var(--text-secondary)')}
-                onMouseLeave={e => (e.currentTarget.style.color = 'var(--text-muted)')}
+                onMouseEnter={e => (e.currentTarget as HTMLButtonElement).style.background = 'var(--primary)'}
+                onMouseLeave={e => (e.currentTarget as HTMLButtonElement).style.background = 'var(--primary-container)'}
               >
-                {item}
-              </a>
+                Đăng ký
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Main footer */}
+      <div style={{ padding: '56px 0 40px' }}>
+        <div className="container">
+          <div style={{ display: 'grid', gridTemplateColumns: '280px repeat(3, 1fr)', gap: 48 }}>
+            {/* Brand */}
+            <div>
+              <Link to="/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
+                <div style={{
+                  width: 32, height: 32,
+                  background: 'linear-gradient(135deg, var(--primary), var(--primary-container))',
+                  borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}>
+                  <span style={{ fontSize: '1rem', filter: 'brightness(0) invert(1)' }}>⟡</span>
+                </div>
+                <span style={{ fontWeight: 800, fontSize: '1.0625rem', letterSpacing: '-0.025em', color: 'var(--on-surface)' }}>
+                  Fund<span style={{ color: 'var(--primary-container)' }}>Trust</span>
+                </span>
+              </Link>
+              <p style={{
+                fontSize: '0.875rem', color: 'var(--on-surface-variant)',
+                lineHeight: 1.65, marginBottom: 20,
+              }}>
+                Gây quỹ minh bạch. Trao niềm tin đúng nơi. Nền tảng xác minh 100% A-to-Z đầu tiên tại Việt Nam.
+              </p>
+              {/* Trust badges */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {[
+                  '✓ Xác minh bởi Bộ Thông tin & Truyền thông',
+                  '🏦 Tài khoản tín thác MB Bank',
+                  '🔒 Mã hóa SSL 256-bit',
+                ].map((badge, i) => (
+                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span style={{ fontSize: '0.75rem', color: 'var(--on-surface-variant)', fontWeight: 500 }}>{badge}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Link columns */}
+            {Object.entries(FOOTER_LINKS).map(([title, links]) => (
+              <div key={title}>
+                <h6 style={{
+                  marginBottom: 16,
+                  color: 'var(--on-surface)',
+                  fontSize: '0.875rem',
+                  fontWeight: 700,
+                  letterSpacing: '-0.01em',
+                }}>
+                  {title}
+                </h6>
+                <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  {links.map(link => (
+                    <li key={link.to}>
+                      <Link to={link.to} style={{
+                        fontSize: '0.875rem',
+                        color: 'var(--on-surface-variant)',
+                        textDecoration: 'none',
+                        transition: 'color 0.15s ease',
+                        fontWeight: 400,
+                      }}
+                        onMouseEnter={e => (e.currentTarget as HTMLAnchorElement).style.color = 'var(--primary-container)'}
+                        onMouseLeave={e => (e.currentTarget as HTMLAnchorElement).style.color = 'var(--on-surface-variant)'}
+                      >
+                        {link.label}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </div>
             ))}
           </div>
         </div>
       </div>
 
-      <style>{`
-        @media (max-width: 900px) {
-          footer > div > div:first-child {
-            grid-template-columns: 1fr 1fr !important;
-          }
-        }
-        @media (max-width: 600px) {
-          footer > div > div:first-child {
-            grid-template-columns: 1fr !important;
-          }
-        }
-      `}</style>
+      {/* Bottom bar */}
+      <div style={{ borderTop: '1px solid var(--outline-variant)', padding: '20px 0' }}>
+        <div className="container">
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
+            <p style={{ margin: 0, fontSize: '0.8125rem', color: 'var(--outline)' }}>
+              © 2026 FundTrust Technologies Inc. Bảo lưu mọi quyền lợi.
+            </p>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
+              {['Điều khoản', 'Bảo mật', 'Cookie'].map((item, i) => (
+                <a key={i} href="#" style={{
+                  fontSize: '0.8125rem', color: 'var(--outline)',
+                  textDecoration: 'none', transition: 'color 0.15s',
+                }}
+                  onMouseEnter={e => (e.currentTarget as HTMLAnchorElement).style.color = 'var(--primary-container)'}
+                  onMouseLeave={e => (e.currentTarget as HTMLAnchorElement).style.color = 'var(--outline)'}
+                >
+                  {item}
+                </a>
+              ))}
+              {/* Social icons */}
+              <div style={{ display: 'flex', gap: 8 }}>
+                {['FB', 'TW', 'IG'].map((s, i) => (
+                  <a key={i} href="#" style={{
+                    width: 32, height: 32, borderRadius: 8,
+                    background: 'var(--surface-container)',
+                    border: '1px solid var(--outline-variant)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: '0.7rem', fontWeight: 700,
+                    color: 'var(--on-surface-variant)', textDecoration: 'none',
+                    transition: 'all 0.15s ease',
+                  }}
+                    onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.background = 'var(--primary-fixed)'; (e.currentTarget as HTMLAnchorElement).style.color = 'var(--primary-container)'; }}
+                    onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.background = 'var(--surface-container)'; (e.currentTarget as HTMLAnchorElement).style.color = 'var(--on-surface-variant)'; }}
+                  >
+                    {s}
+                  </a>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </footer>
   );
 };

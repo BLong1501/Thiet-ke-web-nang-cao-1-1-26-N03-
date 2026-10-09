@@ -3,11 +3,12 @@ import { useParams, Link } from 'react-router-dom';
 import { mockCampaigns, mockDonations } from '../data/mockData';
 import { DonationModal } from '../components/ui/DonationModal';
 import ProgressBar from '../components/ui/ProgressBar';
+import { CampaignCard } from '../components/ui/CampaignCard';
 import { formatCurrency, getDaysLeft, getProgress, formatDate } from '../services/api';
 import { CATEGORY_LABELS, CATEGORY_ICONS } from '../types';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
-// Mock chart data
+// Mock chart data for donation timeline
 const CHART_DATA = [
   { date: '01/09', amount: 12000000 },
   { date: '05/09', amount: 28000000 },
@@ -18,482 +19,684 @@ const CHART_DATA = [
   { date: '22/09', amount: 378000000 },
 ];
 
+const DISBURSEMENT_RECORDS = [
+  {
+    id: 'DSB-001',
+    date: '15/09/2026',
+    purpose: 'Tạm ứng đợt 1 - Mua vật liệu xây dựng (Xi măng, gạch, thép)',
+    recipient: 'Công ty VLXD Hà Giang Xanh',
+    amount: 150000000,
+    proofUrl: 'https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?w=400&q=80',
+    status: 'Đã giải ngân & nghiệm thu',
+  },
+  {
+    id: 'DSB-002',
+    date: '22/09/2026',
+    purpose: 'Chi trả nhân công thi công móng và khung nhà lớp học',
+    recipient: 'Đội thi công bản Lũng Cú',
+    amount: 75000000,
+    proofUrl: 'https://images.unsplash.com/photo-1450133064473-71024230f91b?w=400&q=80',
+    status: 'Đã giải ngân & nghiệm thu',
+  },
+];
+
 const CampaignDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const [activeTab, setActiveTab] = useState<'story' | 'updates' | 'donors' | 'report'>('story');
   const [showDonateModal, setShowDonateModal] = useState(false);
-  const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [copiedShare, setCopiedShare] = useState(false);
+  const [selectedProof, setSelectedProof] = useState<string | null>(null);
 
-  const campaign = mockCampaigns.find(c => c.id === id) || mockCampaigns[0];
+  const campaign = mockCampaigns.find((c) => c.id === id) || mockCampaigns[0];
   const progress = getProgress(campaign.raisedAmount, campaign.targetAmount);
   const daysLeft = getDaysLeft(campaign.deadline);
-  const donations = mockDonations.slice(0, 5);
+  const donations = mockDonations;
+  const relatedCampaigns = mockCampaigns.filter((c) => c.id !== campaign.id).slice(0, 3);
 
   useEffect(() => {
-    document.title = `${campaign.title} - FundVN`;
+    document.title = `${campaign.title} - FundTrust`;
     window.scrollTo(0, 0);
-  }, [campaign.title]);
+  }, [campaign.title, id]);
+
+  const handleShare = () => {
+    navigator.clipboard.writeText(window.location.href);
+    setCopiedShare(true);
+    setTimeout(() => setCopiedShare(false), 2500);
+  };
 
   const tabs = [
-    { key: 'story', label: '📖 Câu chuyện' },
-    { key: 'updates', label: '📣 Cập nhật' },
-    { key: 'donors', label: `❤️ Người ủng hộ (${campaign.donorCount.toLocaleString('vi-VN')})` },
-    { key: 'report', label: '📊 Báo cáo' },
+    { key: 'story', label: '📖 Câu chuyện hoàn cảnh' },
+    { key: 'updates', label: `📣 Cập nhật tiến độ (${campaign.updates?.length || 2})` },
+    { key: 'donors', label: `❤️ Danh sách ủng hộ (${campaign.donorCount.toLocaleString('vi-VN')})` },
+    { key: 'report', label: '📊 Sao kê & Minh bạch tài chính' },
   ];
 
   return (
-    <div className="page-enter" style={{ minHeight: '100vh', background: 'var(--bg-base)' }}>
-      {/* Breadcrumb */}
-      <div style={{
-        background: 'rgba(10,10,20,0.8)',
-        backdropFilter: 'blur(10px)',
-        borderBottom: '1px solid rgba(255,255,255,0.06)',
-        padding: '14px 24px',
-      }}>
-        <div style={{ maxWidth: 1200, margin: '0 auto', display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.82rem' }}>
-          <Link to="/" style={{ color: 'var(--text-muted)', textDecoration: 'none' }}>Trang chủ</Link>
-          <span style={{ color: 'var(--text-disabled)' }}>›</span>
-          <Link to="/campaigns" style={{ color: 'var(--text-muted)', textDecoration: 'none' }}>Chiến dịch</Link>
-          <span style={{ color: 'var(--text-disabled)' }}>›</span>
-          <span style={{ color: 'var(--text-secondary)', maxWidth: 300, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+    <div className="page-enter" style={{ minHeight: '100vh', background: 'var(--background)' }}>
+      {/* Breadcrumb Bar */}
+      <div
+        style={{
+          background: 'var(--surface-container-low)',
+          borderBottom: '1px solid var(--outline-variant)',
+          padding: '12px 0',
+        }}
+      >
+        <div className="container" style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.85rem' }}>
+          <Link to="/" style={{ color: 'var(--on-surface-variant)', textDecoration: 'none' }}>
+            Trang chủ
+          </Link>
+          <span style={{ color: 'var(--outline)' }}>/</span>
+          <Link to="/campaigns" style={{ color: 'var(--on-surface-variant)', textDecoration: 'none' }}>
+            Chiến dịch
+          </Link>
+          <span style={{ color: 'var(--outline)' }}>/</span>
+          <span
+            style={{
+              color: 'var(--primary)',
+              fontWeight: 500,
+              maxWidth: 320,
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+            }}
+          >
             {campaign.title}
           </span>
         </div>
       </div>
 
-      <div style={{ maxWidth: 1200, margin: '0 auto', padding: '32px 24px' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 380px', gap: 32, alignItems: 'start' }}>
-          {/* Left: Main content */}
-          <div>
-            {/* Category badge */}
-            <div style={{
-              display: 'inline-flex', alignItems: 'center', gap: 6,
-              background: 'rgba(124,58,237,0.15)',
-              border: '1px solid rgba(124,58,237,0.3)',
-              borderRadius: 'var(--radius-full)',
-              padding: '4px 12px', marginBottom: 16,
-              fontSize: '0.8rem', fontWeight: 600, color: 'var(--primary-400)',
-            }}>
+      <div className="container" style={{ padding: '36px var(--gutter)' }}>
+        {/* Top Header Section */}
+        <div style={{ marginBottom: 28 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+            <span
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 5,
+                background: 'var(--primary-fixed)',
+                color: 'var(--primary)',
+                padding: '4px 12px',
+                borderRadius: 'var(--radius-full)',
+                fontSize: '0.75rem',
+                fontWeight: 700,
+                textTransform: 'uppercase',
+              }}
+            >
               {CATEGORY_ICONS[campaign.category]} {CATEGORY_LABELS[campaign.category]}
-            </div>
+            </span>
+            <span
+              style={{
+                background: '#ecfdf5',
+                color: '#059669',
+                padding: '4px 10px',
+                borderRadius: 'var(--radius-full)',
+                fontSize: '0.75rem',
+                fontWeight: 600,
+              }}
+            >
+              ✓ Đã xác minh thực địa KYC
+            </span>
+          </div>
 
-            {/* Title */}
-            <h1 style={{
-              fontFamily: 'var(--font-heading)',
-              fontSize: 'clamp(1.5rem, 3vw, 2.2rem)',
+          <h1
+            style={{
+              fontSize: 'clamp(1.5rem, 3.2vw, 2.25rem)',
+              fontWeight: 800,
+              letterSpacing: '-0.03em',
+              color: 'var(--on-surface)',
               lineHeight: 1.3,
-              marginBottom: 16,
-            }}>
-              {campaign.title}
-            </h1>
+              margin: '0 0 16px',
+            }}
+          >
+            {campaign.title}
+          </h1>
 
-            {/* Creator info */}
-            <div style={{
-              display: 'flex', alignItems: 'center', gap: 12,
-              marginBottom: 24,
+          {/* Organizer Card */}
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 14,
               padding: '12px 16px',
-              background: 'rgba(26,26,46,0.6)',
-              border: '1px solid rgba(255,255,255,0.06)',
+              background: 'var(--surface-container-lowest)',
+              border: '1px solid var(--outline-variant)',
               borderRadius: 'var(--radius-lg)',
-            }}>
-              <img
-                src={campaign.creator.avatar || ''}
-                alt={campaign.creator.name}
-                style={{ width: 44, height: 44, borderRadius: '50%', objectFit: 'cover', border: '2px solid rgba(124,58,237,0.4)' }}
-              />
-              <div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
-                  <span style={{ fontWeight: 700, fontSize: '0.9rem' }}>{campaign.creator.name}</span>
-                  {campaign.creator.isVerified && (
-                    <span style={{
-                      background: 'rgba(16,185,129,0.15)',
-                      border: '1px solid rgba(16,185,129,0.3)',
-                      borderRadius: 'var(--radius-full)',
-                      padding: '1px 7px', fontSize: '0.68rem',
-                      color: 'var(--emerald-400)', fontWeight: 700,
-                    }}>
-                      ✓ Đã xác minh
-                    </span>
-                  )}
-                </div>
-                <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
-                  Người tổ chức · Đã tham gia từ {formatDate(campaign.creator.joinedAt)}
+              maxWidth: 'max-content',
+            }}
+          >
+            <img
+              src={campaign.creator.avatar || 'https://i.pravatar.cc/150?img=1'}
+              alt={campaign.creator.name}
+              style={{ width: 44, height: 44, borderRadius: '50%', objectFit: 'cover' }}
+            />
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <span style={{ fontWeight: 700, fontSize: '0.9375rem', color: 'var(--on-surface)' }}>
+                  {campaign.creator.name}
+                </span>
+                <span style={{ color: 'var(--primary)', fontSize: '0.9rem' }} title="Đã xác minh danh tính CCCD/VNeID">
+                  🛡️
                 </span>
               </div>
-              <div style={{ marginLeft: 'auto', display: 'flex', gap: 8 }}>
-                <button style={{
-                  padding: '7px 14px', background: 'rgba(255,255,255,0.05)',
-                  border: '1px solid rgba(255,255,255,0.1)',
-                  borderRadius: 'var(--radius-md)', color: 'var(--text-secondary)',
-                  cursor: 'pointer', fontSize: '0.8rem', fontFamily: 'var(--font-body)',
-                }}>
-                  Theo dõi
-                </button>
-                <button style={{
-                  padding: '7px 14px', background: 'rgba(255,255,255,0.05)',
-                  border: '1px solid rgba(255,255,255,0.1)',
-                  borderRadius: 'var(--radius-md)', color: 'var(--text-secondary)',
-                  cursor: 'pointer', fontSize: '0.8rem', fontFamily: 'var(--font-body)',
-                }}>
-                  Nhắn tin
-                </button>
+              <div style={{ fontSize: '0.8125rem', color: 'var(--on-surface-variant)' }}>
+                Tổ chức đại diện • Đã thực hiện gây quỹ minh bạch từ {campaign.creator.joinedAt}
               </div>
             </div>
+          </div>
+        </div>
 
-            {/* Main image */}
-            <div style={{
-              position: 'relative', borderRadius: 'var(--radius-xl)',
-              overflow: 'hidden', marginBottom: 24,
-              height: 400,
-              cursor: 'pointer',
-            }} onClick={() => setSelectedImage(campaign.thumbnail)}>
+        {/* 2-Column Layout */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 380px', gap: 32, alignItems: 'start' }}>
+          {/* Main Column */}
+          <div>
+            {/* Primary Cover Image */}
+            <div
+              style={{
+                borderRadius: 'var(--radius-xl)',
+                overflow: 'hidden',
+                position: 'relative',
+                height: 420,
+                border: '1px solid var(--outline-variant)',
+                boxShadow: 'var(--shadow-sm)',
+                marginBottom: 32,
+              }}
+            >
               <img
                 src={campaign.thumbnail}
                 alt={campaign.title}
                 style={{ width: '100%', height: '100%', objectFit: 'cover' }}
               />
-              <div style={{
-                position: 'absolute', inset: 0,
-                background: 'linear-gradient(to top, rgba(10,10,20,0.4) 0%, transparent 60%)',
-              }} />
-              <div style={{
-                position: 'absolute', bottom: 16, right: 16,
-                background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(8px)',
-                borderRadius: 'var(--radius-md)', padding: '8px 12px',
-                fontSize: '0.8rem', color: '#fff',
-                display: 'flex', alignItems: 'center', gap: 6,
-              }}>
-                🔍 Phóng to
-              </div>
             </div>
 
-            {/* Tabs */}
-            <div style={{
-              display: 'flex', gap: 4, marginBottom: 28,
-              borderBottom: '1px solid rgba(255,255,255,0.07)',
-              overflowX: 'auto',
-            }}>
-              {tabs.map(({ key, label }) => (
+            {/* Tab navigation */}
+            <div
+              style={{
+                display: 'flex',
+                borderBottom: '1px solid var(--outline-variant)',
+                gap: 8,
+                marginBottom: 28,
+                overflowX: 'auto',
+              }}
+            >
+              {tabs.map((tab) => (
                 <button
-                  key={key}
-                  onClick={() => setActiveTab(key as typeof activeTab)}
+                  key={tab.key}
+                  type="button"
+                  onClick={() => setActiveTab(tab.key as any)}
                   style={{
                     padding: '12px 18px',
-                    background: 'none', border: 'none',
-                    color: activeTab === key ? 'var(--primary-400)' : 'var(--text-muted)',
-                    fontWeight: activeTab === key ? 700 : 400,
-                    fontSize: '0.875rem',
+                    border: 'none',
+                    borderBottom: `2.5px solid ${activeTab === tab.key ? 'var(--primary-container)' : 'transparent'}`,
+                    background: 'transparent',
+                    color: activeTab === tab.key ? 'var(--primary)' : 'var(--on-surface-variant)',
+                    fontWeight: activeTab === tab.key ? 700 : 500,
+                    fontSize: '0.9375rem',
                     cursor: 'pointer',
-                    fontFamily: 'var(--font-body)',
-                    borderBottom: `2px solid ${activeTab === key ? 'var(--primary-500)' : 'transparent'}`,
-                    marginBottom: -1,
                     whiteSpace: 'nowrap',
-                    transition: 'all 0.2s ease',
+                    transition: 'all 0.15s ease',
                   }}
                 >
-                  {label}
+                  {tab.label}
                 </button>
               ))}
             </div>
 
-            {/* Tab content */}
+            {/* TAB CONTENT: 1. STORY */}
             {activeTab === 'story' && (
-              <div>
-                <div style={{
-                  background: 'rgba(26,26,46,0.4)',
-                  border: '1px solid rgba(255,255,255,0.06)',
-                  borderRadius: 'var(--radius-xl)',
-                  padding: '28px',
-                }}>
-                  <h3 style={{ fontFamily: 'var(--font-heading)', marginBottom: 16 }}>Về chiến dịch này</h3>
-                  <p style={{ lineHeight: 1.8, color: 'var(--text-secondary)', marginBottom: 16 }}>
-                    {campaign.description}
+              <div style={{ background: 'var(--surface-container-lowest)', border: '1px solid var(--outline-variant)', borderRadius: 'var(--radius-lg)', padding: '32px' }}>
+                <div style={{ fontSize: '1.0625rem', lineHeight: 1.8, color: 'var(--on-surface)', marginBottom: 28 }}>
+                  <p style={{ fontWeight: 600, color: 'var(--primary)', marginBottom: 16 }}>
+                    {campaign.shortDesc}
                   </p>
-                  <p style={{ lineHeight: 1.8, color: 'var(--text-secondary)', marginBottom: 16 }}>
-                    Với sự hỗ trợ từ cộng đồng, chúng tôi đã tiến được {getProgress(campaign.raisedAmount, campaign.targetAmount)}% mục tiêu. Mỗi khoản đóng góp, dù lớn hay nhỏ, đều mang ý nghĩa đặc biệt.
-                  </p>
-                  <p style={{ lineHeight: 1.8, color: 'var(--text-secondary)' }}>
-                    Toàn bộ số tiền gây quỹ sẽ được sử dụng minh bạch và có báo cáo đầy đủ. Chúng tôi cam kết sử dụng đúng mục đích và công bố kết quả sau khi chiến dịch kết thúc.
+                  <p>{campaign.description}</p>
+                  <p>
+                    Theo khảo sát thực tế tại địa bàn, tình trạng cơ sở vật chất xuống cấp nghiêm trọng gây ảnh hưởng lớn đến đời sống sinh hoạt và tương lai của các đối tượng thụ hưởng. Chiến dịch cam kết 100% số tiền sau khi đóng quỹ sẽ được giải ngân trực tiếp theo từng giai đoạn và có hóa đơn, chứng từ thanh toán công khai.
                   </p>
                 </div>
 
-                {/* Tags */}
-                {campaign.tags && (
-                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 20 }}>
-                    {campaign.tags.map(tag => (
-                      <span key={tag} style={{
-                        padding: '4px 12px',
-                        background: 'rgba(124,58,237,0.1)',
-                        border: '1px solid rgba(124,58,237,0.2)',
-                        borderRadius: 'var(--radius-full)',
-                        fontSize: '0.78rem', color: 'var(--primary-400)',
-                      }}>
-                        #{tag}
-                      </span>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-
-            {activeTab === 'updates' && (
-              <div>
-                {[
-                  { date: '20/09/2026', title: 'Cập nhật tiến độ tháng 9', content: 'Chúng tôi vui mừng thông báo đã đạt 75% mục tiêu! Quá trình xây dựng đang diễn ra suôn sẻ. Dự kiến hoàn thành vào tháng 11.' },
-                  { date: '10/09/2026', title: 'Khởi công xây dựng', content: 'Ngày 10/9, chúng tôi đã chính thức khởi công xây dựng. Cảm ơn tất cả những nhà hảo tâm đã đồng hành!' },
-                ].map((update, i) => (
-                  <div key={i} style={{
-                    padding: '24px',
-                    background: 'rgba(26,26,46,0.4)',
-                    border: '1px solid rgba(255,255,255,0.06)',
-                    borderRadius: 'var(--radius-xl)',
-                    marginBottom: 16,
-                  }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
-                      <h4 style={{ fontFamily: 'var(--font-heading)', fontSize: '1rem', margin: 0 }}>{update.title}</h4>
-                      <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', flexShrink: 0, marginLeft: 12 }}>{update.date}</span>
-                    </div>
-                    <p style={{ fontSize: '0.9rem', lineHeight: 1.7, margin: 0 }}>{update.content}</p>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {activeTab === 'donors' && (
-              <div>
-                {donations.map((donation, i) => (
-                  <div key={i} style={{
-                    display: 'flex', alignItems: 'center', gap: 14,
-                    padding: '16px',
-                    background: 'rgba(26,26,46,0.4)',
-                    border: '1px solid rgba(255,255,255,0.06)',
-                    borderRadius: 'var(--radius-lg)',
-                    marginBottom: 10,
-                  }}>
-                    <div style={{
-                      width: 44, height: 44, borderRadius: '50%',
-                      background: 'linear-gradient(135deg, #7c3aed, #4f46e5)',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      fontSize: '1.2rem', flexShrink: 0,
-                    }}>
-                      {donation.isAnonymous ? '🎭' : '👤'}
-                    </div>
-                    <div style={{ flex: 1 }}>
-                      <div style={{ fontWeight: 600, fontSize: '0.9rem', marginBottom: 3 }}>
-                        {donation.isAnonymous ? 'Ẩn danh' : donation.donor?.name}
+                {/* Impact highlights */}
+                <h3 style={{ fontSize: '1.125rem', fontWeight: 700, marginBottom: 16, color: 'var(--on-surface)' }}>
+                  🎯 Kế hoạch phân bổ ngân sách dự kiến:
+                </h3>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14, marginBottom: 32 }}>
+                  {[
+                    { label: 'Cơ sở vật chất & Vật tư', pct: '65%', desc: 'Thi công xây dựng, trang thiết bị trực tiếp' },
+                    { label: 'Hỗ trợ khẩn cấp / Dinh dưỡng', pct: '25%', desc: 'Thuốc men, nhu yếu phẩm thiết yếu' },
+                    { label: 'Quản lý & Giám sát thực địa', pct: '10%', desc: 'Chi phí vận chuyển & thẩm định chứng từ' },
+                  ].map((item, idx) => (
+                    <div key={idx} style={{ padding: '16px', background: 'var(--surface-container-low)', borderRadius: 12, border: '1px solid var(--outline-variant)' }}>
+                      <div style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--primary)', marginBottom: 4 }}>
+                        {item.pct}
                       </div>
-                      {donation.message && (
-                        <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontStyle: 'italic' }}>
-                          "{donation.message}"
+                      <div style={{ fontWeight: 600, fontSize: '0.875rem', marginBottom: 4, color: 'var(--on-surface)' }}>
+                        {item.label}
+                      </div>
+                      <div style={{ fontSize: '0.75rem', color: 'var(--on-surface-variant)' }}>{item.desc}</div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Transparency Commitment Box */}
+                <div style={{ padding: '20px', background: '#eff6ff', borderRadius: 12, border: '1px solid #bfdbfe', display: 'flex', gap: 16, alignItems: 'center' }}>
+                  <span style={{ fontSize: '2rem' }}>🛡️</span>
+                  <div>
+                    <h4 style={{ margin: '0 0 4px', color: '#1e40af', fontSize: '0.9375rem' }}>
+                      Cam kết bảo vệ nhà hảo tâm 100%
+                    </h4>
+                    <p style={{ margin: 0, fontSize: '0.8125rem', color: '#1e3a8a', lineHeight: 1.5 }}>
+                      Tiền quyên góp được lưu trữ tại tài khoản ký quỹ trung gian của ngân hàng đối tác. Quỹ chỉ giải ngân khi người đại diện cung cấp đầy đủ hóa đơn đỏ, hợp đồng dịch vụ và biên bản nghiệm thu hợp lệ.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* TAB CONTENT: 2. UPDATES */}
+            {activeTab === 'updates' && (
+              <div style={{ background: 'var(--surface-container-lowest)', border: '1px solid var(--outline-variant)', borderRadius: 'var(--radius-lg)', padding: '32px' }}>
+                <h3 style={{ fontSize: '1.125rem', fontWeight: 700, marginBottom: 24, color: 'var(--on-surface)' }}>
+                  Nhật ký tiến độ thực hiện
+                </h3>
+
+                <div style={{ position: 'relative', paddingLeft: 24, borderLeft: '2px solid var(--primary-fixed)' }}>
+                  {[
+                    {
+                      date: '24/09/2026',
+                      title: 'Hoàn thành đổ bê tông phần móng & dựng cột khung trường học',
+                      content: 'Đội thi công đã hoàn tất nghiệm thu đợt 1. Toàn bộ hình ảnh thực địa và hóa đơn mua sắm vật liệu đã được đính kèm vào mục Sao kê.',
+                      images: ['https://images.unsplash.com/photo-1541888946425-d0fbb18f15f7?w=400&q=80'],
+                    },
+                    {
+                      date: '10/09/2026',
+                      title: 'Khởi công dự án và tiếp nhận máy móc san lấp mặt bằng',
+                      content: 'Lễ khởi công có sự chứng kiến của chính quyền địa phương xã và đại diện các bậc phụ huynh.',
+                      images: ['https://images.unsplash.com/photo-1509062522246-3755977927d7?w=400&q=80'],
+                    },
+                  ].map((upd, idx) => (
+                    <div key={idx} style={{ position: 'relative', marginBottom: 32 }}>
+                      <div
+                        style={{
+                          position: 'absolute',
+                          left: -31,
+                          top: 4,
+                          width: 14,
+                          height: 14,
+                          borderRadius: '50%',
+                          background: 'var(--primary-container)',
+                          border: '3px solid #fff',
+                        }}
+                      />
+                      <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--primary)', textTransform: 'uppercase' }}>
+                        {upd.date}
+                      </span>
+                      <h4 style={{ margin: '6px 0 10px', fontSize: '1rem', color: 'var(--on-surface)' }}>
+                        {upd.title}
+                      </h4>
+                      <p style={{ margin: '0 0 14px', fontSize: '0.875rem', color: 'var(--on-surface-variant)', lineHeight: 1.6 }}>
+                        {upd.content}
+                      </p>
+                      {upd.images && (
+                        <div style={{ display: 'flex', gap: 12 }}>
+                          {upd.images.map((img, i) => (
+                            <img
+                              key={i}
+                              src={img}
+                              alt="Minh chứng"
+                              style={{ width: 140, height: 90, borderRadius: 8, objectFit: 'cover', border: '1px solid var(--outline-variant)' }}
+                            />
+                          ))}
                         </div>
                       )}
                     </div>
-                    <div style={{ textAlign: 'right' }}>
-                      <div style={{
-                        fontWeight: 800, fontSize: '1rem',
-                        background: 'linear-gradient(135deg, #a78bfa, #6366f1)',
-                        WebkitBackgroundClip: 'text',
-                        WebkitTextFillColor: 'transparent',
-                        backgroundClip: 'text',
-                      }}>
-                        {formatCurrency(donation.amount)}
-                      </div>
-                      <div style={{ fontSize: '0.72rem', color: 'var(--text-disabled)' }}>
-                        {formatDate(donation.createdAt)}
-                      </div>
-                    </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
             )}
 
-            {activeTab === 'report' && (
-              <div>
-                <div style={{
-                  background: 'rgba(26,26,46,0.4)',
-                  border: '1px solid rgba(255,255,255,0.06)',
-                  borderRadius: 'var(--radius-xl)',
-                  padding: '24px',
-                  marginBottom: 20,
-                }}>
-                  <h3 style={{ fontFamily: 'var(--font-heading)', marginBottom: 20, fontSize: '1.1rem' }}>
-                    📈 Biểu đồ tiến độ gây quỹ
+            {/* TAB CONTENT: 3. DONORS */}
+            {activeTab === 'donors' && (
+              <div style={{ background: 'var(--surface-container-lowest)', border: '1px solid var(--outline-variant)', borderRadius: 'var(--radius-lg)', padding: '32px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+                  <h3 style={{ margin: 0, fontSize: '1.125rem', fontWeight: 700, color: 'var(--on-surface)' }}>
+                    Danh sách những tấm lòng vàng ({donations.length})
                   </h3>
-                  <ResponsiveContainer width="100%" height={240}>
-                    <AreaChart data={CHART_DATA}>
-                      <defs>
-                        <linearGradient id="colorAmount" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="#7c3aed" stopOpacity={0.3} />
-                          <stop offset="95%" stopColor="#7c3aed" stopOpacity={0} />
-                        </linearGradient>
-                      </defs>
-                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-                      <XAxis dataKey="date" stroke="rgba(255,255,255,0.3)" fontSize={11} />
-                      <YAxis stroke="rgba(255,255,255,0.3)" fontSize={11} tickFormatter={(v) => `${(v / 1000000).toFixed(0)}M`} />
-                      <Tooltip
-                        contentStyle={{ background: '#1a1a2e', border: '1px solid rgba(124,58,237,0.3)', borderRadius: 10 }}
-                        labelStyle={{ color: 'var(--text-secondary)' }}
-                        formatter={(v: number) => [formatCurrency(v), 'Đã gây quỹ']}
-                      />
-                      <Area type="monotone" dataKey="amount" stroke="#7c3aed" strokeWidth={2} fill="url(#colorAmount)" />
-                    </AreaChart>
-                  </ResponsiveContainer>
+                  <span style={{ fontSize: '0.8125rem', color: 'var(--on-surface-variant)' }}>
+                    Cập nhật thời gian thực
+                  </span>
                 </div>
-                <div style={{ display: 'flex', gap: 14 }}>
-                  <button style={{
-                    flex: 1, padding: '12px',
-                    background: 'rgba(26,26,46,0.6)',
-                    border: '1px solid rgba(255,255,255,0.1)',
-                    borderRadius: 'var(--radius-md)', color: 'var(--text-secondary)',
-                    cursor: 'pointer', fontSize: '0.875rem',
-                    fontFamily: 'var(--font-body)', display: 'flex',
-                    alignItems: 'center', justifyContent: 'center', gap: 8,
-                  }}>
-                    📄 Xuất PDF
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                  {donations.map((d) => (
+                    <div
+                      key={d.id}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        padding: '14px 18px',
+                        background: 'var(--surface-container-low)',
+                        borderRadius: 12,
+                        border: '1px solid var(--outline-variant)',
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+                        <div
+                          style={{
+                            width: 40,
+                            height: 40,
+                            borderRadius: '50%',
+                            background: d.isAnonymous ? 'var(--surface-container-high)' : 'var(--primary-fixed)',
+                            color: 'var(--primary)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            fontWeight: 700,
+                            fontSize: '0.9rem',
+                          }}
+                        >
+                          {d.isAnonymous ? '👤' : (d.donor?.name || 'K')[0]}
+                        </div>
+                        <div>
+                          <div style={{ fontWeight: 600, fontSize: '0.9rem', color: 'var(--on-surface)' }}>
+                            {d.isAnonymous ? 'Nhà hảo tâm ẩn danh' : d.donor?.name || 'Ủng hộ viên'}
+                          </div>
+                          {d.message && (
+                            <div style={{ fontSize: '0.8125rem', color: 'var(--on-surface-variant)', fontStyle: 'italic', marginTop: 2 }}>
+                              "{d.message}"
+                            </div>
+                          )}
+                          <div style={{ fontSize: '0.75rem', color: 'var(--outline)', marginTop: 2 }}>
+                            {formatDate(d.createdAt)}
+                          </div>
+                        </div>
+                      </div>
+                      <div style={{ textAlign: 'right' }}>
+                        <div style={{ fontWeight: 700, fontSize: '1rem', color: 'var(--primary)' }}>
+                          +{formatCurrency(d.amount)}
+                        </div>
+                        <span style={{ fontSize: '0.6875rem', color: '#059669', background: '#ecfdf5', padding: '2px 8px', borderRadius: 10 }}>
+                          ✓ Đã ghi sổ
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* TAB CONTENT: 4. REPORT & TRANSPARENCY */}
+            {activeTab === 'report' && (
+              <div style={{ background: 'var(--surface-container-lowest)', border: '1px solid var(--outline-variant)', borderRadius: 'var(--radius-lg)', padding: '32px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 16, marginBottom: 24 }}>
+                  <div>
+                    <h3 style={{ margin: '0 0 6px', fontSize: '1.125rem', fontWeight: 700, color: 'var(--on-surface)' }}>
+                      Sổ cái sao kê & Chứng từ tài chính
+                    </h3>
+                    <p style={{ margin: 0, fontSize: '0.8125rem', color: 'var(--on-surface-variant)' }}>
+                      Mã hợp đồng giám sát quỹ: <strong>FT-ESCROW-2026-HG01</strong> (Ngân hàng đối tác bảo chứng)
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => alert('Đang tạo tệp báo cáo sao kê điện tử PDF/Excel...')}
+                    style={{
+                      padding: '8px 16px',
+                      borderRadius: 8,
+                      border: '1px solid var(--outline-variant)',
+                      background: 'var(--surface-container-low)',
+                      color: 'var(--primary)',
+                      fontSize: '0.8125rem',
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                    }}
+                  >
+                    📥 Tải bản sao kê đầy đủ (PDF/Excel)
                   </button>
-                  <button style={{
-                    flex: 1, padding: '12px',
-                    background: 'rgba(26,26,46,0.6)',
-                    border: '1px solid rgba(255,255,255,0.1)',
-                    borderRadius: 'var(--radius-md)', color: 'var(--text-secondary)',
-                    cursor: 'pointer', fontSize: '0.875rem',
-                    fontFamily: 'var(--font-body)', display: 'flex',
-                    alignItems: 'center', justifyContent: 'center', gap: 8,
-                  }}>
-                    📊 Xuất CSV
-                  </button>
+                </div>
+
+                {/* Financial Summary KPI Cards */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14, marginBottom: 28 }}>
+                  <div style={{ padding: '16px', background: 'var(--surface-container-low)', borderRadius: 12, border: '1px solid var(--outline-variant)' }}>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--on-surface-variant)', marginBottom: 4 }}>Tổng quyên góp nhận vào</div>
+                    <div style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--primary)' }}>
+                      {formatCurrency(campaign.raisedAmount)}
+                    </div>
+                  </div>
+                  <div style={{ padding: '16px', background: 'var(--surface-container-low)', borderRadius: 12, border: '1px solid var(--outline-variant)' }}>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--on-surface-variant)', marginBottom: 4 }}>Đã giải ngân thực tế</div>
+                    <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#dc2626' }}>
+                      {formatCurrency(225000000)}
+                    </div>
+                  </div>
+                  <div style={{ padding: '16px', background: 'var(--surface-container-low)', borderRadius: 12, border: '1px solid var(--outline-variant)' }}>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--on-surface-variant)', marginBottom: 4 }}>Số dư tồn ký quỹ bảo lãnh</div>
+                    <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#059669' }}>
+                      {formatCurrency(campaign.raisedAmount - 225000000)}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Disbursement Ledger Table */}
+                <h4 style={{ margin: '0 0 14px', fontSize: '0.9375rem', fontWeight: 700, color: 'var(--on-surface)' }}>
+                  Chi tiết các khoản đã chi trả & Nghiệm thu
+                </h4>
+                <div style={{ overflowX: 'auto' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8125rem' }}>
+                    <thead>
+                      <tr style={{ background: 'var(--surface-container-low)', borderBottom: '1px solid var(--outline-variant)', textAlign: 'left' }}>
+                        <th style={{ padding: '10px 12px', color: 'var(--on-surface-variant)' }}>Mã đợt</th>
+                        <th style={{ padding: '10px 12px', color: 'var(--on-surface-variant)' }}>Ngày</th>
+                        <th style={{ padding: '10px 12px', color: 'var(--on-surface-variant)' }}>Nội dung chi</th>
+                        <th style={{ padding: '10px 12px', color: 'var(--on-surface-variant)' }}>Bên thụ hưởng</th>
+                        <th style={{ padding: '10px 12px', color: 'var(--on-surface-variant)', textAlign: 'right' }}>Số tiền</th>
+                        <th style={{ padding: '10px 12px', color: 'var(--on-surface-variant)', textAlign: 'center' }}>Chứng từ</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {DISBURSEMENT_RECORDS.map((rec) => (
+                        <tr key={rec.id} style={{ borderBottom: '1px solid var(--outline-variant)' }}>
+                          <td style={{ padding: '12px', fontWeight: 600 }}>{rec.id}</td>
+                          <td style={{ padding: '12px' }}>{rec.date}</td>
+                          <td style={{ padding: '12px' }}>{rec.purpose}</td>
+                          <td style={{ padding: '12px' }}>{rec.recipient}</td>
+                          <td style={{ padding: '12px', textAlign: 'right', fontWeight: 700, color: '#dc2626' }}>
+                            -{formatCurrency(rec.amount)}
+                          </td>
+                          <td style={{ padding: '12px', textAlign: 'center' }}>
+                            <button
+                              type="button"
+                              onClick={() => setSelectedProof(rec.proofUrl)}
+                              style={{
+                                background: 'var(--primary-fixed)',
+                                border: 'none',
+                                borderRadius: 6,
+                                padding: '4px 10px',
+                                color: 'var(--primary)',
+                                fontSize: '0.75rem',
+                                fontWeight: 600,
+                                cursor: 'pointer',
+                              }}
+                            >
+                              🔍 Xem hóa đơn
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Donation progression chart */}
+                <div style={{ marginTop: 32 }}>
+                  <h4 style={{ margin: '0 0 16px', fontSize: '0.9375rem', fontWeight: 700, color: 'var(--on-surface)' }}>
+                    Biểu đồ tăng trưởng dòng tiền gây quỹ
+                  </h4>
+                  <div style={{ width: '100%', height: 220 }}>
+                    <ResponsiveContainer width="100%" height="100%">
+                      <AreaChart data={CHART_DATA}>
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--outline-variant)" />
+                        <XAxis dataKey="date" tick={{ fill: 'var(--on-surface-variant)', fontSize: 12 }} />
+                        <YAxis tick={{ fill: 'var(--on-surface-variant)', fontSize: 11 }} tickFormatter={(val) => `${val / 1000000}tr`} />
+                        <Tooltip formatter={(value: any) => [formatCurrency(Number(value)), 'Tổng quỹ lũy kế']} />
+                        <Area type="monotone" dataKey="amount" stroke="var(--primary-container)" fill="var(--primary-fixed)" />
+                      </AreaChart>
+                    </ResponsiveContainer>
+                  </div>
                 </div>
               </div>
             )}
           </div>
 
-          {/* Right: Sticky donation panel */}
-          <div style={{ position: 'sticky', top: 90 }}>
-            <div style={{
-              background: 'linear-gradient(135deg, rgba(26,26,46,0.9), rgba(22,33,62,0.8))',
-              backdropFilter: 'blur(20px)',
-              border: '1px solid rgba(124,58,237,0.25)',
-              borderRadius: 'var(--radius-xl)',
-              padding: '24px',
-              boxShadow: '0 20px 60px rgba(0,0,0,0.5)',
-            }}>
-              {/* Amount raised */}
-              <div style={{ marginBottom: 18 }}>
-                <div style={{
-                  fontSize: '1.8rem', fontWeight: 900,
-                  fontFamily: 'var(--font-heading)',
-                  background: 'linear-gradient(135deg, #a78bfa, #6366f1)',
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent',
-                  backgroundClip: 'text',
-                  marginBottom: 4,
-                }}>
+          {/* Sticky Sidebar Right Column */}
+          <div style={{ position: 'sticky', top: 84 }}>
+            <div
+              style={{
+                background: 'var(--surface-container-lowest)',
+                border: '1px solid var(--outline-variant)',
+                borderRadius: 'var(--radius-xl)',
+                padding: '24px',
+                boxShadow: 'var(--shadow-md)',
+              }}
+            >
+              {/* Target & Raised Numbers */}
+              <div style={{ marginBottom: 16 }}>
+                <span style={{ fontSize: '0.8125rem', color: 'var(--on-surface-variant)' }}>Đã vận động được</span>
+                <div style={{ fontSize: '1.75rem', fontWeight: 800, color: 'var(--primary)', letterSpacing: '-0.02em', margin: '4px 0' }}>
                   {formatCurrency(campaign.raisedAmount)}
                 </div>
-                <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-                  đã đạt được từ mục tiêu {formatCurrency(campaign.targetAmount)}
+                <div style={{ fontSize: '0.875rem', color: 'var(--on-surface-variant)' }}>
+                  mục tiêu: <strong>{formatCurrency(campaign.targetAmount)}</strong>
                 </div>
               </div>
 
-              {/* Progress */}
-              <ProgressBar value={progress} height={10} />
-
-              <div style={{ display: 'flex', gap: 4, alignItems: 'center', marginTop: 8, marginBottom: 24 }}>
-                <span style={{
-                  fontSize: '1.1rem', fontWeight: 800,
-                  color: progress >= 100 ? 'var(--emerald-400)' : 'var(--primary-400)',
-                }}>
-                  {progress}%
-                </span>
-                <span style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>mục tiêu</span>
+              {/* Progress Bar */}
+              <div style={{ marginBottom: 20 }}>
+                <ProgressBar value={progress} height={10} />
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 8, fontSize: '0.8125rem' }}>
+                  <span style={{ fontWeight: 700, color: 'var(--primary)' }}>{progress}% đạt được</span>
+                  <span style={{ color: 'var(--on-surface-variant)' }}>{campaign.donorCount} lượt ủng hộ</span>
+                </div>
               </div>
 
-              {/* Stats grid */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10, marginBottom: 24 }}>
-                {[
-                  { value: campaign.donorCount.toLocaleString('vi-VN'), label: 'người ủng hộ', icon: '❤️' },
-                  { value: `${daysLeft}`, label: 'ngày còn lại', icon: '⏳' },
-                  { value: `${progress}%`, label: 'hoàn thành', icon: '🎯' },
-                ].map(({ value, label, icon }) => (
-                  <div key={label} style={{
-                    textAlign: 'center', padding: '12px 8px',
-                    background: 'rgba(255,255,255,0.04)',
-                    borderRadius: 'var(--radius-md)',
-                    border: '1px solid rgba(255,255,255,0.06)',
-                  }}>
-                    <div style={{ fontSize: '1rem', marginBottom: 2 }}>{icon}</div>
-                    <div style={{ fontWeight: 800, fontSize: '1rem', fontFamily: 'var(--font-heading)', color: 'var(--text-primary)' }}>{value}</div>
-                    <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>{label}</div>
-                  </div>
-                ))}
+              {/* Meta stats */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, padding: '14px', background: 'var(--surface-container-low)', borderRadius: 12, marginBottom: 22 }}>
+                <div>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--on-surface-variant)' }}>Thời gian còn lại</div>
+                  <strong style={{ fontSize: '1.1rem', color: daysLeft <= 7 ? '#dc2626' : 'var(--on-surface)' }}>
+                    {daysLeft > 0 ? `${daysLeft} ngày` : 'Đã kết thúc'}
+                  </strong>
+                </div>
+                <div>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--on-surface-variant)' }}>Hạn chót</div>
+                  <strong style={{ fontSize: '0.9rem', color: 'var(--on-surface)' }}>
+                    {formatDate(campaign.deadline)}
+                  </strong>
+                </div>
               </div>
 
-              {/* Donate button */}
+              {/* Primary Action Button */}
               <button
+                type="button"
                 onClick={() => setShowDonateModal(true)}
                 style={{
-                  width: '100%', padding: '16px',
-                  background: 'linear-gradient(135deg, #7c3aed, #4f46e5, #06b6d4)',
-                  border: 'none', borderRadius: 'var(--radius-md)',
-                  color: '#fff', cursor: 'pointer',
-                  fontSize: '1.05rem', fontWeight: 800,
-                  fontFamily: 'var(--font-heading)',
-                  boxShadow: '0 8px 30px rgba(124,58,237,0.4)',
+                  width: '100%',
+                  padding: '14px',
+                  borderRadius: 12,
+                  border: 'none',
+                  background: 'var(--primary-container)',
+                  color: '#fff',
+                  fontSize: '1rem',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  boxShadow: '0 4px 14px rgba(37,99,235,0.35)',
+                  transition: 'all 0.18s ease',
                   marginBottom: 12,
-                  transition: 'all 0.3s ease',
-                  letterSpacing: '0.01em',
+                }}
+                onMouseEnter={(e) => {
+                  (e.currentTarget as HTMLButtonElement).style.background = 'var(--primary)';
+                  (e.currentTarget as HTMLButtonElement).style.transform = 'translateY(-1px)';
+                }}
+                onMouseLeave={(e) => {
+                  (e.currentTarget as HTMLButtonElement).style.background = 'var(--primary-container)';
+                  (e.currentTarget as HTMLButtonElement).style.transform = 'translateY(0)';
                 }}
               >
                 💝 Quyên góp ngay
               </button>
 
-              <div style={{ display: 'flex', gap: 8 }}>
-                {['📤 Chia sẻ', '🔖 Lưu', '🚩 Báo cáo'].map((action) => (
-                  <button key={action} style={{
-                    flex: 1, padding: '10px 8px',
-                    background: 'rgba(255,255,255,0.04)',
-                    border: '1px solid rgba(255,255,255,0.08)',
-                    borderRadius: 'var(--radius-md)', color: 'var(--text-muted)',
-                    cursor: 'pointer', fontSize: '0.75rem',
-                    fontFamily: 'var(--font-body)',
-                  }}>
-                    {action}
-                  </button>
-                ))}
-              </div>
+              {/* Share Button */}
+              <button
+                type="button"
+                onClick={handleShare}
+                style={{
+                  width: '100%',
+                  padding: '11px',
+                  borderRadius: 12,
+                  border: '1.5px solid var(--outline-variant)',
+                  background: 'var(--surface-container-lowest)',
+                  color: 'var(--on-surface)',
+                  fontSize: '0.875rem',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 8,
+                  transition: 'all 0.15s ease',
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--surface-container-low)')}
+                onMouseLeave={(e) => (e.currentTarget.style.background = 'var(--surface-container-lowest)')}
+              >
+                <span>🔗</span> {copiedShare ? '✓ Đã sao chép liên kết!' : 'Chia sẻ chiến dịch'}
+              </button>
 
-              {/* Security note */}
-              <div style={{
-                marginTop: 16, padding: '10px 14px',
-                background: 'rgba(16,185,129,0.08)',
-                border: '1px solid rgba(16,185,129,0.2)',
-                borderRadius: 'var(--radius-md)',
-                display: 'flex', alignItems: 'center', gap: 8,
-                fontSize: '0.78rem', color: 'var(--emerald-400)',
-              }}>
-                🔒 Thanh toán bảo mật SSL 256-bit
+              {/* Trust badge */}
+              <div style={{ marginTop: 20, paddingTop: 16, borderTop: '1px solid var(--outline-variant)', textAlign: 'center', fontSize: '0.75rem', color: 'var(--on-surface-variant)' }}>
+                🔒 Giao dịch mã hóa an toàn 256-bit qua cổng VietQR & ngân hàng.
               </div>
             </div>
           </div>
         </div>
+
+        {/* Related Campaigns Section */}
+        {relatedCampaigns.length > 0 && (
+          <div style={{ marginTop: 64, paddingTop: 40, borderTop: '1px solid var(--outline-variant)' }}>
+            <h2 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--on-surface)', marginBottom: 24 }}>
+              Các chiến dịch liên quan khác
+            </h2>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 24 }}>
+              {relatedCampaigns.map((rc) => (
+                <CampaignCard key={rc.id} campaign={rc} />
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
-      {/* Lightbox */}
-      {selectedImage && (
-        <>
-          <div onClick={() => setSelectedImage(null)} style={{
-            position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.9)',
-            zIndex: 500, display: 'flex', alignItems: 'center', justifyContent: 'center',
-          }}>
-            <img src={selectedImage} alt="" style={{ maxWidth: '90vw', maxHeight: '90vh', objectFit: 'contain', borderRadius: 'var(--radius-lg)' }} />
-            <button onClick={() => setSelectedImage(null)} style={{
-              position: 'absolute', top: 20, right: 20,
-              background: 'rgba(255,255,255,0.1)', border: 'none',
-              borderRadius: 'var(--radius-md)', color: '#fff', cursor: 'pointer',
-              padding: '10px 14px', fontSize: '1.1rem',
-            }}>✕</button>
+      {/* Proof Modal */}
+      {selectedProof && (
+        <div
+          onClick={() => setSelectedProof(null)}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0,0,0,0.8)',
+            zIndex: 999,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: 24,
+          }}
+        >
+          <div style={{ maxWidth: 640, width: '100%', background: '#fff', borderRadius: 12, padding: 16, overflow: 'hidden' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12 }}>
+              <strong>Chứng từ / Hóa đơn nghiệm thu</strong>
+              <button onClick={() => setSelectedProof(null)} style={{ border: 'none', background: 'none', cursor: 'pointer', fontSize: 16 }}>✕</button>
+            </div>
+            <img src={selectedProof} alt="Chứng từ" style={{ width: '100%', maxHeight: '70vh', objectFit: 'contain' }} />
           </div>
-        </>
+        </div>
       )}
 
       {/* Donation Modal */}
@@ -501,14 +704,9 @@ const CampaignDetailPage: React.FC = () => {
         <DonationModal
           campaign={campaign}
           onClose={() => setShowDonateModal(false)}
+          onSuccess={() => {}}
         />
       )}
-
-      <style>{`
-        @media (max-width: 900px) {
-          .campaign-detail-grid { grid-template-columns: 1fr !important; }
-        }
-      `}</style>
     </div>
   );
 };
