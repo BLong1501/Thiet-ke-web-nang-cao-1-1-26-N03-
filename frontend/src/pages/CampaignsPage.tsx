@@ -1,135 +1,278 @@
-import React, { useState, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import React, { useState, useEffect, useMemo } from 'react';
 import { CampaignCard } from '../components/ui/CampaignCard';
 import { SearchBar } from '../components/ui/SearchBar';
 import { CategoryFilter } from '../components/ui/CategoryFilter';
+import Pagination from '../components/ui/Pagination';
+import { useSearch } from '../hooks/useSearch';
+import { campaignApi } from '../services/api';
 import { mockCampaigns } from '../data/mockData';
-import type { CampaignCategory } from '../types';
+import type { Campaign, CampaignCategory } from '../types';
 
 const SORT_OPTIONS = [
   { value: 'newest', label: 'Mới nhất' },
-  { value: 'most-funded', label: 'Được ủng hộ nhiều nhất' },
+  { value: 'most-funded', label: 'Ủng hộ nhiều nhất' },
   { value: 'deadline', label: 'Sắp hết hạn' },
-  { value: 'trending', label: 'Đang hot 🔥' },
+  { value: 'trending', label: 'Đang nổi bật 🔥' },
 ];
 
+const ITEMS_PER_PAGE = 6;
+
 const CampaignsPage: React.FC = () => {
-  const [searchParams, setSearchParams] = useSearchParams();
-  const [search, setSearch] = useState(searchParams.get('search') || '');
-  const [category, setCategory] = useState<CampaignCategory | 'all'>(
-    (searchParams.get('category') as CampaignCategory) || 'all'
-  );
-  const [sortBy, setSortBy] = useState(searchParams.get('sort') || 'newest');
-  const [page, setPage] = useState(1);
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
-
-  useEffect(() => {
-    document.title = 'Khám phá Chiến dịch - FundVN';
-  }, []);
-
-  // Filter campaigns
-  const filtered = mockCampaigns.filter(c => {
-    const matchSearch = !search || c.title.toLowerCase().includes(search.toLowerCase()) || c.shortDesc.toLowerCase().includes(search.toLowerCase());
-    const matchCategory = category === 'all' || c.category === category;
-    return matchSearch && matchCategory;
+  // Quản lý state Tìm kiếm, Lọc, Phân trang qua Custom Hook useSearch (Đồng bộ URL Params)
+  const {
+    filters,
+    searchInput,
+    handleSearchChange,
+    setFilter,
+    setPage,
+    resetFilters,
+  } = useSearch<{
+    search: string;
+    category: CampaignCategory | 'all';
+    sort: string;
+    page: number;
+    limit: number;
+  }>({
+    search: '',
+    category: 'all',
+    sort: 'newest',
+    page: 1,
+    limit: ITEMS_PER_PAGE,
   });
 
-  const totalPages = Math.ceil(filtered.length / 6);
-  const paginated = filtered.slice((page - 1) * 6, page * 6);
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [apiCampaigns, setApiCampaigns] = useState<Campaign[] | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    document.title = 'Khám phá Chiến dịch - FundTrust';
+  }, []);
+
+  // Gọi API Backend nếu có kết nối, nếu không sẽ dùng mockCampaigns
+  useEffect(() => {
+    let isMounted = true;
+    const fetchFromApi = async () => {
+      try {
+        setLoading(true);
+        const res = await campaignApi.getAll({
+          search: filters.search || undefined,
+          status: 'ACTIVE',
+        });
+        if (isMounted && res.data?.data?.items && res.data.data.items.length > 0) {
+          // Chuẩn hóa dữ liệu API thành type Campaign
+          const mapped: Campaign[] = res.data.data.items.map((item: any) => ({
+            id: item.id,
+            title: item.title,
+            description: item.story || item.shortDescription,
+            shortDesc: item.shortDescription || item.title,
+            category: (item.category?.slug || 'cong-dong') as CampaignCategory,
+            targetAmount: Number(item.targetAmount),
+            raisedAmount: Number(item.currentAmount),
+            donorCount: item.donorCount || 0,
+            deadline: item.endDate,
+            status: (item.status?.toLowerCase() || 'active') as any,
+            creator: {
+              id: item.fundraiser?.id || '1',
+              name: item.fundraiser?.fullName || 'Người gây quỹ',
+              email: item.fundraiser?.email || '',
+              avatar: item.fundraiser?.avatarUrl || 'https://i.pravatar.cc/150?img=1',
+              role: 'fundraiser',
+              isVerified: true,
+              joinedAt: item.createdAt,
+            },
+            thumbnail: item.coverImageUrl || 'https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?auto=format&fit=crop&w=800&q=80',
+            createdAt: item.createdAt,
+            updatedAt: item.updatedAt,
+          }));
+          setApiCampaigns(mapped);
+        } else {
+          setApiCampaigns(null); // Sử dụng mockCampaigns
+        }
+      } catch (err) {
+        setApiCampaigns(null); // Fallback mockCampaigns
+      } finally {
+        if (isMounted) setLoading(false);
+      }
+    };
+
+    fetchFromApi();
+    return () => {
+      isMounted = false;
+    };
+  }, [filters.search]);
+
+  // Bộ dữ liệu nguồn (API kết hợp Mock Data)
+  const dataSource = useMemo(() => {
+    if (apiCampaigns && apiCampaigns.length > 0) {
+      // Kết hợp các campaign từ API và mock data không trùng ID
+      const apiIds = new Set(apiCampaigns.map((c) => c.id));
+      const nonDuplicateMock = mockCampaigns.filter((c) => !apiIds.has(c.id));
+      return [...apiCampaigns, ...nonDuplicateMock];
+    }
+    return mockCampaigns;
+  }, [apiCampaigns]);
+
+  // Bộ lọc dữ liệu
+  const filtered = useMemo(() => {
+    return dataSource.filter((c) => {
+      const matchSearch =
+        !filters.search ||
+        c.title.toLowerCase().includes(filters.search.toLowerCase()) ||
+        c.shortDesc.toLowerCase().includes(filters.search.toLowerCase());
+      const matchCategory = filters.category === 'all' || c.category === filters.category;
+      return matchSearch && matchCategory;
+    });
+  }, [dataSource, filters.search, filters.category]);
+
+  // Sắp xếp dữ liệu
+  const sorted = useMemo(() => {
+    return [...filtered].sort((a, b) => {
+      if (filters.sort === 'most-funded') return b.raisedAmount - a.raisedAmount;
+      if (filters.sort === 'deadline') return new Date(a.deadline).getTime() - new Date(b.deadline).getTime();
+      if (filters.sort === 'trending') return b.donorCount - a.donorCount;
+      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+    });
+  }, [filtered, filters.sort]);
+
+  // Phân trang
+  const totalItems = sorted.length;
+  const totalPages = Math.ceil(totalItems / ITEMS_PER_PAGE);
+  const currentPage = Math.min(filters.page || 1, Math.max(1, totalPages));
+  const paginated = useMemo(() => {
+    return sorted.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
+  }, [sorted, currentPage]);
 
   return (
-    <div className="page-enter" style={{ minHeight: '100vh', background: 'var(--bg-base)' }}>
-      {/* Header */}
-      <div style={{
-        padding: '60px 0 40px',
-        background: 'linear-gradient(135deg, #0a0a14, #1a0a2e)',
-        position: 'relative',
-        overflow: 'hidden',
-      }}>
-        <div style={{
-          position: 'absolute', inset: 0,
-          backgroundImage: `linear-gradient(rgba(124,58,237,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(124,58,237,0.04) 1px, transparent 1px)`,
-          backgroundSize: '50px 50px',
-          pointerEvents: 'none',
-        }} />
-        <div className="container" style={{ position: 'relative' }}>
-          <h1 style={{ fontFamily: 'var(--font-heading)', marginBottom: 12, textAlign: 'center' }}>
-            Khám phá <span className="text-gradient">chiến dịch</span>
+    <div className="page-enter" style={{ minHeight: '100vh', background: 'var(--background)' }}>
+      {/* Header Banner */}
+      <div
+        style={{
+          padding: '52px 0 36px',
+          background: 'linear-gradient(180deg, var(--surface-container-low) 0%, var(--background) 100%)',
+          borderBottom: '1px solid var(--outline-variant)',
+        }}
+      >
+        <div className="container" style={{ textAlign: 'center' }}>
+          <div
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 6,
+              padding: '4px 12px',
+              background: 'var(--primary-fixed)',
+              borderRadius: 20,
+              color: 'var(--primary)',
+              fontSize: '0.8125rem',
+              fontWeight: 600,
+              marginBottom: 12,
+            }}
+          >
+            <span>🌱</span> Khám phá & Kết nối cộng đồng
+          </div>
+          <h1
+            style={{
+              fontFamily: 'var(--font-heading)',
+              fontSize: 'clamp(1.75rem, 3.5vw, 2.5rem)',
+              color: 'var(--on-surface)',
+              fontWeight: 800,
+              letterSpacing: '-0.03em',
+              marginBottom: 10,
+            }}
+          >
+            Các chiến dịch gây quỹ <span style={{ color: 'var(--primary-container)' }}>minh bạch</span>
           </h1>
-          <p style={{ color: 'var(--text-muted)', textAlign: 'center', marginBottom: 32 }}>
-            {filtered.length} chiến dịch đang chờ sự ủng hộ của bạn
+          <p
+            style={{
+              color: 'var(--on-surface-variant)',
+              maxWidth: 580,
+              margin: '0 auto 28px',
+              fontSize: '0.9375rem',
+              lineHeight: 1.6,
+            }}
+          >
+            100% chiến dịch được xác minh danh tính và công khai sao kê thu chi theo thời gian thực.
           </p>
-          <div style={{ maxWidth: 600, margin: '0 auto' }}>
+          <div style={{ maxWidth: 620, margin: '0 auto' }}>
             <SearchBar
               large
-              onSearch={(q) => { setSearch(q); setPage(1); }}
-              placeholder="Tìm kiếm chiến dịch..."
+              placeholder="Tìm theo tên hoàn cảnh, địa phương hoặc người gây quỹ..."
+              onSearch={handleSearchChange}
             />
           </div>
         </div>
       </div>
 
-      <div className="container" style={{ padding: '32px 24px' }}>
-        {/* Filters row */}
-        <div style={{
-          display: 'flex',
-          gap: 16,
-          alignItems: 'flex-start',
-          marginBottom: 28,
-          flexWrap: 'wrap',
-        }}>
-          <div style={{ flex: 1, minWidth: 0 }}>
+      <div className="container" style={{ padding: '36px var(--gutter)' }}>
+        {/* Filter bar */}
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'flex-start',
+            gap: 16,
+            marginBottom: 28,
+            flexWrap: 'wrap',
+          }}
+        >
+          {/* Category Pills */}
+          <div style={{ flex: 1, minWidth: 280 }}>
             <CategoryFilter
-              selected={category}
-              onChange={(cat) => { setCategory(cat); setPage(1); }}
+              selected={filters.category || 'all'}
+              onChange={(cat) => setFilter('category', cat)}
             />
           </div>
 
+          {/* Right: Sort & Layout */}
           <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexShrink: 0 }}>
-            {/* Sort */}
+            {/* Sort Dropdown */}
             <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value)}
+              value={filters.sort || 'newest'}
+              aria-label="Sắp xếp chiến dịch"
+              onChange={(e) => setFilter('sort', e.target.value)}
               style={{
                 padding: '9px 14px',
-                background: 'rgba(26,26,46,0.8)',
-                border: '1px solid rgba(255,255,255,0.1)',
-                borderRadius: 'var(--radius-md)',
-                color: 'var(--text-secondary)',
-                fontSize: '0.85rem',
+                background: 'var(--surface-container-lowest)',
+                border: '1px solid var(--outline-variant)',
+                borderRadius: 10,
+                color: 'var(--on-surface)',
+                fontSize: '0.875rem',
                 cursor: 'pointer',
                 outline: 'none',
                 fontFamily: 'var(--font-body)',
               }}
             >
-              {SORT_OPTIONS.map(o => (
-                <option key={o.value} value={o.value} style={{ background: '#1a1a2e' }}>
+              {SORT_OPTIONS.map((o) => (
+                <option key={o.value} value={o.value}>
                   {o.label}
                 </option>
               ))}
             </select>
 
-            {/* View toggle */}
-            <div style={{
-              display: 'flex',
-              background: 'rgba(26,26,46,0.8)',
-              border: '1px solid rgba(255,255,255,0.1)',
-              borderRadius: 'var(--radius-md)',
-              overflow: 'hidden',
-            }}>
-              {['grid', 'list'].map((mode) => (
+            {/* View Mode */}
+            <div
+              style={{
+                display: 'flex',
+                background: 'var(--surface-container-lowest)',
+                border: '1px solid var(--outline-variant)',
+                borderRadius: 10,
+                overflow: 'hidden',
+              }}
+            >
+              {(['grid', 'list'] as const).map((mode) => (
                 <button
                   key={mode}
-                  onClick={() => setViewMode(mode as 'grid' | 'list')}
+                  type="button"
+                  onClick={() => setViewMode(mode)}
                   style={{
-                    padding: '9px 12px',
-                    background: viewMode === mode ? 'rgba(124,58,237,0.3)' : 'transparent',
+                    padding: '8px 12px',
+                    background: viewMode === mode ? 'var(--primary-fixed)' : 'transparent',
                     border: 'none',
-                    color: viewMode === mode ? 'var(--primary-400)' : 'var(--text-muted)',
+                    color: viewMode === mode ? 'var(--primary)' : 'var(--outline)',
                     cursor: 'pointer',
-                    fontSize: '1rem',
-                    transition: 'all 0.2s ease',
+                    fontSize: '0.9375rem',
+                    transition: 'all 0.15s ease',
                   }}
+                  title={mode === 'grid' ? 'Dạng lưới' : 'Dạng danh sách'}
                 >
                   {mode === 'grid' ? '⊞' : '☰'}
                 </button>
@@ -138,101 +281,93 @@ const CampaignsPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Results count */}
-        <div style={{ marginBottom: 20, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <span style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>
-            Hiển thị <strong style={{ color: 'var(--text-primary)' }}>{paginated.length}</strong> / {filtered.length} chiến dịch
+        {/* Results summary & Active tag info */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+          <span style={{ fontSize: '0.875rem', color: 'var(--on-surface-variant)' }}>
+            Tìm thấy <strong style={{ color: 'var(--on-surface)' }}>{totalItems}</strong> chiến dịch phù hợp
+            {filters.category !== 'all' && ` trong danh mục đã chọn`}
+            {filters.search && ` với từ khóa "${filters.search}"`}
           </span>
+          {(filters.category !== 'all' || filters.search) && (
+            <button
+              type="button"
+              onClick={resetFilters}
+              style={{
+                background: 'none',
+                border: 'none',
+                color: 'var(--primary)',
+                fontSize: '0.8125rem',
+                cursor: 'pointer',
+                fontWeight: 600,
+                textDecoration: 'underline',
+              }}
+            >
+              Xóa tất cả bộ lọc
+            </button>
+          )}
         </div>
 
-        {/* Campaign grid */}
+        {/* Campaigns Grid / List */}
         {paginated.length > 0 ? (
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: viewMode === 'grid' ? 'repeat(3, 1fr)' : '1fr',
-            gap: 22,
-            marginBottom: 40,
-          }}>
-            {paginated.map(campaign => (
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: viewMode === 'grid' ? 'repeat(auto-fill, minmax(320px, 1fr))' : '1fr',
+              gap: 24,
+              marginBottom: 44,
+            }}
+          >
+            {paginated.map((campaign) => (
               <CampaignCard key={campaign.id} campaign={campaign} />
             ))}
           </div>
         ) : (
-          <div style={{
-            textAlign: 'center', padding: '80px 20px',
-            background: 'rgba(26,26,46,0.4)',
-            border: '1px solid rgba(255,255,255,0.06)',
-            borderRadius: 'var(--radius-xl)',
-            marginBottom: 40,
-          }}>
+          <div
+            style={{
+              textAlign: 'center',
+              padding: '72px 24px',
+              background: 'var(--surface-container-lowest)',
+              border: '1px solid var(--outline-variant)',
+              borderRadius: 'var(--radius-xl)',
+              marginBottom: 40,
+            }}
+          >
             <div style={{ fontSize: '3rem', marginBottom: 16 }}>🔍</div>
-            <h3 style={{ fontFamily: 'var(--font-heading)', marginBottom: 8 }}>Không tìm thấy chiến dịch</h3>
-            <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>
-              Thử thay đổi từ khóa hoặc danh mục tìm kiếm
+            <h3 style={{ margin: '0 0 8px', fontSize: '1.25rem', color: 'var(--on-surface)' }}>
+              Không tìm thấy chiến dịch phù hợp
+            </h3>
+            <p style={{ margin: '0 0 20px', color: 'var(--on-surface-variant)', fontSize: '0.9375rem' }}>
+              Hãy thử tìm kiếm với từ khóa khác hoặc xóa bớt tiêu chí lọc danh mục.
             </p>
+            <button
+              type="button"
+              onClick={resetFilters}
+              style={{
+                padding: '10px 20px',
+                borderRadius: 10,
+                border: 'none',
+                background: 'var(--primary-container)',
+                color: '#fff',
+                fontSize: '0.875rem',
+                fontWeight: 600,
+                cursor: 'pointer',
+              }}
+            >
+              Xem tất cả chiến dịch
+            </button>
           </div>
         )}
 
-        {/* Pagination */}
-        {totalPages > 1 && (
-          <div style={{ display: 'flex', justifyContent: 'center', gap: 8 }}>
-            <button
-              onClick={() => setPage(p => Math.max(1, p - 1))}
-              disabled={page === 1}
-              style={{
-                padding: '9px 16px', borderRadius: 'var(--radius-md)',
-                background: 'rgba(26,26,46,0.8)', border: '1px solid rgba(255,255,255,0.1)',
-                color: page === 1 ? 'var(--text-disabled)' : 'var(--text-secondary)',
-                cursor: page === 1 ? 'not-allowed' : 'pointer',
-                fontFamily: 'var(--font-body)',
-              }}
-            >
-              ← Trước
-            </button>
-            {Array.from({ length: totalPages }).map((_, i) => (
-              <button
-                key={i}
-                onClick={() => setPage(i + 1)}
-                style={{
-                  width: 40, height: 40,
-                  borderRadius: 'var(--radius-md)',
-                  background: page === i + 1 ? 'linear-gradient(135deg, #7c3aed, #4f46e5)' : 'rgba(26,26,46,0.8)',
-                  border: page === i + 1 ? 'none' : '1px solid rgba(255,255,255,0.1)',
-                  color: page === i + 1 ? '#fff' : 'var(--text-secondary)',
-                  cursor: 'pointer',
-                  fontWeight: page === i + 1 ? 700 : 400,
-                  fontFamily: 'var(--font-body)',
-                  boxShadow: page === i + 1 ? '0 4px 14px rgba(124,58,237,0.35)' : 'none',
-                }}
-              >
-                {i + 1}
-              </button>
-            ))}
-            <button
-              onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-              disabled={page === totalPages}
-              style={{
-                padding: '9px 16px', borderRadius: 'var(--radius-md)',
-                background: 'rgba(26,26,46,0.8)', border: '1px solid rgba(255,255,255,0.1)',
-                color: page === totalPages ? 'var(--text-disabled)' : 'var(--text-secondary)',
-                cursor: page === totalPages ? 'not-allowed' : 'pointer',
-                fontFamily: 'var(--font-body)',
-              }}
-            >
-              Sau →
-            </button>
-          </div>
-        )}
+        {/* Reusable Pagination Component */}
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          total={totalItems}
+          limit={ITEMS_PER_PAGE}
+          onPageChange={setPage}
+          showInfo={true}
+        />
       </div>
-
-      <style>{`
-        @media (max-width: 900px) {
-          .campaigns-grid { grid-template-columns: repeat(2, 1fr) !important; }
-        }
-        @media (max-width: 600px) {
-          .campaigns-grid { grid-template-columns: 1fr !important; }
-        }
-      `}</style>
     </div>
   );
 };

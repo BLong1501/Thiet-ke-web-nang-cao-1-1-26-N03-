@@ -3,7 +3,6 @@ import { Link } from 'react-router-dom';
 import type { Campaign } from '../../types';
 import { CATEGORY_LABELS, CATEGORY_ICONS } from '../../types';
 import { formatCurrency, getDaysLeft, getProgress } from '../../services/api';
-import ProgressBar from './ProgressBar';
 
 interface CampaignCardProps {
   campaign: Campaign;
@@ -14,138 +13,126 @@ export const CampaignCard: React.FC<CampaignCardProps> = ({ campaign, featured =
   const [hovered, setHovered] = React.useState(false);
   const progress = getProgress(campaign.raisedAmount, campaign.targetAmount);
   const daysLeft = getDaysLeft(campaign.deadline);
-  const isUrgent = daysLeft <= 7;
+  const isUrgent = daysLeft <= 7 && daysLeft > 0;
+  const isCompleted = progress >= 100;
+
+  const categoryColors: Record<string, string> = {
+    'y-te': '#dc2626', 'giao-duc': '#d97706', 'moi-truong': '#059669',
+    'cuu-tro': '#2563eb', 'dong-vat': '#7c3aed', 'cong-dong': '#0891b2',
+    'sang-tao': '#db2777', 'khac': '#64748b',
+  };
+  const catColor = categoryColors[campaign.category] || '#64748b';
 
   return (
-    <Link
-      to={`/campaigns/${campaign.id}`}
-      style={{ textDecoration: 'none', display: 'block' }}
-    >
+    <Link to={`/campaigns/${campaign.id}`} style={{ textDecoration: 'none', display: 'block', height: '100%' }}>
       <div
         onMouseEnter={() => setHovered(true)}
         onMouseLeave={() => setHovered(false)}
         style={{
-          background: hovered
-            ? 'linear-gradient(135deg, rgba(124,58,237,0.12) 0%, rgba(79,70,229,0.08) 100%)'
-            : 'rgba(22, 33, 62, 0.8)',
-          border: `1px solid ${hovered ? 'rgba(124,58,237,0.4)' : 'rgba(255,255,255,0.07)'}`,
-          borderRadius: 'var(--radius-xl)',
+          background: 'var(--surface-container-lowest)',
+          border: `1px solid ${hovered ? 'var(--primary-fixed-dim)' : 'var(--outline-variant)'}`,
+          borderRadius: 'var(--radius-lg)',
           overflow: 'hidden',
-          transition: 'all 0.35s cubic-bezier(0.4, 0, 0.2, 1)',
-          transform: hovered ? 'translateY(-6px)' : 'translateY(0)',
-          boxShadow: hovered
-            ? '0 20px 60px rgba(0,0,0,0.6), 0 0 30px rgba(124,58,237,0.2)'
-            : '0 4px 20px rgba(0,0,0,0.3)',
+          transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
+          transform: hovered ? 'translateY(-4px)' : 'translateY(0)',
+          boxShadow: hovered ? 'var(--shadow-md)' : 'var(--shadow-sm)',
           cursor: 'pointer',
-          height: featured ? 'auto' : '100%',
+          height: '100%',
           display: 'flex',
           flexDirection: 'column',
         }}
       >
         {/* Thumbnail */}
-        <div style={{ position: 'relative', overflow: 'hidden', height: featured ? 220 : 180 }}>
+        <div style={{ position: 'relative', overflow: 'hidden', height: featured ? 220 : 192 }}>
           <img
             src={campaign.thumbnail}
             alt={campaign.title}
             style={{
-              width: '100%',
-              height: '100%',
-              objectFit: 'cover',
-              transition: 'transform 0.5s ease',
-              transform: hovered ? 'scale(1.08)' : 'scale(1)',
+              width: '100%', height: '100%', objectFit: 'cover',
+              transition: 'transform 0.45s ease',
+              transform: hovered ? 'scale(1.05)' : 'scale(1)',
             }}
           />
-          {/* Overlay gradient */}
+          {/* Subtle bottom gradient */}
           <div style={{
-            position: 'absolute',
-            inset: 0,
-            background: 'linear-gradient(to top, rgba(10,10,20,0.8) 0%, transparent 60%)',
+            position: 'absolute', inset: 0,
+            background: 'linear-gradient(to top, rgba(19,27,46,0.35) 0%, transparent 55%)',
           }} />
 
           {/* Category badge */}
           <div style={{
-            position: 'absolute',
-            top: 12,
-            left: 12,
-            background: 'rgba(10,10,20,0.75)',
-            backdropFilter: 'blur(10px)',
-            border: '1px solid rgba(255,255,255,0.12)',
+            position: 'absolute', top: 12, left: 12,
+            background: 'rgba(255,255,255,0.92)',
+            backdropFilter: 'blur(8px)',
+            border: `1px solid ${catColor}30`,
             borderRadius: 'var(--radius-full)',
-            padding: '4px 10px',
-            fontSize: '0.72rem',
+            padding: '3px 10px',
+            fontSize: '0.6875rem',
             fontWeight: 600,
-            color: 'var(--text-primary)',
-            display: 'flex',
-            alignItems: 'center',
-            gap: 4,
+            letterSpacing: '0.04em',
+            textTransform: 'uppercase' as const,
+            color: catColor,
+            display: 'flex', alignItems: 'center', gap: 4,
           }}>
             <span>{CATEGORY_ICONS[campaign.category]}</span>
             <span>{CATEGORY_LABELS[campaign.category]}</span>
           </div>
 
-          {/* Urgent badge */}
-          {isUrgent && daysLeft > 0 && (
+          {/* Status badge */}
+          {isCompleted && (
             <div style={{
-              position: 'absolute',
-              top: 12,
-              right: 12,
-              background: 'rgba(239,68,68,0.9)',
+              position: 'absolute', top: 12, right: 12,
+              background: 'rgba(16,185,129,0.92)',
               borderRadius: 'var(--radius-full)',
-              padding: '4px 10px',
-              fontSize: '0.72rem',
-              fontWeight: 700,
-              color: '#fff',
-              animation: 'pulse-glow 2s infinite',
-            }}>
-              🔥 Gấp
-            </div>
+              padding: '3px 10px', fontSize: '0.6875rem',
+              fontWeight: 700, color: '#fff', letterSpacing: '0.04em',
+              textTransform: 'uppercase' as const,
+            }}>✓ Đạt mục tiêu</div>
           )}
-
-          {/* Progress % overlay */}
-          {progress >= 100 && (
+          {isUrgent && !isCompleted && (
             <div style={{
-              position: 'absolute',
-              top: 12,
-              right: 12,
-              background: 'rgba(16,185,129,0.9)',
+              position: 'absolute', top: 12, right: 12,
+              background: 'rgba(186,26,26,0.9)',
               borderRadius: 'var(--radius-full)',
-              padding: '4px 10px',
-              fontSize: '0.72rem',
-              fontWeight: 700,
-              color: '#fff',
-            }}>
-              ✅ Đạt mục tiêu
-            </div>
+              padding: '3px 10px', fontSize: '0.6875rem',
+              fontWeight: 700, color: '#fff', letterSpacing: '0.04em',
+              textTransform: 'uppercase' as const,
+            }}>⚡ Gấp</div>
           )}
         </div>
 
         {/* Content */}
-        <div style={{ padding: '16px 18px', display: 'flex', flexDirection: 'column', gap: 10, flex: 1 }}>
+        <div style={{ padding: '18px 20px', display: 'flex', flexDirection: 'column', gap: 12, flex: 1 }}>
           {/* Creator */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <img
-              src={campaign.creator.avatar || `https://ui-avatars.com/api/?name=${campaign.creator.name}&background=7c3aed&color=fff`}
+              src={campaign.creator.avatar || `https://ui-avatars.com/api/?name=${campaign.creator.name}&background=2563eb&color=fff&size=48`}
               alt={campaign.creator.name}
-              style={{ width: 24, height: 24, borderRadius: '50%', objectFit: 'cover' }}
+              style={{ width: 22, height: 22, borderRadius: '50%', objectFit: 'cover', border: '1.5px solid var(--outline-variant)' }}
             />
-            <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+            <span style={{ fontSize: '0.8125rem', color: 'var(--outline)', fontWeight: 500 }}>
               {campaign.creator.name}
             </span>
             {campaign.creator.isVerified && (
-              <span title="Đã xác minh" style={{ fontSize: '0.75rem' }}>✅</span>
+              <span style={{
+                fontSize: '0.6875rem', fontWeight: 600, letterSpacing: '0.04em', textTransform: 'uppercase',
+                color: '#047857', background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.25)',
+                padding: '1px 7px', borderRadius: 'var(--radius-full)',
+              }}>✓ Xác minh</span>
             )}
           </div>
 
           {/* Title */}
           <h3 style={{
             fontFamily: 'var(--font-heading)',
-            fontSize: featured ? '1.1rem' : '0.95rem',
-            fontWeight: 700,
-            color: 'var(--text-primary)',
+            fontSize: featured ? '1.0625rem' : '0.9375rem',
+            fontWeight: 600,
+            color: 'var(--on-surface)',
             lineHeight: 1.4,
+            letterSpacing: '-0.015em',
             display: '-webkit-box',
             WebkitLineClamp: 2,
-            WebkitBoxOrient: 'vertical',
+            WebkitBoxOrient: 'vertical' as const,
             overflow: 'hidden',
             margin: 0,
           }}>
@@ -154,12 +141,12 @@ export const CampaignCard: React.FC<CampaignCardProps> = ({ campaign, featured =
 
           {/* Short desc */}
           <p style={{
-            fontSize: '0.82rem',
-            color: 'var(--text-muted)',
-            lineHeight: 1.5,
+            fontSize: '0.8125rem',
+            color: 'var(--on-surface-variant)',
+            lineHeight: 1.55,
             display: '-webkit-box',
             WebkitLineClamp: 2,
-            WebkitBoxOrient: 'vertical',
+            WebkitBoxOrient: 'vertical' as const,
             overflow: 'hidden',
             margin: 0,
             flex: 1,
@@ -168,65 +155,65 @@ export const CampaignCard: React.FC<CampaignCardProps> = ({ campaign, featured =
           </p>
 
           {/* Progress */}
-          <ProgressBar value={progress} height={6} />
+          <div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+              <span style={{ fontSize: '0.75rem', color: 'var(--outline)', fontWeight: 500 }}>
+                Tiến độ
+              </span>
+              <span style={{
+                fontSize: '0.75rem', fontWeight: 700,
+                color: isCompleted ? '#047857' : 'var(--primary-container)',
+              }}>
+                {progress}%
+              </span>
+            </div>
+            <div style={{
+              width: '100%', height: 6,
+              background: 'var(--surface-container-high)',
+              borderRadius: 'var(--radius-full)', overflow: 'hidden',
+            }}>
+              <div style={{
+                height: '100%',
+                width: `${Math.min(100, progress)}%`,
+                borderRadius: 'var(--radius-full)',
+                background: isCompleted
+                  ? 'linear-gradient(90deg, var(--secondary), #10b981)'
+                  : 'linear-gradient(90deg, var(--primary), var(--primary-container))',
+                animation: 'progress-fill 1.2s ease-out',
+              }} />
+            </div>
+          </div>
 
           {/* Stats */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div style={{
+            display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end',
+            paddingTop: 10, borderTop: '1px solid var(--outline-variant)',
+          }}>
             <div>
               <div style={{
-                fontSize: '1rem',
-                fontWeight: 800,
-                fontFamily: 'var(--font-heading)',
-                background: 'linear-gradient(135deg, #a78bfa, #6366f1)',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-                backgroundClip: 'text',
+                fontSize: '1.0625rem', fontWeight: 700,
+                color: 'var(--primary)', letterSpacing: '-0.02em',
+                fontFeatureSettings: '"tnum" 1',
               }}>
                 {formatCurrency(campaign.raisedAmount)}
               </div>
-              <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+              <div style={{ fontSize: '0.75rem', color: 'var(--outline)', marginTop: 1 }}>
                 / {formatCurrency(campaign.targetAmount)}
               </div>
             </div>
             <div style={{ textAlign: 'right' }}>
-              <div style={{
-                fontSize: '0.9rem',
-                fontWeight: 700,
-                color: progress >= 100 ? 'var(--emerald-400)' : 'var(--primary-400)',
-              }}>
-                {progress}%
+              <div style={{ fontSize: '0.8125rem', fontWeight: 600, color: 'var(--on-surface-variant)' }}>
+                {campaign.donorCount.toLocaleString('vi-VN')} người
               </div>
-              <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
-                {campaign.donorCount.toLocaleString('vi-VN')} người ủng hộ
+              <div style={{
+                fontSize: '0.75rem',
+                color: daysLeft <= 7 ? 'var(--error)' : daysLeft <= 30 ? '#d97706' : 'var(--outline)',
+                fontWeight: daysLeft <= 7 ? 600 : 400,
+                marginTop: 1,
+              }}>
+                {daysLeft === 0 ? 'Đã kết thúc' : `Còn ${daysLeft} ngày`}
               </div>
             </div>
-          </div>
-
-          {/* Footer */}
-          <div style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            paddingTop: 10,
-            borderTop: '1px solid rgba(255,255,255,0.06)',
-          }}>
-            <span style={{
-              fontSize: '0.78rem',
-              color: daysLeft <= 7 ? 'var(--red-400)' : daysLeft <= 30 ? 'var(--amber-400)' : 'var(--text-muted)',
-              fontWeight: daysLeft <= 7 ? 700 : 400,
-            }}>
-              {daysLeft === 0 ? '⏰ Đã kết thúc' : `⏳ Còn ${daysLeft} ngày`}
-            </span>
-            <span style={{
-              fontSize: '0.78rem',
-              color: 'var(--primary-400)',
-              fontWeight: 600,
-              display: 'flex',
-              alignItems: 'center',
-              gap: 4,
-            }}>
-              Xem chi tiết →
-            </span>
           </div>
         </div>
       </div>
