@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import { authService, AuthService } from "./auth.service";
 import { sendSuccess } from "../../core/utils/response.util";
+import { auditService } from "../../core/services/audit.service";
 
 export class AuthController {
   constructor(private service: AuthService = authService) {}
@@ -68,11 +69,32 @@ export class AuthController {
         sameSite: "strict",
         maxAge: 30 * 24 * 60 * 60 * 1000,
       });
+
+      // Ghi nhật ký đăng nhập thành công
+      await auditService.log({
+        req,
+        userId: result.user.id,
+        action: "LOGIN_SUCCESS",
+        entityName: "User",
+        entityId: result.user.id,
+        details: { email: result.user.email, role: result.user.role },
+      });
+
       return sendSuccess(res, 200, "Đăng nhập thành công", {
         user: result.user,
         accessToken: result.accessToken,
       });
     } catch (error) {
+      // Ghi nhật ký đăng nhập thất bại
+      try {
+        await auditService.log({
+          req,
+          action: "LOGIN_FAILED",
+          entityName: "User",
+          entityId: req.body?.email || "UNKNOWN",
+          details: { email: req.body?.email, error: (error as any)?.message },
+        });
+      } catch {}
       return next(error);
     }
   };

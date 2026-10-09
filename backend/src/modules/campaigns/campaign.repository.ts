@@ -163,11 +163,33 @@ export class CampaignRepository {
    * Tạo mới chiến dịch
    */
   async create(fundraiserId: string, slug: string, input: CreateCampaignInput) {
-    const { media, ...campaignData } = input;
+    const {
+      media,
+      organizerType,
+      organizationName,
+      taxCode,
+      representativeRole,
+      charityCommitmentAccepted,
+      beneficiaryInfo,
+      ...campaignData
+    } = input;
+
+    // Đóng gói thông tin pháp lý & cam kết minh bạch vào trường beneficiaryInfo (JSON Text)
+    const legalMetadata = {
+      organizerType: organizerType || "INDIVIDUAL",
+      organizationName: organizationName || null,
+      taxCode: taxCode || null,
+      representativeRole: representativeRole || null,
+      charityCommitmentAccepted: true,
+      charityCommitmentAcceptedAt: new Date().toISOString(),
+      charityCommitmentStatement: "Cam kết tính minh bạch trong việc tạo chiến dịch, đại diện hợp pháp cho cơ quan tổ chức/cá nhân, đảm bảo tài khoản nhận tiền là tài khoản phục vụ việc từ thiện không có chi tiêu cá nhân hay khoản ngoài việc từ thiện theo quy định pháp luật.",
+      details: beneficiaryInfo || null,
+    };
 
     return prisma.campaign.create({
       data: {
         ...campaignData,
+        beneficiaryInfo: JSON.stringify(legalMetadata),
         fundraiserId,
         slug,
         startDate: campaignData.startDate ? new Date(campaignData.startDate) : new Date(),
@@ -195,6 +217,36 @@ export class CampaignRepository {
    * Cập nhật chiến dịch
    */
   async update(id: string, input: UpdateCampaignInput) {
+    let serializedBeneficiaryInfo: string | undefined = undefined;
+    if (
+      input.beneficiaryInfo !== undefined ||
+      input.organizerType !== undefined ||
+      input.organizationName !== undefined ||
+      input.taxCode !== undefined ||
+      input.representativeRole !== undefined
+    ) {
+      const existing = await prisma.campaign.findUnique({
+        where: { id },
+        select: { beneficiaryInfo: true },
+      });
+      let existingMetadata: any = {};
+      if (existing?.beneficiaryInfo) {
+        try {
+          existingMetadata = JSON.parse(existing.beneficiaryInfo);
+        } catch {
+          existingMetadata = { details: existing.beneficiaryInfo };
+        }
+      }
+      serializedBeneficiaryInfo = JSON.stringify({
+        ...existingMetadata,
+        ...(input.organizerType !== undefined && { organizerType: input.organizerType }),
+        ...(input.organizationName !== undefined && { organizationName: input.organizationName }),
+        ...(input.taxCode !== undefined && { taxCode: input.taxCode }),
+        ...(input.representativeRole !== undefined && { representativeRole: input.representativeRole }),
+        ...(input.beneficiaryInfo !== undefined && { details: input.beneficiaryInfo }),
+      });
+    }
+
     const data: Prisma.CampaignUpdateInput = {
       ...(input.title && { title: input.title }),
       ...(input.shortDescription && { shortDescription: input.shortDescription }),
@@ -206,7 +258,7 @@ export class CampaignRepository {
       ...(input.bankAccountNumber && { bankAccountNumber: input.bankAccountNumber }),
       ...(input.bankName && { bankName: input.bankName }),
       ...(input.bankAccountName && { bankAccountName: input.bankAccountName }),
-      ...(input.beneficiaryInfo !== undefined && { beneficiaryInfo: input.beneficiaryInfo }),
+      ...(serializedBeneficiaryInfo !== undefined && { beneficiaryInfo: serializedBeneficiaryInfo }),
       ...(input.status && { status: input.status }),
       ...(input.categoryId && {
         category: {

@@ -5,17 +5,39 @@ import cookieParser from "cookie-parser";
 
 const app: Express = express();
 
+import { xssSanitizer, csrfProtection } from "./core/middleware/security.middleware";
+
 // Middlewares bảo mật & phân tích cú pháp
-app.use(helmet());
+app.use(
+  helmet({
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        scriptSrc: ["'self'"],
+        styleSrc: ["'self'", "'unsafe-inline'"],
+        imgSrc: ["'self'", "data:", "https:"],
+      },
+    },
+    crossOriginEmbedderPolicy: false,
+  })
+);
+
 app.use(
   cors({
     origin: process.env.CLIENT_URL || "http://localhost:5173",
     credentials: true,
   })
 );
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+
+app.use(express.json({ limit: "10mb" }));
+app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 app.use(cookieParser(process.env.COOKIE_SECRET));
+
+// Phòng chống XSS: Tự động loại bỏ script và mã độc hại trong body, query, params
+app.use(xssSanitizer);
+
+// Phòng chống CSRF: Kiểm tra Origin/Referer và bảo vệ State-changing requests
+app.use(csrfProtection);
 
 import authRouter from "./modules/auth/auth.routes";
 import { verificationRouter } from "./modules/verifications/verification.routes";

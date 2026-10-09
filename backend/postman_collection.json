@@ -1348,6 +1348,120 @@
           }
         }
       ]
+    },
+    {
+      "name": "8. Security & Audit Logs",
+      "item": [
+        {
+          "name": "8.1 Admin View Security Audit Logs",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users/audit-logs?page=1&limit=20",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "audit-logs"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "8.2 Test XSS Protection (Input Sanitized)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Chiến dịch thử nghiệm XSS <script>alert('xss')</script><iframe src='evil.com'></iframe>\",\n  \"categoryId\": \"CATEGORY_ID_HERE\",\n  \"shortDescription\": \"Mô tả ngắn tối thiểu hai mươi ký tự hợp lệ\",\n  \"story\": \"Nội dung câu chuyện chi tiết trên năm mươi ký tự để kiểm tra bộ lọc làm sạch XSS phía máy chủ\",\n  \"coverImageUrl\": \"https://images.unsplash.com/photo-1516627145497-ae6968895b74?w=1000\",\n  \"targetAmount\": 10000000,\n  \"endDate\": \"2026-11-25T23:59:59.000Z\",\n  \"bankAccountNumber\": \"19035678901234\",\n  \"bankName\": \"Techcombank\",\n  \"bankAccountName\": \"NGUYEN VAN A\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/campaigns",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "campaigns"
+              ]
+            }
+          }
+        },
+        {
+          "name": "8.3 Test Broken Access Control (403 Expected)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users/audit-logs",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "audit-logs"
+              ]
+            }
+          }
+        },
+        {
+          "name": "8.4 Test SQL Injection (400/401 Blocked)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"' OR '1'='1' -- \",\n  \"password\": \"' OR '1'='1' -- \"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            }
+          }
+        }
+      ]
     }
   ]
 }

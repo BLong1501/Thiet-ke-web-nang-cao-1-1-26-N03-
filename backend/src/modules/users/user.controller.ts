@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import { userService, UserService } from "./user.service";
 import { sendSuccess } from "../../core/utils/response.util";
+import { auditService } from "../../core/services/audit.service";
 
 export class UserController {
   constructor(private service: UserService = userService) {}
@@ -30,6 +31,15 @@ export class UserController {
       const adminId = req.user!.userId;
       const result = await this.service.updateUserStatus(id, req.body, adminId);
       return sendSuccess(res, 200, result.message, result.user);
+    } catch (error) {
+      return next(error);
+    }
+  };
+
+  getAuditLogs = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const result = await auditService.getLogs(req.query as any);
+      return sendSuccess(res, 200, "Lấy danh sách nhật ký kiểm toán bảo mật thành công", result.items, result.meta);
     } catch (error) {
       return next(error);
     }

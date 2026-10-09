@@ -393,3 +393,42 @@ Authorization: Bearer {{fundraiserToken}}
   "note": "Đã chuyển khoản trực tiếp vào tài khoản bệnh viện số phiếu thu viện phí #BV-9821."
 }
 
+### ================================================================
+### PHÂN HỆ AN TOÀN BẢO MẬT & KIỂM TOÁN (SECURITY & AUDIT LOGS)
+### ================================================================
+
+### 41. ADMIN XEM NHẬT KÝ KIỂM TOÁN BẢO MẬT (Audit Logs)
+GET {{baseUrl}}/users/audit-logs?page=1&limit=20
+Authorization: Bearer {{adminToken}}
+
+### 42. TEST PHÒNG CHỐNG XSS (Cross-Site Scripting) - Tự động loại bỏ script trong input
+POST {{baseUrl}}/campaigns
+Content-Type: application/json
+Authorization: Bearer {{fundraiserToken}}
+
+{
+  "title": "Chiến dịch thử nghiệm XSS <script>alert('xss_attack')</script><iframe src='evil.com'></iframe>",
+  "categoryId": "{{categoryId}}",
+  "shortDescription": "Mô tả ngắn tối thiểu hai mươi ký tự hợp lệ <img src=x onerror=alert(1)>",
+  "story": "Nội dung câu chuyện chi tiết trên năm mươi ký tự để kiểm tra bộ lọc làm sạch XSS phía máy chủ",
+  "coverImageUrl": "https://images.unsplash.com/photo-1516627145497-ae6968895b74?w=1000",
+  "targetAmount": 10000000,
+  "endDate": "2026-11-25T23:59:59.000Z",
+  "bankAccountNumber": "19035678901234",
+  "bankName": "Techcombank",
+  "bankAccountName": "NGUYEN VAN A"
+}
+
+### 43. TEST PHÒNG CHỐNG BROKEN ACCESS CONTROL - User thông thường gọi API Admin (Kỳ vọng: 403 Forbidden & ghi AuditLog)
+GET {{baseUrl}}/users/audit-logs
+Authorization: Bearer {{userToken}}
+
+### 44. TEST PHÒNG CHỐNG SQL INJECTION - Dùng chuỗi SQLi (Kỳ vọng: Bị Zod/Prisma chặn an toàn)
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "' OR '1'='1' -- ",
+  "password": "' OR '1'='1' -- "
+}
+

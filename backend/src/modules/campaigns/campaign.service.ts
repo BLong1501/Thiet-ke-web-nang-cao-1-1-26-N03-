@@ -15,6 +15,16 @@ import { AppError } from "../../core/errors/app.error";
 import { CampaignStatus, Prisma, UserRole } from "@prisma/client";
 import { prisma } from "../../core/database/prisma";
 
+function normalizeVietnamese(str: string): string {
+  return str
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/đ/g, "d")
+    .replace(/Đ/g, "D")
+    .toUpperCase()
+    .trim();
+}
+
 export class CampaignService {
   constructor(private repo: CampaignRepository = campaignRepository) {}
 
@@ -25,11 +35,11 @@ export class CampaignService {
     if (!campaign) return null;
 
     const target = Number(campaign.targetAmount);
-    const ledger = await prisma.ledgerEntry.groupBy({
+    const ledger = await (prisma as any).ledgerEntry.groupBy({
       by: ['kind'], where: { donation: { campaignId: campaign.id } }, _sum: { amount: true },
     });
-    const received = ledger.find(row => row.kind === 'RECEIPT')?._sum.amount ?? new Prisma.Decimal(0);
-    const refunded = ledger.find(row => row.kind === 'REFUND')?._sum.amount ?? new Prisma.Decimal(0);
+    const received = ledger.find((row: any) => row.kind === 'RECEIPT')?._sum.amount ?? new Prisma.Decimal(0);
+    const refunded = ledger.find((row: any) => row.kind === 'REFUND')?._sum.amount ?? new Prisma.Decimal(0);
     const current = Number(received.minus(refunded));
     const progressPercentage = target > 0 ? Math.min(100, Math.round((current / target) * 100)) : 0;
     const now = new Date();
@@ -38,6 +48,15 @@ export class CampaignService {
     const daysLeft = Math.max(0, Math.ceil(diffTime / (1000 * 60 * 60 * 24)));
     const isEnded = now > end || campaign.status === CampaignStatus.COMPLETED;
 
+    let legalMetadata: any = null;
+    if (campaign.beneficiaryInfo) {
+      try {
+        legalMetadata = JSON.parse(campaign.beneficiaryInfo);
+      } catch {
+        legalMetadata = { details: campaign.beneficiaryInfo };
+      }
+    }
+
     return {
       ...campaign,
       targetAmount: target,
@@ -45,6 +64,18 @@ export class CampaignService {
       progressPercentage,
       daysLeft,
       isEnded,
+      organizerType: legalMetadata?.organizerType || "INDIVIDUAL",
+      organizationName: legalMetadata?.organizationName || null,
+      taxCode: legalMetadata?.taxCode || null,
+      representativeRole: legalMetadata?.representativeRole || null,
+      charityCommitment: legalMetadata?.charityCommitmentAccepted
+        ? {
+            isAccepted: true,
+            acceptedAt: legalMetadata.charityCommitmentAcceptedAt,
+            statement: legalMetadata.charityCommitmentStatement,
+          }
+        : null,
+      beneficiaryDetails: legalMetadata?.details || campaign.beneficiaryInfo,
     };
   }
 
@@ -151,24 +182,81 @@ export class CampaignService {
       );
     }
 
-    // 2. Kiểm tra danh mục hợp lệ
+    // 2. Kiểm tra cam kết minh bạch gây quỹ từ thiện (Bắt buộc)
+    if (!input.charityCommitmentAccepted) {
+      throw new AppError(
+        "Bạn bắt buộc phải đọc và tích cam kết minh bạch gây quỹ từ thiện, đảm bảo tài khoản nhận tiền chỉ phục vụ mục đích từ thiện theo quy định pháp luật.",
+        400
+      );
+    }
+
+    // 3. Lấy thông tin người gây quỹ để kiểm tra đối soát tài khoản ngân hàng
+    const fundraiser = await prisma.user.findUnique({
+      where: { id: fundraiserId },
+      select: { id: true, fullName: true, role: true },
+    });
+
+    const organizerType = input.organizerType || "INDIVIDUAL";
+    const normalizedBankName = normalizeVietnamese(input.bankAccountName || "");
+    const normalizedFundraiserName = normalizeVietnamese(fundraiser?.fullName || "");
+
+    // 4. Ràng buộc theo loại chủ thể
+    if (organizerType === "INDIVIDUAL") {
+      // Đối với cá nhân: Tên chủ tài khoản ngân hàng phải trùng khớp với họ tên người gây quỹ (định danh CCCD)
+      if (normalizedFundraiserName && normalizedFundraiserName !== normalizedBankName) {
+        throw new AppError(
+          `Tên chủ tài khoản ngân hàng (${input.bankAccountName}) không trùng khớp với họ tên đã định danh của bạn (${fundraiser?.fullName}). Đối với chiến dịch do cá nhân phát động, tài khoản ngân hàng phải đứng tên chính bạn để bảo đảm tính minh bạch.`,
+          400
+        );
+      }
+    } else if (organizerType === "ORGANIZATION") {
+      // Đối với tổ chức: Tài khoản nhận tiền phải là tài khoản của Tổ chức/Pháp nhân, KHÔNG được dùng tài khoản cá nhân của người đại diện
+      if (normalizedFundraiserName && normalizedFundraiserName === normalizedBankName) {
+        throw new AppError(
+          "Đối với chiến dịch do Doanh nghiệp / Tổ chức phát động, tài khoản nhận tiền bắt buộc phải là tài khoản ngân hàng của Pháp nhân, không được sử dụng tài khoản cá nhân của người đại diện.",
+          400
+        );
+      }
+    }
+
+    // 5. Kiểm tra danh mục hợp lệ
     const category = await this.repo.findCategoryById(input.categoryId);
     if (!category || !category.isActive) {
       throw new AppError("Danh mục chiến dịch không tồn tại hoặc đang tạm ngưng", 400);
     }
 
-    // 3. Kiểm tra ngày kết thúc phải lớn hơn ngày bắt đầu
+    // 6. Kiểm tra ngày kết thúc phải lớn hơn ngày bắt đầu
     const startDate = input.startDate ? new Date(input.startDate) : new Date();
     const endDate = new Date(input.endDate);
     if (endDate <= startDate) {
       throw new AppError("Ngày kết thúc gây quỹ phải diễn ra sau ngày bắt đầu", 400);
     }
 
-    // 4. Sinh slug chuẩn SEO duy nhất
+    // 7. Sinh slug chuẩn SEO duy nhất
     const slug = generateUniqueSlug(input.title);
 
-    // 5. Lưu vào Database
+    // 8. Lưu vào Database
     const campaign = await this.repo.create(fundraiserId, slug, input);
+
+    // 9. Ghi AuditLog bảo mật hành vi khởi tạo chiến dịch
+    await prisma.auditLog.create({
+      data: {
+        userId: fundraiserId,
+        action: "CREATE_CAMPAIGN",
+        entityName: "Campaign",
+        entityId: campaign.id,
+        details: {
+          organizerType,
+          organizationName: input.organizationName || null,
+          taxCode: input.taxCode || null,
+          representativeRole: input.representativeRole || null,
+          bankAccountName: input.bankAccountName,
+          bankAccountNumber: input.bankAccountNumber,
+          bankName: input.bankName,
+          charityCommitmentAccepted: true,
+        },
+      },
+    });
 
     return this.formatCampaign(campaign);
   }

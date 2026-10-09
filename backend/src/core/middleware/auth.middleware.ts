@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from "express";
 import { UserRole } from "@prisma/client";
 import { verifyAccessToken, JwtPayload } from "../utils/jwt.util";
 import { sendError } from "../utils/response.util";
+import { auditService } from "../services/audit.service";
 
 // Mở rộng kiểu dữ liệu Request của Express để chứa thông tin người dùng đã xác thực
 declare global {
@@ -44,6 +45,21 @@ export const authorize = (...roles: UserRole[]) => {
     }
 
     if (!roles.includes(req.user.role)) {
+      // Ghi nhật ký hành vi truy cập trái phép (Broken Access Control violation)
+      auditService.log({
+        req,
+        userId: req.user?.userId,
+        action: "UNAUTHORIZED_ACCESS_ATTEMPT",
+        entityName: "AccessControl",
+        entityId: req.originalUrl,
+        details: {
+          userRole: req.user?.role,
+          requiredRoles: roles,
+          method: req.method,
+          path: req.originalUrl,
+        },
+      });
+
       return sendError(
         res,
         403,

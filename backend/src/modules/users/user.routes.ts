@@ -13,6 +13,9 @@ router.use(authenticate, authorize(UserRole.ADMIN));
 // Lấy danh sách toàn bộ người dùng có phân trang, lọc và tìm kiếm
 router.get("/", validate({ query: userQuerySchema }), userController.getUsers);
 
+// Lấy danh sách nhật ký kiểm toán bảo mật (Security Audit Logs)
+router.get("/audit-logs", userController.getAuditLogs);
+
 // Lấy chi tiết thông tin một người dùng
 router.get("/:id", userController.getUserDetail);
 
