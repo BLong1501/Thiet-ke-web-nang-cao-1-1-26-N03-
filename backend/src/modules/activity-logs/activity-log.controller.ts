@@ -5,6 +5,15 @@ import { sendSuccess, sendCreated } from "../../core/utils/response.util";
 export class ActivityLogController {
   constructor(private service: ActivityLogService = activityLogService) {}
 
+  getMyLogs = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const result = await this.service.getMyLogs(req.user!.userId, req.query as any);
+      return sendSuccess(res, 200, "Lấy nhật ký cá nhân thành công", result.items, result.meta);
+    } catch (error) {
+      return next(error);
+    }
+  };
+
   /**
    * Lấy danh sách nhật ký hệ thống
    * GET /api/v1/activity-logs

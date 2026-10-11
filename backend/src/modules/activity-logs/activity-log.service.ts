@@ -3,6 +3,21 @@ import { AppError } from "../../core/errors/app.error";
 import { ActivityLogQueryInput, ActivityLogStatsQueryInput, CreateActivityLogInput } from "./activity-log.validation";
 
 export class ActivityLogService {
+  /** Only an actor's own events; omit internal details and other identity data. */
+  async getMyLogs(userId: string, query: ActivityLogQueryInput) {
+    const result = await this.getUserLogs(userId, query);
+    return {
+      meta: result.meta,
+      items: result.items.map(log => ({
+        id: log.id,
+        action: log.action,
+        entityName: log.entityName,
+        entityId: log.entityId,
+        createdAt: log.createdAt,
+      })),
+    };
+  }
+
   /**
    * Lấy danh sách nhật ký hệ thống kèm bộ lọc, tìm kiếm và phân trang
    */

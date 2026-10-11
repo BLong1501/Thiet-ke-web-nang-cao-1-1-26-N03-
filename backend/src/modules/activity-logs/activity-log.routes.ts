@@ -11,8 +11,16 @@ import {
 
 const router = Router();
 
-// Toàn bộ các endpoints về Activity Log yêu cầu quyền Quản trị viên (ADMIN)
-router.use(authenticate, authorize(UserRole.ADMIN));
+// Personal activity is scoped to the verified token, never a client-supplied userId.
+router.use(authenticate);
+router.get(
+  "/me",
+  validateRequest({ query: activityLogQuerySchema.omit({ userId: true }) }),
+  activityLogController.getMyLogs
+);
+
+// System-wide, arbitrary-user, detail and write access remains admin-only.
+router.use(authorize(UserRole.ADMIN));
 
 // 1. Thống kê số liệu nhật ký hệ thống
 router.get(
