@@ -32,6 +32,8 @@ Thumbs.db
 
 # Coverage directory used by tools like istanbul
 coverage/
+frontend/test-results/
+frontend/playwright-report/
 
 # Temporary folders
 tmp/

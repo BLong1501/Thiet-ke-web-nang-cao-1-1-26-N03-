@@ -1,6 +1,6 @@
-import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
-import type { User } from '../types';
+import { create } from "zustand";
+import { persist, createJSONStorage } from "zustand/middleware";
+import type { User } from "../types";
 
 interface AuthState {
   user: User | null;
@@ -25,8 +25,7 @@ export const useAuthStore = create<AuthState>()(
       setUser: (user, token) =>
         set({ user, token, isAuthenticated: true, isLoading: false }),
 
-      logout: () =>
-        set({ user: null, token: null, isAuthenticated: false }),
+      logout: () => set({ user: null, token: null, isAuthenticated: false }),
 
       updateUser: (updates) =>
         set((state) => ({
@@ -36,12 +35,13 @@ export const useAuthStore = create<AuthState>()(
       setLoading: (loading) => set({ isLoading: loading }),
     }),
     {
-      name: 'fundvn-auth',
+      name: "fundtrust-session-v2",
+      storage: createJSONStorage(() => sessionStorage),
       partialize: (state) => ({
         user: state.user,
         token: state.token,
         isAuthenticated: state.isAuthenticated,
       }),
-    }
-  )
+    },
+  ),
 );

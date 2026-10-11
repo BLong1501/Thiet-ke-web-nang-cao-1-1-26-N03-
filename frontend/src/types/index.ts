@@ -5,12 +5,13 @@ export interface User {
   name: string;
   email: string;
   avatar?: string;
-  role: 'admin' | 'fundraiser' | 'user';
+  role: "admin" | "fundraiser" | "user" | "ADMIN" | "FUNDRAISER" | "USER";
   isVerified: boolean;
   bio?: string;
   joinedAt: string;
   totalDonated?: number;
   totalRaised?: number;
+  phoneNumber?: string;
 }
 
 export interface Campaign {
@@ -18,39 +19,72 @@ export interface Campaign {
   title: string;
   description: string;
   shortDesc: string;
-  category: CampaignCategory;
+  category: CampaignCategory | string;
   targetAmount: number;
   raisedAmount: number;
   donorCount: number;
   deadline: string;
-  status: 'draft' | 'pending' | 'active' | 'completed' | 'rejected' | 'suspended';
+  status:
+    | "draft"
+    | "pending"
+    | "active"
+    | "completed"
+    | "rejected"
+    | "suspended"
+    | "DRAFT"
+    | "PENDING_APPROVAL"
+    | "ACTIVE"
+    | "COMPLETED"
+    | "REJECTED"
+    | "SUSPENDED";
   creator: User;
   thumbnail: string;
+  coverImageUrl?: string;
   images?: string[];
   tags?: string[];
   createdAt: string;
   updatedAt: string;
   updates?: CampaignUpdate[];
+  disbursements?: DisbursementRecord[];
+  bankAccountNumber?: string;
+  bankName?: string;
+  bankAccountName?: string;
+  beneficiaryInfo?: string;
+  rejectionReason?: string;
+}
+
+export interface DisbursementRecord {
+  id: string;
+  date: string;
+  purpose: string;
+  recipient: string;
+  amount: number;
+  proofUrl: string;
+  status: string;
+  note?: string;
 }
 
 export type CampaignCategory =
-  | 'y-te'
-  | 'giao-duc'
-  | 'moi-truong'
-  | 'cuu-tro'
-  | 'dong-vat'
-  | 'cong-dong'
-  | 'sang-tao'
-  | 'khac';
+  | "y-te"
+  | "giao-duc"
+  | "moi-truong"
+  | "cuu-tro"
+  | "dong-vat"
+  | "cong-dong"
+  | "sang-tao"
+  | "khac";
 
 export interface Donation {
   id: string;
   campaign: Campaign;
   donor: User | null;
+  donorName?: string;
+  donorEmail?: string;
   isAnonymous: boolean;
   amount: number;
   message?: string;
-  status: 'pending' | 'success' | 'failed';
+  status: "pending" | "success" | "failed" | "PENDING" | "SUCCESS" | "FAILED";
+  paymentMethod?: string;
   createdAt: string;
 }
 
@@ -64,12 +98,19 @@ export interface CampaignUpdate {
 
 export interface Notification {
   id: string;
-  type: 'donation' | 'campaign' | 'verification' | 'social' | 'system';
+  type: "donation" | "campaign" | "verification" | "social" | "system";
   title: string;
   message: string;
   isRead: boolean;
   createdAt: string;
   link?: string;
+}
+
+export interface PostComment {
+  id: string;
+  author: User;
+  content: string;
+  createdAt: string;
 }
 
 export interface Post {
@@ -82,6 +123,8 @@ export interface Post {
   isLiked: boolean;
   createdAt: string;
   campaign?: Campaign;
+  category?: string;
+  commentList?: PostComment[];
 }
 
 export interface Community {
@@ -99,10 +142,26 @@ export interface Community {
 export interface VerificationRequest {
   id: string;
   user: User;
-  status: 'pending' | 'approved' | 'rejected' | 'need-info';
-  documents: string[];
+  idCardNumber: string;
+  cardIssuedDate?: string;
+  cardIssuedPlace?: string;
+  frontCardImage: string;
+  backCardImage: string;
+  portraitImage: string;
+  supportingDocuments?: string[];
+  status:
+    | "pending"
+    | "approved"
+    | "rejected"
+    | "need-info"
+    | "PENDING"
+    | "APPROVED"
+    | "REJECTED";
+  documents?: string[];
   submittedAt: string;
+  createdAt?: string;
   reviewedAt?: string;
+  rejectionReason?: string;
   note?: string;
 }
 
@@ -128,23 +187,23 @@ export interface ApiError {
 }
 
 export const CATEGORY_LABELS: Record<CampaignCategory, string> = {
-  'y-te': 'Y tế & Sức khỏe',
-  'giao-duc': 'Giáo dục',
-  'moi-truong': 'Môi trường',
-  'cuu-tro': 'Cứu trợ thiên tai',
-  'dong-vat': 'Động vật',
-  'cong-dong': 'Cộng đồng',
-  'sang-tao': 'Sáng tạo',
-  'khac': 'Khác',
+  "y-te": "Y tế & Sức khỏe",
+  "giao-duc": "Giáo dục",
+  "moi-truong": "Môi trường",
+  "cuu-tro": "Cứu trợ thiên tai",
+  "dong-vat": "Động vật",
+  "cong-dong": "Cộng đồng",
+  "sang-tao": "Sáng tạo",
+  khac: "Khác",
 };
 
 export const CATEGORY_ICONS: Record<CampaignCategory, string> = {
-  'y-te': '🏥',
-  'giao-duc': '📚',
-  'moi-truong': '🌱',
-  'cuu-tro': '🆘',
-  'dong-vat': '🐾',
-  'cong-dong': '🤝',
-  'sang-tao': '🎨',
-  'khac': '💡',
+  "y-te": "🏥",
+  "giao-duc": "📚",
+  "moi-truong": "🌱",
+  "cuu-tro": "🆘",
+  "dong-vat": "🐾",
+  "cong-dong": "🤝",
+  "sang-tao": "🎨",
+  khac: "💡",
 };

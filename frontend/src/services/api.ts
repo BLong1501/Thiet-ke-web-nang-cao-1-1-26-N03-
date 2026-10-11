@@ -1,122 +1,262 @@
-import axios from 'axios';
-import { useAuthStore } from '../store/authStore';
+import axios from "axios";
+import { useAuthStore } from "../store/authStore";
 
-const BASE_URL = (import.meta as any).env.VITE_API_URL || 'http://localhost:3000/api/v1';
+const BASE_URL =
+  (import.meta as any).env.VITE_API_URL || "http://localhost:5000/api/v1";
 
 export const api = axios.create({
   baseURL: BASE_URL,
-  headers: { 'Content-Type': 'application/json' },
+  headers: { "Content-Type": "application/json" },
   withCredentials: true,
+  timeout: 20000,
 });
 
 // Request interceptor - attach token
 api.interceptors.request.use((config) => {
   const token = useAuthStore.getState().token;
-  if (token) config.headers.Authorization = `Bearer ${token}`;
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
   return config;
 });
 
-// Response interceptor - handle errors
+let refreshPromise: Promise<string> | null = null;
+// Share a refresh request across concurrent callers.
 api.interceptors.response.use(
   (res) => res,
   async (error) => {
-    if (error.response?.status === 401) {
+    const request = error.config;
+    const previousToken = useAuthStore.getState().token;
+    if (
+      error.response?.status === 401 &&
+      request &&
+      !request._retry &&
+      previousToken &&
+      (!request.url?.startsWith("/auth/") ||
+        ["/auth/me", "/auth/logout"].includes(request.url))
+    ) {
+      request._retry = true;
+      // A late 401 may refer to the previous token after another request refreshed it.
+      const sentToken = request.headers?.Authorization;
+      if (sentToken && sentToken !== `Bearer ${previousToken}`) {
+        request.headers.Authorization = `Bearer ${previousToken}`;
+        return api(request);
+      }
+      try {
+        if (!refreshPromise)
+          refreshPromise = axios
+            .post(
+              `${BASE_URL}/auth/refresh-token`,
+              {},
+              { withCredentials: true, timeout: 20000 },
+            )
+            .then((r) => {
+              const token = r.data?.data?.accessToken;
+              if (!token) throw new Error("Phiên đăng nhập không hợp lệ");
+              return token;
+            })
+            .finally(() => {
+              refreshPromise = null;
+            });
+        const token = await refreshPromise;
+        const currentToken = useAuthStore.getState().token;
+        if (currentToken !== previousToken && currentToken !== token)
+          return Promise.reject(error);
+        useAuthStore.setState({ token });
+        request.headers.Authorization = `Bearer ${token}`;
+        return api(request);
+      } catch (refreshError: any) {
+        if (
+          [401, 403].includes(refreshError?.response?.status) &&
+          useAuthStore.getState().token === previousToken
+        )
+          useAuthStore.getState().logout();
+        return Promise.reject(refreshError);
+      }
+    }
+    if (error.response?.status === 401 && request?._retry) {
       useAuthStore.getState().logout();
-      window.location.href = '/login';
     }
     return Promise.reject(error);
-  }
+  },
 );
 
 // --- Auth APIs ---
 export const authApi = {
-  login: (email: string, password: string) =>
-    api.post('/auth/login', { email, password }),
-  register: (data: { name: string; email: string; password: string }) =>
-    api.post('/auth/register', data),
-  logout: () => api.post('/auth/logout'),
-  me: () => api.get('/auth/me'),
+  login: (data: { email: string; password: string }) =>
+    api.post("/auth/login", data),
+  register: (data: {
+    fullName: string;
+    email: string;
+    password: string;
+    phoneNumber?: string;
+  }) => api.post("/auth/register", data),
+  logout: () => api.post("/auth/logout"),
+  me: () => api.get("/auth/me"),
+  verifyEmail: (data: { email: string; otp: string }) =>
+    api.post("/auth/verify-email", data),
+  resendOtp: (email: string) => api.post("/auth/resend-otp", { email }),
+  forgotPassword: (email: string) =>
+    api.post("/auth/forgot-password", { email }),
+  resetPassword: (data: { email: string; otp: string; newPassword: string }) =>
+    api.post("/auth/reset-password", data),
+};
+
+// --- Upload APIs ---
+export const uploadApi = {
+  uploadFile: async (
+    file: File,
+  ): Promise<{ id: string; fileName: string; downloadUrl: string }> => {
+    const formData = new FormData();
+    formData.append("file", file);
+    const res = await api.post("/uploads", formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+    return res.data?.data || res.data;
+  },
 };
 
 // --- Campaign APIs ---
 export const campaignApi = {
   getAll: (params?: Record<string, unknown>) =>
-    api.get('/campaigns', { params }),
-  getById: (id: string) => api.get(`/campaigns/${id}`),
-  create: (data: FormData) =>
-    api.post('/campaigns', data, { headers: { 'Content-Type': 'multipart/form-data' } }),
-  update: (id: string, data: FormData) =>
-    api.put(`/campaigns/${id}`, data, { headers: { 'Content-Type': 'multipart/form-data' } }),
-  delete: (id: string) => api.delete(`/campaigns/${id}`),
-  getUpdates: (id: string) => api.get(`/campaigns/${id}/updates`),
+    api.get("/campaigns", { params }),
+  getById: (idOrSlug: string) => api.get(`/campaigns/${idOrSlug}`),
+  getMyCampaigns: (params?: Record<string, unknown>) =>
+    api.get("/campaigns/my/list", { params }),
+  getPending: (params?: Record<string, unknown>) =>
+    api.get("/campaigns/admin/pending", { params }),
+  create: (data: any) => api.post("/campaigns", data),
+  update: (id: string, data: any) => api.put(`/campaigns/${id}`, data),
+  review: (
+    id: string,
+    data: { status: "ACTIVE" | "REJECTED"; rejectionReason?: string },
+  ) => api.patch(`/campaigns/${id}/review`, data),
+  addMedia: (
+    id: string,
+    data: {
+      mediaType: "IMAGE" | "VIDEO" | "DOCUMENT";
+      url: string;
+      caption?: string;
+    },
+  ) => api.post(`/campaigns/${id}/media`, data),
   postUpdate: (id: string, data: { title: string; content: string }) =>
     api.post(`/campaigns/${id}/updates`, data),
+  addDisbursement: (
+    id: string,
+    data: {
+      title: string;
+      amount: number;
+      disbursementDate: string;
+      proofDocuments: string[];
+      note?: string;
+    },
+  ) => api.post(`/campaigns/${id}/disbursements`, data),
+  getCategories: () => api.get("/campaigns/categories"),
 };
 
 // --- Donation APIs ---
 export const donationApi = {
-  create: (data: { campaignId: string; amount: number; message?: string; isAnonymous: boolean }) =>
-    api.post('/donations', data),
+  create: (data: {
+    campaignId: string;
+    amount: number;
+    donorName?: string;
+    donorEmail?: string;
+    donorPhone?: string;
+    message?: string;
+    isAnonymous?: boolean;
+    paymentMethod?: string;
+    requestKey?: string;
+  }) => api.post("/donations", data),
+  confirmPayment: (
+    id: string,
+    data?: { gatewayTransactionNo?: string; note?: string },
+  ) => api.post(`/donations/${id}/confirm`, data || {}),
+  getCampaignDonations: (
+    campaignId: string,
+    params?: Record<string, unknown>,
+  ) => api.get(`/donations/campaign/${campaignId}`, { params }),
   getMyDonations: (params?: Record<string, unknown>) =>
-    api.get('/donations/my', { params }),
-  getCampaignDonations: (campaignId: string, params?: Record<string, unknown>) =>
-    api.get(`/donations/campaign/${campaignId}`, { params }),
+    api.get("/donations/my/history", { params }),
+  getAllForAdmin: (params?: Record<string, unknown>) =>
+    api.get("/donations/admin/all", { params }),
+  getById: (id: string) => api.get(`/donations/${id}`),
 };
 
-// --- User APIs ---
-export const userApi = {
-  getProfile: (id: string) => api.get(`/users/${id}`),
-  updateProfile: (data: FormData) =>
-    api.put('/users/me', data, { headers: { 'Content-Type': 'multipart/form-data' } }),
-  changePassword: (data: { currentPassword: string; newPassword: string }) =>
-    api.put('/users/me/password', data),
-};
-
-// --- Verification APIs ---
+// --- Verification APIs (KYC) ---
 export const verificationApi = {
-  submit: (data: FormData) =>
-    api.post('/verifications', data, { headers: { 'Content-Type': 'multipart/form-data' } }),
-  getStatus: () => api.get('/verifications/my'),
-  getAll: (params?: Record<string, unknown>) => api.get('/verifications', { params }),
-  review: (id: string, data: { status: string; note?: string }) =>
-    api.put(`/verifications/${id}/review`, data),
+  submit: (data: {
+    idCardNumber: string;
+    frontCardImage: string;
+    backCardImage: string;
+    portraitImage: string;
+    cardIssuedDate?: string;
+    cardIssuedPlace?: string;
+    supportingDocuments?: any;
+  }) => api.post("/verifications/request", data),
+  getMyStatus: () => api.get("/verifications/my-status"),
+  getPending: (params?: Record<string, unknown>) =>
+    api.get("/verifications/pending", { params }),
+  getById: (id: string) => api.get(`/verifications/${id}`),
+  review: (
+    id: string,
+    data: { status: "APPROVED" | "REJECTED"; rejectionReason?: string },
+  ) => api.patch(`/verifications/${id}/review`, data),
 };
 
-// --- Community APIs ---
-export const communityApi = {
-  getAll: (params?: Record<string, unknown>) => api.get('/communities', { params }),
-  getById: (id: string) => api.get(`/communities/${id}`),
-  join: (id: string) => api.post(`/communities/${id}/join`),
-  leave: (id: string) => api.post(`/communities/${id}/leave`),
-  getPosts: (id: string) => api.get(`/communities/${id}/posts`),
+// --- Profile & User APIs ---
+export const profileApi = {
+  getMyProfile: () => api.get("/profile/me"),
+  updateProfile: (data: {
+    fullName?: string;
+    phoneNumber?: string;
+    avatarUrl?: string;
+    bio?: string;
+  }) => api.put("/profile/me", data),
+  changePassword: (data: { oldPassword: string; newPassword: string }) =>
+    api.put("/profile/change-password", data),
+};
+
+export const userApi = {
+  getUsers: (params?: Record<string, unknown>) => api.get("/users", { params }),
+  getUserDetail: (id: string) => api.get(`/users/${id}`),
+  updateUserStatus: (
+    id: string,
+    data: { status: "ACTIVE" | "SUSPENDED" | "BANNED"; reason?: string },
+  ) => api.patch(`/users/${id}/status`, data),
 };
 
 // --- Activity Log APIs (Admin) ---
 export const activityLogApi = {
+  getMyLogs: (params?: Record<string, unknown>) =>
+    api.get("/activity-logs/me", { params }),
   getLogs: (params?: Record<string, unknown>) =>
-    api.get('/activity-logs', { params }),
+    api.get("/activity-logs", { params }),
   getStats: (params?: { from?: string; to?: string }) =>
-    api.get('/activity-logs/stats', { params }),
+    api.get("/activity-logs/stats", { params }),
   getLogById: (id: string) => api.get(`/activity-logs/${id}`),
   getUserLogs: (userId: string, params?: Record<string, unknown>) =>
     api.get(`/activity-logs/user/${userId}`, { params }),
 };
 
-// --- Helper ---
+// --- Helper Functions ---
 export const formatCurrency = (amount: number): string => {
-  return new Intl.NumberFormat('vi-VN', {
-    style: 'currency',
-    currency: 'VND',
+  return new Intl.NumberFormat("vi-VN", {
+    style: "currency",
+    currency: "VND",
     maximumFractionDigits: 0,
   }).format(amount);
 };
 
 export const formatDate = (dateString: string): string => {
-  return new Intl.DateTimeFormat('vi-VN', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-  }).format(new Date(dateString));
+  try {
+    return new Intl.DateTimeFormat("vi-VN", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    }).format(new Date(dateString));
+  } catch {
+    return dateString;
+  }
 };
 
 export const getDaysLeft = (deadline: string): number => {
@@ -127,5 +267,6 @@ export const getDaysLeft = (deadline: string): number => {
 };
 
 export const getProgress = (raised: number, target: number): number => {
+  if (!target || target <= 0) return 0;
   return Math.min(100, Math.round((raised / target) * 100));
 };
