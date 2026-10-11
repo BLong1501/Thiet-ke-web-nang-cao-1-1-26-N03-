@@ -2,26 +2,50 @@ import express, { Express, Request, Response, NextFunction } from "express";
 import cors from "cors";
 import helmet from "helmet";
 import cookieParser from "cookie-parser";
-import { auditLogMiddleware } from "./core/middleware/audit-log.middleware";
 
 const app: Express = express();
 
+import { xssSanitizer, csrfProtection } from "./core/middleware/security.middleware";
+
 // Middlewares bảo mật & phân tích cú pháp
-app.use(helmet());
+app.use(
+  helmet({
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        scriptSrc: ["'self'"],
+        styleSrc: ["'self'", "'unsafe-inline'"],
+        imgSrc: ["'self'", "data:", "https:"],
+      },
+    },
+    crossOriginEmbedderPolicy: false,
+  })
+);
+
 app.use(
   cors({
     origin: process.env.CLIENT_URL || "http://localhost:5173",
     credentials: true,
   })
 );
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+
+app.use(express.json({ limit: "10mb" }));
+app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 app.use(cookieParser(process.env.COOKIE_SECRET));
+
+// Phòng chống XSS: Tự động loại bỏ script và mã độc hại trong body, query, params
+app.use(xssSanitizer);
+
+// Phòng chống CSRF: Kiểm tra Origin/Referer và bảo vệ State-changing requests
+app.use(csrfProtection);
 
 import authRouter from "./modules/auth/auth.routes";
 import { verificationRouter } from "./modules/verifications/verification.routes";
 import { profileRouter } from "./modules/profile/profile.routes";
 import { campaignRouter } from "./modules/campaigns/campaign.routes";
+import { donationRouter } from "./modules/donations/donation.routes";
+import { userRouter } from "./modules/users/user.routes";
+import { uploadRouter } from "./modules/uploads/upload.routes";
 import { activityLogRouter } from "./modules/activity-logs/activity-log.routes";
 
 // Health check endpoint
@@ -33,14 +57,14 @@ app.get("/api/v1/health", (_req: Request, res: Response) => {
   });
 });
 
-// Middleware ghi nhật ký tự động cho các request thay đổi trạng thái
-app.use(auditLogMiddleware);
-
 // Đăng ký các phân hệ Routes v1
 app.use("/api/v1/auth", authRouter);
 app.use("/api/v1/verifications", verificationRouter);
 app.use("/api/v1/profile", profileRouter);
 app.use("/api/v1/campaigns", campaignRouter);
+app.use("/api/v1/donations", donationRouter);
+app.use("/api/v1/users", userRouter);
+app.use("/api/v1/uploads", uploadRouter);
 app.use("/api/v1/activity-logs", activityLogRouter);
 
 import { sendError } from "./core/utils/response.util";

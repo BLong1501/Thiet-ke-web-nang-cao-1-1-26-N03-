@@ -1,0 +1,13 @@
+{
+  "checkedAt": "2026-10-02T08:59:37.553Z",
+  "database": "crowdfunding_db",
+  "usersPreserved": true,
+  "triggers": [
+    "ledger_validate_insert",
+    "ledger_no_update",
+    "ledger_no_delete",
+    "donation_lock_financial_fields"
+  ],
+  "ledger": "full refund only; one entry per donation/kind",
+  "scriptSha256": "a4ba4782396cd097668404c452f8b0cc2ef3d214ff94584d293745e416a0ea26"
+}

@@ -1,0 +1,104 @@
+◇ injected env (25) from .env // tip: ⌁ auth for agents [www.vestauth.com]
+◇ injected env (0) from .env // tip: ⌘ suppress logs { quiet: true }
+PASS B6-01 create PENDING + idempotent replay
+PASS B6-02 missing token 401; USER confirm 403; cross-owner detail 403
+PASS B6-03 invalid amount 400; key reused with changed payload 409; pending refund 422
+PASS B6-04 rollback on injected notification/audit failure
+PASS B6-05 ADMIN confirm + repeated confirm 422 + reconciliation
+PASS B6-06 active campaign refund 422; admin cancellation
+prisma:error 
+Invalid `db.ledgerEntry.create()` invocation in
+D:\DO_AN_WEB\Thiet-ke-web-nang-cao-1-1-26-N03-\backend\scripts\session06-check.ts:95:49
+
+  92   assert.equal((await request('POST', `/donations/campaigns/${campaignId}/cancel`, admin, { reason: 'Test cancellation' })).status, 200);
+  93 });
+  94 await check('B6-07 real DB rejects refund exceeding receipt', async () => {
+→ 95   await assert.rejects(() => db.ledgerEntry.create(
+Database error. Code: `1644`. Message: `Ledger amount must equal the original full donation`
+PASS B6-07 real DB rejects refund exceeding receipt
+PASS B6-08 50 concurrent HTTP refunds: exactly 1 success, 49 rejected
+prisma:error 
+Invalid `db.ledgerEntry.create()` invocation in
+D:\DO_AN_WEB\Thiet-ke-web-nang-cao-1-1-26-N03-\backend\scripts\session06-check.ts:115:49
+
+  112   assert.equal(await db.notification.count({ where: { userId, type: 'DEMO_FULL_REFUND' } }), 1);
+  113 });
+  114 await check('B6-09 direct DB duplicate refund and ledger editing rejected', async () => {
+→ 115   await assert.rejects(() => db.ledgerEntry.create(
+Database error. Code: `1644`. Message: `Refund requires a successful receipt and cannot exceed it`
+prisma:error 
+Invalid `db.ledgerEntry.updateMany()` invocation in
+D:\DO_AN_WEB\Thiet-ke-web-nang-cao-1-1-26-N03-\backend\scripts\session06-check.ts:116:49
+
+  113 });
+  114 await check('B6-09 direct DB duplicate refund and ledger editing rejected', async () => {
+  115   await assert.rejects(() => db.ledgerEntry.create({ data: { donationId, kind: 'REFUND', amount: 100000 } }), /Refund requires/);
+→ 116   await assert.rejects(() => db.ledgerEntry.updateMany(
+Database error. Code: `1644`. Message: `Ledger entries are immutable`
+prisma:error 
+Invalid `db.donation.update()` invocation in
+D:\DO_AN_WEB\Thiet-ke-web-nang-cao-1-1-26-N03-\backend\scripts\session06-check.ts:117:46
+
+  114 await check('B6-09 direct DB duplicate refund and ledger editing rejected', async () => {
+  115   await assert.rejects(() => db.ledgerEntry.create({ data: { donationId, kind: 'REFUND', amount: 100000 } }), /Refund requires/);
+  116   await assert.rejects(() => db.ledgerEntry.updateMany({ where: { donationId }, data: { amount: 999999 } }), /Ledger entries are immutable/);
+→ 117   await assert.rejects(() => db.donation.update(
+Database error. Code: `1644`. Message: `Settled donation financial fields are immutable`
+PASS B6-09 direct DB duplicate refund and ledger editing rejected
+PASS B6-10 expiry task closes campaign without HTTP access
+┌─────────┬─────────┬────────────┬────────────┬──────────────────────────────────────────────┐
+│ (index) │ request │ httpStatus │ durationMs │ message                                      │
+├─────────┼─────────┼────────────┼────────────┼──────────────────────────────────────────────┤
+│ 0       │ 1       │ 422        │ 153        │ 'Chỉ hoàn khoản SUCCESS chưa được hoàn tiền' │
+│ 1       │ 2       │ 200        │ 142        │ 'Hoàn tiền mô phỏng thành công'              │
+│ 2       │ 3       │ 422        │ 193        │ 'Chỉ hoàn khoản SUCCESS chưa được hoàn tiền' │
+│ 3       │ 4       │ 422        │ 181        │ 'Chỉ hoàn khoản SUCCESS chưa được hoàn tiền' │
+│ 4       │ 5       │ 422        │ 168        │ 'Chỉ hoàn khoản SUCCESS chưa được hoàn tiền' │
+│ 5       │ 6       │ 422        │ 203        │ 'Chỉ hoàn khoản SUCCESS chưa được hoàn tiền' │
+│ 6       │ 7       │ 422        │ 213        │ 'Chỉ hoàn khoản SUCCESS chưa được hoàn tiền' │
+│ 7       │ 8       │ 422        │ 245        │ 'Chỉ hoàn khoản SUCCESS chưa được hoàn tiền' │
+│ 8       │ 9       │ 422        │ 223        │ 'Chỉ hoàn khoản SUCCESS chưa được hoàn tiền' │
+│ 9       │ 10      │ 422        │ 232        │ 'Chỉ hoàn khoản SUCCESS chưa được hoàn tiền' │
+│ 10      │ 11      │ 422        │ 257        │ 'Chỉ hoàn khoản SUCCESS chưa được hoàn tiền' │
+│ 11      │ 12      │ 422        │ 266        │ 'Chỉ hoàn khoản SUCCESS chưa được hoàn tiền' │
+│ 12      │ 13      │ 422        │ 295        │ 'Chỉ hoàn khoản SUCCESS chưa được hoàn tiền' │
+│ 13      │ 14      │ 422        │ 307        │ 'Chỉ hoàn khoản SUCCESS chưa được hoàn tiền' │
+│ 14      │ 15      │ 422        │ 317        │ 'Chỉ hoàn khoản SUCCESS chưa được hoàn tiền' │
+│ 15      │ 16      │ 422        │ 331        │ 'Chỉ hoàn khoản SUCCESS chưa được hoàn tiền' │
+│ 16      │ 17      │ 422        │ 342        │ 'Chỉ hoàn khoản SUCCESS chưa được hoàn tiền' │
+│ 17      │ 18      │ 422        │ 353        │ 'Chỉ hoàn khoản SUCCESS chưa được hoàn tiền' │
+│ 18      │ 19      │ 422        │ 370        │ 'Chỉ hoàn khoản SUCCESS chưa được hoàn tiền' │
+│ 19      │ 20      │ 422        │ 380        │ 'Chỉ hoàn khoản SUCCESS chưa được hoàn tiền' │
+│ 20      │ 21      │ 422        │ 389        │ 'Chỉ hoàn khoản SUCCESS chưa được hoàn tiền' │
+│ 21      │ 22      │ 422        │ 398        │ 'Chỉ hoàn khoản SUCCESS chưa được hoàn tiền' │
+│ 22      │ 23      │ 422        │ 408        │ 'Chỉ hoàn khoản SUCCESS chưa được hoàn tiền' │
+│ 23      │ 24      │ 422        │ 420        │ 'Chỉ hoàn khoản SUCCESS chưa được hoàn tiền' │
+│ 24      │ 25      │ 422        │ 430        │ 'Chỉ hoàn khoản SUCCESS chưa được hoàn tiền' │
+│ 25      │ 26      │ 422        │ 445        │ 'Chỉ hoàn khoản SUCCESS chưa được hoàn tiền' │
+│ 26      │ 27      │ 422        │ 456        │ 'Chỉ hoàn khoản SUCCESS chưa được hoàn tiền' │
+│ 27      │ 28      │ 422        │ 467        │ 'Chỉ hoàn khoản SUCCESS chưa được hoàn tiền' │
+│ 28      │ 29      │ 422        │ 480        │ 'Chỉ hoàn khoản SUCCESS chưa được hoàn tiền' │
+│ 29      │ 30      │ 422        │ 493        │ 'Chỉ hoàn khoản SUCCESS chưa được hoàn tiền' │
+│ 30      │ 31      │ 422        │ 506        │ 'Chỉ hoàn khoản SUCCESS chưa được hoàn tiền' │
+│ 31      │ 32      │ 422        │ 518        │ 'Chỉ hoàn khoản SUCCESS chưa được hoàn tiền' │
+│ 32      │ 33      │ 422        │ 531        │ 'Chỉ hoàn khoản SUCCESS chưa được hoàn tiền' │
+│ 33      │ 34      │ 422        │ 547        │ 'Chỉ hoàn khoản SUCCESS chưa được hoàn tiền' │
+│ 34      │ 35      │ 422        │ 560        │ 'Chỉ hoàn khoản SUCCESS chưa được hoàn tiền' │
+│ 35      │ 36      │ 422        │ 575        │ 'Chỉ hoàn khoản SUCCESS chưa được hoàn tiền' │
+│ 36      │ 37      │ 422        │ 591        │ 'Chỉ hoàn khoản SUCCESS chưa được hoàn tiền' │
+│ 37      │ 38      │ 422        │ 610        │ 'Chỉ hoàn khoản SUCCESS chưa được hoàn tiền' │
+│ 38      │ 39      │ 422        │ 626        │ 'Chỉ hoàn khoản SUCCESS chưa được hoàn tiền' │
+│ 39      │ 40      │ 422        │ 650        │ 'Chỉ hoàn khoản SUCCESS chưa được hoàn tiền' │
+│ 40      │ 41      │ 422        │ 672        │ 'Chỉ hoàn khoản SUCCESS chưa được hoàn tiền' │
+│ 41      │ 42      │ 422        │ 694        │ 'Chỉ hoàn khoản SUCCESS chưa được hoàn tiền' │
+│ 42      │ 43      │ 422        │ 717        │ 'Chỉ hoàn khoản SUCCESS chưa được hoàn tiền' │
+│ 43      │ 44      │ 422        │ 740        │ 'Chỉ hoàn khoản SUCCESS chưa được hoàn tiền' │
+│ 44      │ 45      │ 422        │ 756        │ 'Chỉ hoàn khoản SUCCESS chưa được hoàn tiền' │
+│ 45      │ 46      │ 422        │ 774        │ 'Chỉ hoàn khoản SUCCESS chưa được hoàn tiền' │
+│ 46      │ 47      │ 422        │ 790        │ 'Chỉ hoàn khoản SUCCESS chưa được hoàn tiền' │
+│ 47      │ 48      │ 422        │ 805        │ 'Chỉ hoàn khoản SUCCESS chưa được hoàn tiền' │
+│ 48      │ 49      │ 422        │ 819        │ 'Chỉ hoàn khoản SUCCESS chưa được hoàn tiền' │
+│ 49      │ 50      │ 422        │ 833        │ 'Chỉ hoàn khoản SUCCESS chưa được hoàn tiền' │
+└─────────┴─────────┴────────────┴────────────┴──────────────────────────────────────────────┘
+ANH 31: 50 requests | 1 HTTP 200 | 49 HTTP 422 | refunded 100000 / received 100000 | net 0
+⚠ Không thể kết nối tới Redis, tự động chuyển sang chế độ Memory Fallback: Connection is closed.

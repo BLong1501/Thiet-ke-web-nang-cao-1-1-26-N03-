@@ -1,0 +1,53 @@
+◇ injected env (24) from .env // tip: ⌘ enable debugging { debug: true }
+◇ injected env (0) from .env // tip: ⌘ enable debugging { debug: true }
+✔ TOKEN-01 GET /auth/me: missing token -> 401 (489.1276ms)
+⚠ Không thể kết nối tới Redis, tự động chuyển sang chế độ Memory Fallback: Connection is closed.
+✔ TOKEN-02 GET /auth/me: bad signature -> 401 (14.3141ms)
+✔ TOKEN-01 POST /verifications/request: missing token -> 401 (9.2191ms)
+✔ TOKEN-02 POST /verifications/request: bad signature -> 401 (7.159ms)
+✔ TOKEN-01 GET /verifications/my-status: missing token -> 401 (6.7378ms)
+✔ TOKEN-02 GET /verifications/my-status: bad signature -> 401 (7.1278ms)
+✔ TOKEN-01 GET /verifications/pending: missing token -> 401 (8.2576ms)
+✔ TOKEN-02 GET /verifications/pending: bad signature -> 401 (7.6906ms)
+✔ TOKEN-01 GET /verifications/existing-id: missing token -> 401 (7.8321ms)
+✔ TOKEN-02 GET /verifications/existing-id: bad signature -> 401 (7.7368ms)
+✔ TOKEN-01 PATCH /verifications/existing-id/review: missing token -> 401 (7.8987ms)
+✔ TOKEN-02 PATCH /verifications/existing-id/review: bad signature -> 401 (6.8425ms)
+✔ DENY USER GET /verifications/pending: 403 before business handler (7.7869ms)
+✔ DENY USER GET /verifications/existing-id: 403 before business handler (6.5884ms)
+✔ DENY USER PATCH /verifications/existing-id/review: 403 before business handler (6.1321ms)
+✔ DENY FUNDRAISER GET /verifications/pending: 403 before business handler (6.9862ms)
+✔ DENY FUNDRAISER GET /verifications/existing-id: 403 before business handler (5.4035ms)
+✔ DENY FUNDRAISER PATCH /verifications/existing-id/review: 403 before business handler (6.1781ms)
+✔ ALLOW ADMIN GET /verifications/pending (6.5427ms)
+✔ ALLOW ADMIN GET /verifications/existing-id (5.8127ms)
+✔ ALLOW ADMIN PATCH /verifications/existing-id/review (11.6111ms)
+✔ TOKEN-02 expired token is rejected (6.0041ms)
+✔ TOKEN-02 refresh token is rejected (5.138ms)
+✔ IDOR-01 profile identity comes from token (6.5447ms)
+✔ IDOR-02 KYC status identity comes from token (5.8167ms)
+✔ IDOR-03 submit strips injected owner and role (6.9473ms)
+✔ ROLE-07 review PENDING rejected before side effects (7.64ms)
+✔ ROLE-07 review UNKNOWN rejected before side effects (6.4009ms)
+✔ ROLE-08 invalid rejection reason undefined (6.7717ms)
+✔ ROLE-08 invalid rejection reason   ab   (6.2071ms)
+✔ ROLE-03 service rejects FUNDRAISER KYC with 400 (1.1213ms)
+✔ ROLE-03 service rejects ADMIN KYC with 400 (0.2078ms)
+
+======================================================
+📧 [MOCK EMAIL SERVICE - XÁC THỰC TÀI KHOẢN MỚI]
+👉 Người nhận: new@example.test
+🔑 MÃ OTP: >>> 895897 <<< (Hạn 10 phút)
+======================================================
+
+✔ ROLE-01 registration cannot forward an injected ADMIN role; hashes password (101.9729ms)
+✔ BM05-01 invalid KYC input fails before writes (12.2018ms)
+✔ health route is public and keeps its actual response format (6.1402ms)
+ℹ tests 35
+ℹ suites 0
+ℹ pass 35
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 18071.2345

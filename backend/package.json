@@ -4,6 +4,10 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "session06:prepare": "node scripts/session06-schema.cjs",
+    "test:session06:local": "node scripts/session06-local-check.cjs",
+    "test:session06": "tsx scripts/session06-check.ts",
+    "test:security": "tsx scripts/security-check.ts",
     "dev": "tsx watch src/server.ts",
     "build": "tsc",
     "start": "node dist/server.js",
@@ -36,6 +40,7 @@
     "nodemailer": "^10.0.10",
     "prisma": "^7.10.0",
     "redis": "^6.2.1",
+    "sharp": "^0.35.5",
     "zod": "^4.6.4"
   },
   "devDependencies": {
