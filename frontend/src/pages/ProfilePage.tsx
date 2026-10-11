@@ -4,7 +4,7 @@ import { mockDonations } from '../data/mockData';
 import { formatCurrency, formatDate } from '../services/api';
 
 export const ProfilePage: React.FC = () => {
-  const { user, setUser } = useAuthStore();
+  const { user, updateUser } = useAuthStore();
   const [activeTab, setActiveTab] = useState<'info' | 'kyc' | 'history' | 'security'>('info');
 
   // Form states
@@ -26,7 +26,7 @@ export const ProfilePage: React.FC = () => {
   const handleSaveInfo = (e: React.FormEvent) => {
     e.preventDefault();
     if (user) {
-      setUser({ ...user, name, bio });
+      updateUser({ name, bio });
     }
     setSavedSuccess(true);
     setTimeout(() => setSavedSuccess(false), 3000);
@@ -37,7 +37,7 @@ export const ProfilePage: React.FC = () => {
     setKycSubmitted(true);
     setKycSuccessMsg(true);
     if (user) {
-      setUser({ ...user, isVerified: true });
+      updateUser({ isVerified: true });
     }
     setTimeout(() => setKycSuccessMsg(false), 4000);
   };

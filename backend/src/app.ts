@@ -46,6 +46,7 @@ import { campaignRouter } from "./modules/campaigns/campaign.routes";
 import { donationRouter } from "./modules/donations/donation.routes";
 import { userRouter } from "./modules/users/user.routes";
 import { uploadRouter } from "./modules/uploads/upload.routes";
+import { activityLogRouter } from "./modules/activity-logs/activity-log.routes";
 
 // Health check endpoint
 app.get("/api/v1/health", (_req: Request, res: Response) => {
@@ -64,6 +65,7 @@ app.use("/api/v1/campaigns", campaignRouter);
 app.use("/api/v1/donations", donationRouter);
 app.use("/api/v1/users", userRouter);
 app.use("/api/v1/uploads", uploadRouter);
+app.use("/api/v1/activity-logs", activityLogRouter);
 
 import { sendError } from "./core/utils/response.util";
 
