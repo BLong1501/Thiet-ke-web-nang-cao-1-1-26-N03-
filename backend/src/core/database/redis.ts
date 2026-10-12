@@ -176,6 +176,101 @@ export class RedisService {
     }
     memoryStore.delete(key);
   }
+
+  /**
+   * Kiểm tra xem email có đang bị khóa đăng nhập tạm thời không
+   */
+  async getLoginLock(email: string): Promise<{ remainingSeconds: number } | null> {
+    const key = `login_lock:${email.toLowerCase()}`;
+    if (isRedisConnected && redisClient) {
+      try {
+        const ttl = await redisClient.ttl(key);
+        if (ttl > 0) {
+          return { remainingSeconds: ttl };
+        }
+        return null;
+      } catch (err) {
+        console.warn("Redis getLoginLock error, fallback memory");
+      }
+    }
+    const item = memoryStore.get(key);
+    if (item && item.expiresAt > Date.now()) {
+      return { remainingSeconds: Math.ceil((item.expiresAt - Date.now()) / 1000) };
+    }
+    if (item) memoryStore.delete(key);
+    return null;
+  }
+
+  /**
+   * Khóa tài khoản tạm thời trong lockSeconds (mặc định 600s = 10 phút)
+   */
+  async lockAccount(email: string, lockSeconds = 600): Promise<void> {
+    const key = `login_lock:${email.toLowerCase()}`;
+    if (isRedisConnected && redisClient) {
+      try {
+        await redisClient.set(key, "locked", "EX", lockSeconds);
+        return;
+      } catch (err) {
+        console.warn("Redis lockAccount error, fallback memory");
+      }
+    }
+    memoryStore.set(key, {
+      value: "locked",
+      expiresAt: Date.now() + lockSeconds * 1000,
+    });
+  }
+
+  /**
+   * Ghi nhận một lần nhập sai mật khẩu của email, trả về tổng số lần sai hiện tại
+   */
+  async recordFailedLoginAttempt(email: string, windowSeconds = 600): Promise<number> {
+    const key = `login_attempts:${email.toLowerCase()}`;
+    if (isRedisConnected && redisClient) {
+      try {
+        const attempts = await redisClient.incr(key);
+        if (attempts === 1) {
+          await redisClient.expire(key, windowSeconds);
+        }
+        return attempts;
+      } catch (err) {
+        console.warn("Redis recordFailedLoginAttempt error, fallback memory");
+      }
+    }
+    const item = memoryStore.get(key);
+    let attempts = 1;
+    if (item && item.expiresAt > Date.now()) {
+      attempts = parseInt(item.value, 10) + 1;
+      memoryStore.set(key, {
+        value: attempts.toString(),
+        expiresAt: item.expiresAt,
+      });
+    } else {
+      memoryStore.set(key, {
+        value: "1",
+        expiresAt: Date.now() + windowSeconds * 1000,
+      });
+    }
+    return attempts;
+  }
+
+  /**
+   * Xóa số lần sai và mở khóa khi đăng nhập thành công
+   */
+  async clearFailedLoginAttempts(email: string): Promise<void> {
+    const norm = email.toLowerCase();
+    const attemptsKey = `login_attempts:${norm}`;
+    const lockKey = `login_lock:${norm}`;
+    if (isRedisConnected && redisClient) {
+      try {
+        await redisClient.del(attemptsKey, lockKey);
+        return;
+      } catch (err) {
+        // ignore
+      }
+    }
+    memoryStore.delete(attemptsKey);
+    memoryStore.delete(lockKey);
+  }
 }
 
 export const redisService = new RedisService();

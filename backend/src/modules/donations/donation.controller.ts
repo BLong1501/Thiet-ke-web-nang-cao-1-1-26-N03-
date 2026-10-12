@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import { donationService, DonationService } from "./donation.service";
 import { sendCreated, sendSuccess } from "../../core/utils/response.util";
+import { PaymentStatus } from "@prisma/client";
 
 export class DonationController {
   constructor(private service: DonationService = donationService) {}
@@ -13,7 +14,8 @@ export class DonationController {
       const currentUserId = req.user?.userId;
       const result = await this.service.createDonation(req.body, currentUserId);
       const statusCode = result.replayed ? 200 : 201;
-      return sendCreated(res, result.message, result.donation, {
+      return sendSuccess(res, statusCode, result.message, {
+        donation: result.donation,
         paymentInstructions: result.paymentInstructions,
       });
     } catch (error) {
@@ -100,6 +102,33 @@ export class DonationController {
       const limit = req.query.limit ? parseInt(req.query.limit as string, 10) : 10;
       const result = await this.service.getCampaignDonations(campaignId, page, limit);
       return sendSuccess(res, 200, "Lấy danh sách ủng hộ thành công", result.items, result.meta);
+    } catch (error) {
+      return next(error);
+    }
+  };
+
+  /**
+   * Danh sách quyên góp đối soát nội bộ cho Fundraiser (kèm Email, SĐT, transactionCode)
+   */
+  getFundraiserDonations = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const campaignId = String(req.params.campaignId);
+      const page = req.query.page ? parseInt(req.query.page as string, 10) : 1;
+      const limit = req.query.limit ? parseInt(req.query.limit as string, 10) : 10;
+      const status = req.query.status as PaymentStatus | undefined;
+
+      const result = await this.service.getFundraiserCampaignDonations(
+        req.user!,
+        campaignId,
+        page,
+        limit,
+        status
+      );
+
+      return sendSuccess(res, 200, "Lấy danh sách đối soát quyên góp thành công", result.items, {
+        ...result.meta,
+        campaign: result.campaign,
+      });
     } catch (error) {
       return next(error);
     }

@@ -28,9 +28,13 @@ export const loginSchema = z.object({
   email: z
     .string()
     .trim()
+    .toLowerCase()
     .min(1, "Email không được để trống")
     .email("Định dạng email không hợp lệ"),
-  password: z.string().min(1, "Mật khẩu không được để trống"),
+  password: z
+    .string()
+    .trim()
+    .min(1, "Mật khẩu không được để trống"),
 });
 
 export const verifyEmailSchema = z.object({

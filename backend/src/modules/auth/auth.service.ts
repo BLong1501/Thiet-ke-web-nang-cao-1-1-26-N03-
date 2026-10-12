@@ -202,8 +202,33 @@ export class AuthService {
   }
 
   async login(input: LoginInput) {
-    const user = await this.repo.findByEmail(input.email);
+    const email = input.email.trim().toLowerCase();
+    const password = input.password.trim();
+
+    // 1. Kiểm tra tài khoản có đang bị khóa tạm 10 phút do nhập sai mật khẩu quá 5 lần không
+    const lockInfo = await redisService.getLoginLock(email);
+    if (lockInfo) {
+      const remainingMinutes = Math.max(1, Math.ceil(lockInfo.remainingSeconds / 60));
+      const error: any = new Error(
+        `Tài khoản đã bị tạm khóa đăng nhập trong 10 phút do nhập sai mật khẩu quá 5 lần liên tiếp. Vui lòng thử lại sau ${remainingMinutes} phút (${lockInfo.remainingSeconds} giây).`
+      );
+      error.statusCode = 429;
+      error.remainingSeconds = lockInfo.remainingSeconds;
+      throw error;
+    }
+
+    const user = await this.repo.findByEmail(email);
     if (!user) {
+      // Ghi nhận lần thử thất bại để ngăn chặn kẻ tấn công dò tìm tài khoản
+      const attempts = await redisService.recordFailedLoginAttempt(email, 600);
+      if (attempts >= 5) {
+        await redisService.lockAccount(email, 600);
+        const error: any = new Error(
+          "Tài khoản đã bị tạm khóa đăng nhập trong 10 phút do nhập sai quá 5 lần liên tiếp. Vui lòng thử lại sau 10 phút."
+        );
+        error.statusCode = 429;
+        throw error;
+      }
       const error: any = new Error("Email hoặc mật khẩu không chính xác");
       error.statusCode = 401;
       throw error;
@@ -231,12 +256,28 @@ export class AuthService {
       throw error;
     }
 
-    const isPasswordValid = await bcrypt.compare(input.password, user.passwordHash);
+    const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
     if (!isPasswordValid) {
-      const error: any = new Error("Email hoặc mật khẩu không chính xác");
+      // Ghi nhận lần nhập sai mật khẩu (cửa sổ 10 phút = 600s)
+      const attempts = await redisService.recordFailedLoginAttempt(email, 600);
+      if (attempts >= 5) {
+        await redisService.lockAccount(email, 600);
+        const error: any = new Error(
+          "Tài khoản đã bị tạm khóa đăng nhập trong 10 phút do nhập sai mật khẩu quá 5 lần liên tiếp. Vui lòng thử lại sau 10 phút."
+        );
+        error.statusCode = 429;
+        throw error;
+      }
+      const remainingAttempts = 5 - attempts;
+      const error: any = new Error(
+        `Email hoặc mật khẩu không chính xác. Bạn còn ${remainingAttempts} lần thử trước khi tài khoản bị khóa tạm 10 phút.`
+      );
       error.statusCode = 401;
       throw error;
     }
+
+    // Đăng nhập thành công -> Xóa lịch sử sai và mở khóa tài khoản
+    await redisService.clearFailedLoginAttempts(email);
 
     // Bắt buộc xác thực email
     if (!user.isEmailVerified) {

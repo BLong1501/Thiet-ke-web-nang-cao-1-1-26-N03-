@@ -239,10 +239,45 @@ async function runSecurityAudit() {
     const actions = auditRes.body.data.map((l: any) => l.action);
     console.log('  Các hành vi nhạy cảm đã được ghi nhận tự động vào CSDL:');
     actions.slice(0, 5).forEach((act: string) => console.log(`   - [AUDIT ACTION]: ${act}`));
-    console.log('  ✔ PASS: Toàn bộ hành vi đăng nhập, vi phạm quyền, IDOR, CSRF đều được lưu vết đầy đủ.');
+    // -------------------------------------------------------------
+    // BM 10: DÒ MẬT KHẨU VÀ LẠM DỤNG DỊCH VỤ (BRUTE-FORCE & RATE LIMITING)
+    // -------------------------------------------------------------
+    console.log('\n[BM 10] Kiểm tra: Khóa tạm tài khoản sau 5 lần nhập sai mật khẩu (Rate Limiting)');
+    const testBruteEmail = `brute_victim_${randomUUID().substring(0, 6)}@example.com`;
+    await db.user.create({
+      data: {
+        id: randomUUID(),
+        email: testBruteEmail,
+        passwordHash: dummyHash,
+        fullName: 'Brute Force Test User',
+        role: 'USER',
+        isEmailVerified: true,
+      },
+    });
+
+    // Thử đăng nhập sai 5 lần liên tiếp với khoảng trắng thừa ở email và mật khẩu
+    for (let i = 1; i <= 5; i++) {
+      const failRes = await apiRequest('POST', '/auth/login', undefined, {
+        email: `   ${testBruteEmail.toUpperCase()}   `, // Khoảng trắng và chữ hoa được chuẩn hóa tự động
+        password: '   wrong_password   ',
+      });
+      assert.equal(failRes.status, 401, `Lần thử ${i}: Bị từ chối 401 Unauthorized`);
+    }
+
+    // Lần thử thứ 6: Bắt buộc phải bị khóa tạm và trả về HTTP 429 Too Many Requests
+    const lockedRes = await apiRequest('POST', '/auth/login', undefined, {
+      email: testBruteEmail,
+      password: 'wrong_password',
+    });
+    assert.equal(lockedRes.status, 429, 'Từ lần thử thứ 6: Phải trả về mã 429 Too Many Requests do bị khóa tạm 10 phút');
+    assert.ok(
+      lockedRes.body.message.includes('tạm khóa'),
+      'Thông báo phải nêu rõ tài khoản bị tạm khóa 10 phút'
+    );
+    console.log('  ✔ PASS: Nhập sai 5 lần bị 401, từ lần thứ 6 hệ thống kích hoạt khóa tạm 10 phút (HTTP 429).');
 
     console.log("\n==================================================================");
-    console.log("  KẾT QUẢ: 7/7 TIÊU CHÍ AN TOÀN BẢO MẬT ĐẠT 100% TIÊU CHUẨN!");
+    console.log("  KẾT QUẢ: TOÀN BỘ TIÊU CHÍ AN TOÀN BẢO MẬT ĐẠT 100% TIÊU CHUẨN!");
     console.log("==================================================================");
 
   } finally {

@@ -44,7 +44,7 @@ export class DonationService {
 
     // 2. Chống tạo trùng lặp với Idempotency Key (nếu có cung cấp)
     if (input.requestKey) {
-      const existing = await this.repo.findByRequestKey(input.requestKey);
+      const existing = await this.repo.findByTransactionCode(input.requestKey);
       if (existing) {
         if (Number(existing.amount) !== input.amount || existing.campaignId !== input.campaignId) {
           throw new AppError("requestKey đã được sử dụng với nội dung quyên góp khác", 409);
@@ -79,10 +79,10 @@ export class DonationService {
       donorName = input.isAnonymous ? "Nhà hảo tâm ẩn danh" : "Nhà hảo tâm";
     }
 
-    // 4. Tạo mã giao dịch đối soát duy nhất (e.g., DON-261007-AB12)
+    // 4. Tạo mã giao dịch đối soát duy nhất (e.g., DON-261007-AB12 hoặc requestKey)
     const randomSuffix = crypto.randomBytes(3).toString("hex").toUpperCase();
     const datePrefix = new Date().toISOString().slice(2, 10).replace(/-/g, "");
-    const transactionCode = `DON-${datePrefix}-${randomSuffix}`;
+    const transactionCode = input.requestKey || `DON-${datePrefix}-${randomSuffix}`;
 
     // 5. Lưu bản ghi quyên góp vào CSDL
     const donation = await this.repo.createDonation({
@@ -188,14 +188,74 @@ export class DonationService {
     };
   }
 
+  private async record(
+    tx: Prisma.TransactionClient,
+    userId: string,
+    donation: any,
+    action: string,
+    message: string
+  ) {
+    await tx.auditLog.create({
+      data: {
+        userId,
+        action,
+        entityName: "Donation",
+        entityId: donation.id,
+        details: { amount: donation.amount.toString(), message, simulated: true },
+      },
+    });
+    if (donation.donorId) {
+      await tx.notification.create({
+        data: {
+          userId: donation.donorId,
+          title: "Đóng góp kiểm thử Buổi 6",
+          message,
+          type: action,
+        },
+      });
+    }
+  }
+
   /**
    * Admin xác nhận thanh toán mô phỏng (Endpoint confirm-demo phục vụ kiểm thử Buổi 6)
    */
-  async confirmDemo(actor: { userId: string; role: string }, donationId: string) {
-    if (process.env.NODE_ENV === "production") {
-      throw new AppError("Điểm cuối kiểm thử mô phỏng bị vô hiệu hóa trên môi trường production", 403);
+  async confirm(actor: { userId: string; role: string }, id: string) {
+    if (!["development", "test"].includes(process.env.NODE_ENV ?? "")) {
+      throw new AppError("Xác nhận thanh toán mô phỏng chỉ dùng trong development/test", 403);
     }
-    return this.confirmPayment(donationId, { note: "Admin confirm-demo" });
+    return this.repo.transaction(async (tx) => {
+      const user = await tx.user.findUnique({ where: { id: actor.userId } });
+      if (!user || user.status !== "ACTIVE" || !user.isEmailVerified) {
+        throw new AppError("Tài khoản không được phép thực hiện thao tác", 403);
+      }
+      if (user.role !== UserRole.ADMIN) {
+        throw new AppError("Chỉ quản trị viên được thực hiện thao tác", 403);
+      }
+
+      const ref = await tx.donation.findUnique({ where: { id }, select: { campaignId: true } });
+      if (!ref) throw new AppError("Không tìm thấy khoản đóng góp", 404);
+      const campaign = await this.repo.lockCampaign(tx, ref.campaignId);
+      const donation = await this.repo.lockDonation(tx, id);
+      if (!campaign || !donation) throw new AppError("Không tìm thấy dữ liệu", 404);
+
+      if (donation.paymentStatus !== PaymentStatus.PENDING) {
+        throw new AppError("Chỉ xác nhận khoản đóng góp đang PENDING", 422);
+      }
+      const now = new Date();
+      if (campaign.status !== CampaignStatus.ACTIVE || now < campaign.startDate || now >= campaign.endDate) {
+        throw new AppError("Chiến dịch không còn nhận tiền", 422);
+      }
+
+      await tx.ledgerEntry.create({ data: { donationId: id, kind: "RECEIPT", amount: donation.amount } });
+      const updated = await tx.donation.update({ where: { id }, data: { paymentStatus: PaymentStatus.SUCCESS, paidAt: now } });
+      const totals = await this.repo.refreshCampaign(tx, campaign.id);
+      await this.record(tx, actor.userId, donation, "DEMO_PAYMENT_CONFIRMED", "Đã ghi nhận đóng góp mô phỏng");
+      return { donation: updated, totals, simulated: true };
+    });
+  }
+
+  async confirmDemo(actor: { userId: string; role: string }, donationId: string) {
+    return this.confirm(actor, donationId);
   }
 
   /**
@@ -267,7 +327,7 @@ export class DonationService {
       await tx.auditLog.create({
         data: {
           userId: actor.userId,
-          action: "REFUND_DONATION",
+          action: "DEMO_FULL_REFUND",
           entityName: "Donation",
           entityId: donation.id,
           details: { amount: donation.amount.toString(), reason: reason || "Hoàn tiền đóng góp" },
@@ -411,14 +471,8 @@ export class DonationService {
     const isFundraiser = currentUserId && (donation as any).campaign?.fundraiserId === currentUserId;
     const isAdmin = userRole === UserRole.ADMIN;
 
-    if (donation.isAnonymous && !isOwner && !isFundraiser && !isAdmin) {
-      return {
-        ...donation,
-        donorName: "Nhà hảo tâm ẩn danh",
-        donorEmail: null,
-        donorPhone: null,
-        donor: null,
-      };
+    if (!isOwner && !isFundraiser && !isAdmin) {
+      throw new AppError("Bạn không sở hữu khoản đóng góp này", 403);
     }
 
     return donation;
@@ -460,6 +514,64 @@ export class DonationService {
       },
       data: { status: CampaignStatus.COMPLETED },
     });
+  }
+
+  /**
+   * Lấy danh sách đối soát nội bộ (kèm SĐT, Email, Transaction Code) cho Fundraiser & Admin
+   */
+  async getFundraiserCampaignDonations(
+    actor: { userId: string; role: string },
+    campaignId: string,
+    page: number = 1,
+    limit: number = 10,
+    status?: PaymentStatus
+  ) {
+    const campaign = await prisma.campaign.findUnique({
+      where: { id: campaignId },
+      select: {
+        id: true,
+        title: true,
+        slug: true,
+        fundraiserId: true,
+        currentAmount: true,
+        targetAmount: true,
+        status: true,
+      },
+    });
+
+    if (!campaign) {
+      throw new AppError("Chiến dịch không tồn tại", 404);
+    }
+
+    if (actor.role !== UserRole.ADMIN && campaign.fundraiserId !== actor.userId) {
+      throw new AppError("Bạn không có quyền xem thông tin đối soát của chiến dịch này", 403);
+    }
+
+    const skip = (page - 1) * limit;
+    const [items, total] = await Promise.all([
+      this.repo.findFundraiserCampaignDonations(campaignId, skip, limit, status),
+      this.repo.countFundraiserCampaignDonations(campaignId, status),
+    ]);
+
+    const totalPages = Math.ceil(total / limit);
+
+    return {
+      campaign: {
+        id: campaign.id,
+        title: campaign.title,
+        slug: campaign.slug,
+        status: campaign.status,
+        currentAmount: campaign.currentAmount,
+        targetAmount: campaign.targetAmount,
+      },
+      items,
+      meta: {
+        page,
+        limit,
+        total,
+        totalPages,
+      },
+    };
   }
 }
 

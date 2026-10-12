@@ -139,7 +139,7 @@ export class DonationRepository {
     return prisma.donation.findFirst({
       where: {
         paymentGatewayResponse: {
-          path: ["requestKey"],
+          path: "$.requestKey",
           equals: requestKey,
         },
       },
@@ -307,6 +307,56 @@ export class DonationRepository {
       where: {
         campaignId,
         paymentStatus: PaymentStatus.SUCCESS,
+      },
+    });
+  }
+
+  /**
+   * Lấy danh sách đối soát nội bộ của một chiến dịch (Dành riêng cho Fundraiser / Admin)
+   * Bao gồm cả SĐT, Email, transactionCode, gateway response
+   */
+  async findFundraiserCampaignDonations(campaignId: string, skip: number, take: number, status?: PaymentStatus) {
+    const where: Prisma.DonationWhereInput = {
+      campaignId,
+      ...(status ? { paymentStatus: status } : {}),
+    };
+
+    return prisma.donation.findMany({
+      where,
+      skip,
+      take,
+      orderBy: { createdAt: "desc" },
+      select: {
+        id: true,
+        transactionCode: true,
+        amount: true,
+        donorName: true,
+        donorEmail: true,
+        donorPhone: true,
+        message: true,
+        isAnonymous: true,
+        paymentMethod: true,
+        paymentStatus: true,
+        paidAt: true,
+        createdAt: true,
+        donor: {
+          select: {
+            id: true,
+            fullName: true,
+            email: true,
+            phoneNumber: true,
+            avatarUrl: true,
+          },
+        },
+      },
+    });
+  }
+
+  async countFundraiserCampaignDonations(campaignId: string, status?: PaymentStatus): Promise<number> {
+    return prisma.donation.count({
+      where: {
+        campaignId,
+        ...(status ? { paymentStatus: status } : {}),
       },
     });
   }

@@ -85,14 +85,19 @@ export class AuthController {
         accessToken: result.accessToken,
       });
     } catch (error) {
-      // Ghi nhật ký đăng nhập thất bại
+      // Ghi nhật ký đăng nhập thất bại / khóa tài khoản
       try {
+        const isLocked = (error as any)?.statusCode === 429;
         await auditService.log({
           req,
-          action: "LOGIN_FAILED",
+          action: isLocked ? "ACCOUNT_LOCKED_TEMPORARY" : "LOGIN_FAILED",
           entityName: "User",
           entityId: req.body?.email || "UNKNOWN",
-          details: { email: req.body?.email, error: (error as any)?.message },
+          details: {
+            email: req.body?.email,
+            error: (error as any)?.message,
+            statusCode: (error as any)?.statusCode || 401,
+          },
         });
       } catch {}
       return next(error);

@@ -21,6 +21,7 @@ DROP TABLE IF EXISTS `community_posts`;
 DROP TABLE IF EXISTS `community_members`;
 DROP TABLE IF EXISTS `communities`;
 DROP TABLE IF EXISTS `disbursements`;
+DROP TABLE IF EXISTS `ledger_entries`;
 DROP TABLE IF EXISTS `donations`;
 DROP TABLE IF EXISTS `campaign_updates`;
 DROP TABLE IF EXISTS `campaign_media`;
@@ -197,7 +198,22 @@ CREATE TABLE `donations` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------------------
--- 8. BẢNG DISBURSEMENTS (Minh bạch giải ngân & Các khoản chi)
+-- 8. BẢNG LEDGER_ENTRIES (Sổ cái kế toán minh bạch & Bất biến)
+-- --------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS `ledger_entries` (
+    `id` VARCHAR(36) NOT NULL,
+    `donation_id` VARCHAR(36) NOT NULL,
+    `kind` ENUM('RECEIPT', 'REFUND') NOT NULL,
+    `amount` DECIMAL(15, 2) NOT NULL,
+    `created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `idx_ledger_donation_kind` (`donation_id`, `kind`),
+    CONSTRAINT `ledger_positive` CHECK (`amount` > 0),
+    CONSTRAINT `fk_ledger_donation` FOREIGN KEY (`donation_id`) REFERENCES `donations` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------------------
+-- 9. BẢNG DISBURSEMENTS (Minh bạch giải ngân & Các khoản chi)
 -- --------------------------------------------------------------------
 CREATE TABLE `disbursements` (
     `id` VARCHAR(36) NOT NULL,
@@ -217,7 +233,7 @@ CREATE TABLE `disbursements` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------------------
--- 9. BẢNG COMMUNITIES (Cộng đồng / Nhóm thiện nguyện)
+-- 10. BẢNG COMMUNITIES (Cộng đồng / Nhóm thiện nguyện)
 -- --------------------------------------------------------------------
 CREATE TABLE `communities` (
     `id` VARCHAR(36) NOT NULL,
@@ -238,7 +254,7 @@ CREATE TABLE `communities` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------------------
--- 10. BẢNG COMMUNITY_MEMBERS (Thành viên cộng đồng)
+-- 11. BẢNG COMMUNITY_MEMBERS (Thành viên cộng đồng)
 -- --------------------------------------------------------------------
 CREATE TABLE `community_members` (
     `id` VARCHAR(36) NOT NULL,
@@ -254,7 +270,7 @@ CREATE TABLE `community_members` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------------------
--- 11. BẢNG COMMUNITY_POSTS (Bài viết trong cộng đồng)
+-- 12. BẢNG COMMUNITY_POSTS (Bài viết trong cộng đồng)
 -- --------------------------------------------------------------------
 CREATE TABLE `community_posts` (
     `id` VARCHAR(36) NOT NULL,
@@ -277,7 +293,7 @@ CREATE TABLE `community_posts` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------------------
--- 12. BẢNG COMMENTS (Bình luận bài viết & chiến dịch)
+-- 13. BẢNG COMMENTS (Bình luận bài viết & chiến dịch)
 -- --------------------------------------------------------------------
 CREATE TABLE `comments` (
     `id` VARCHAR(36) NOT NULL,
@@ -300,7 +316,7 @@ CREATE TABLE `comments` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------------------
--- 13. BẢNG AUDIT_LOGS (Vết kiểm toán hệ thống - Append Only)
+-- 14. BẢNG AUDIT_LOGS (Vết kiểm toán hệ thống - Append Only)
 -- --------------------------------------------------------------------
 CREATE TABLE `audit_logs` (
     `id` VARCHAR(36) NOT NULL,
@@ -321,7 +337,7 @@ CREATE TABLE `audit_logs` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------------------
--- 14. BẢNG REPORTS (Báo cáo tố giác vi phạm)
+-- 15. BẢNG REPORTS (Báo cáo tố giác vi phạm)
 -- --------------------------------------------------------------------
 CREATE TABLE `reports` (
     `id` VARCHAR(36) NOT NULL,
@@ -345,7 +361,7 @@ CREATE TABLE `reports` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------------------
--- 15. BẢNG NOTIFICATIONS (Thông báo người dùng)
+-- 16. BẢNG NOTIFICATIONS (Thông báo người dùng)
 -- --------------------------------------------------------------------
 CREATE TABLE `notifications` (
     `id` VARCHAR(36) NOT NULL,

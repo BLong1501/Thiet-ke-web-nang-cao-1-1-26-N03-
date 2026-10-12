@@ -36,8 +36,16 @@ router.post(
 router.get("/campaign/:campaignId", donationController.getCampaignDonations);
 
 // ==========================================
-// 2. AUTHENTICATED USER ROUTES
+// 2. AUTHENTICATED USER & FUNDRAISER ROUTES
 // ==========================================
+
+// Danh sách đối soát quyên góp nội bộ (Chỉ chủ sở hữu chiến dịch / Admin mới xem được đầy đủ Email & SĐT)
+router.get(
+  "/campaign/:campaignId/manage-donations",
+  authenticate,
+  authorize(UserRole.FUNDRAISER, UserRole.ADMIN),
+  donationController.getFundraiserDonations
+);
 
 // Lịch sử các khoản quyên góp của tôi
 router.get("/my/history", authenticate, donationController.getMyDonations);
@@ -94,7 +102,7 @@ router.get(
 // ==========================================
 
 // Tra cứu chi tiết một giao dịch quyên góp
-router.get("/:id", optionalAuthenticate, donationController.getDonationDetail);
+router.get("/:id", authenticate, donationController.getDonationDetail);
 
 export default router;
 export { router as donationRouter };
