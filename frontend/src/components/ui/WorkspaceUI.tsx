@@ -6,10 +6,25 @@ import {
   useId,
   useRef,
   useState,
+  type CSSProperties,
   type ReactNode,
   type ReactElement,
 } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
+import type { IconType } from "react-icons";
+import {
+  LuChevronLeft,
+  LuChevronRight,
+  LuCircleAlert,
+  LuCircleCheck,
+  LuInbox,
+  LuInfo,
+  LuSearchX,
+  LuServerCrash,
+  LuTriangleAlert,
+  LuX,
+} from "react-icons/lu";
+import Seo from "../Seo";
 import { api } from "../../services/api";
 import {
   privateUploadPath,
@@ -17,25 +32,81 @@ import {
   statusLabels,
 } from "../../services/platform";
 
+export interface Crumb {
+  label: string;
+  to?: string;
+}
+
+/** Các nhánh có trang cha; breadcrumb được suy ra từ đường dẫn hiện tại. */
+const CRUMB_ROOTS: [path: string, label: string][] = [
+  ["/admin", "Quản trị"],
+  ["/campaigns", "Chiến dịch"],
+  ["/dashboard", "Bảng điều khiển"],
+];
+
+function crumbsFor(pathname: string, title: string): Crumb[] {
+  const parents = CRUMB_ROOTS.filter(([path]) =>
+    pathname.startsWith(`${path}/`),
+  );
+  if (!parents.length) return [];
+  return [...parents.map(([to, label]) => ({ to, label })), { label: title }];
+}
+
+export function Breadcrumb({ items }: { items: Crumb[] }) {
+  return (
+    <nav className="breadcrumb" aria-label="Vị trí trang">
+      <ol>
+        {items.map((item) => (
+          <li key={item.to ?? item.label}>
+            {item.to ? (
+              <Link to={item.to}>{item.label}</Link>
+            ) : (
+              <span aria-current="page">{item.label}</span>
+            )}
+          </li>
+        ))}
+      </ol>
+    </nav>
+  );
+}
+
 export function Page({
   title,
   intro,
   actions,
   children,
+  description,
+  image,
+  noindex,
+  canonicalPath,
+  breadcrumbs,
 }: {
   title: string;
   intro?: string;
   actions?: ReactNode;
   children: ReactNode;
+  /** Mô tả SEO; mặc định dùng `intro`. */
+  description?: string;
+  image?: string;
+  noindex?: boolean;
+  canonicalPath?: string;
+  /** Ghi đè breadcrumb tự suy ra; truyền `[]` để ẩn. */
+  breadcrumbs?: Crumb[];
 }) {
-  useEffect(() => {
-    document.title = `${title} — FundTrust`;
-  }, [title]);
+  const { pathname } = useLocation();
+  const crumbs = breadcrumbs ?? crumbsFor(pathname, title);
   return (
     <div className="workspace container">
+      <Seo
+        title={title}
+        description={description || intro}
+        image={image}
+        noindex={noindex}
+        canonicalPath={canonicalPath}
+      />
       <header className="page-heading">
         <div>
-          <p className="eyebrow">FUNDTRUST / CÙNG NHAU TẠO THAY ĐỔI</p>
+          {crumbs.length > 0 && <Breadcrumb items={crumbs} />}
           <h1>{title}</h1>
           {intro && <p>{intro}</p>}
         </div>
@@ -45,51 +116,166 @@ export function Page({
     </div>
   );
 }
+
+type Tone = "info" | "success" | "warning" | "error";
+const NOTICE_ICONS: Record<Tone, IconType> = {
+  info: LuInfo,
+  success: LuCircleCheck,
+  warning: LuTriangleAlert,
+  error: LuCircleAlert,
+};
+
 export function Notice({
   children,
   error = false,
+  tone,
 }: {
   children: ReactNode;
+  /** Giữ tương thích: tương đương `tone="error"`. */
   error?: boolean;
+  tone?: Tone;
 }) {
+  const kind = tone ?? (error ? "error" : "info");
+  const Icon = NOTICE_ICONS[kind];
   return (
     <div
-      className={`notice ${error ? "notice-error" : ""}`}
-      role={error ? "alert" : "status"}
+      className={`notice notice-${kind}`}
+      role={kind === "error" ? "alert" : "status"}
     >
-      {children}
+      <Icon aria-hidden="true" />
+      <div>{children}</div>
     </div>
   );
 }
+
+export function Skeleton({
+  lines = 3,
+  label = "Đang tải dữ liệu…",
+}: {
+  lines?: number;
+  label?: string;
+}) {
+  return (
+    <div className="skeleton-group" role="status">
+      <span className="visually-hidden">{label}</span>
+      <span className="skeleton title" aria-hidden="true" />
+      {Array.from({ length: lines }, (_, i) => (
+        <span key={i} className="skeleton" aria-hidden="true" />
+      ))}
+    </div>
+  );
+}
+
+export function CampaignGridSkeleton({ count = 3 }: { count?: number }) {
+  return (
+    <div className="campaign-grid" role="status">
+      <span className="visually-hidden">Đang tải chiến dịch…</span>
+      {Array.from({ length: count }, (_, i) => (
+        <div key={i} className="skeleton-card" aria-hidden="true">
+          <span className="skeleton media" />
+          <span className="skeleton title" />
+          <span className="skeleton" />
+          <span className="skeleton" />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/**
+ * Trạng thái lỗi khi tải dữ liệu. 404 là "không tìm thấy" (không có nút thử lại);
+ * 5xx, lỗi mạng và lỗi khác luôn hiển thị kèm nút thử lại.
+ */
+export function ErrorState({
+  status,
+  message,
+  onRetry,
+}: {
+  status?: number;
+  message: string;
+  onRetry?: () => void;
+}) {
+  const kind =
+    status === undefined
+      ? "network"
+      : status === 404
+        ? "not-found"
+        : status >= 500
+          ? "server"
+          : "client";
+  const Icon =
+    kind === "not-found"
+      ? LuSearchX
+      : kind === "server"
+        ? LuServerCrash
+        : LuCircleAlert;
+  const title =
+    kind === "not-found"
+      ? "Không tìm thấy nội dung"
+      : kind === "server"
+        ? "Máy chủ đang gặp sự cố"
+        : "Không thể tải dữ liệu";
+  return (
+    <div className={`error-state ${kind}`} role="alert">
+      <span className="state-icon" aria-hidden="true">
+        <Icon />
+      </span>
+      <p className="state-title">{title}</p>
+      <p className="state-message">{message}</p>
+      {kind === "not-found" ? (
+        <Link className="button secondary" to="/campaigns">
+          Khám phá chiến dịch
+        </Link>
+      ) : (
+        onRetry && (
+          <button className="button secondary" onClick={onRetry}>
+            Thử lại
+          </button>
+        )
+      )}
+    </div>
+  );
+}
+
 export function RemoteState({
   loading,
   error,
   reload,
+  status,
+  skeleton,
 }: {
   loading: boolean;
   error: string;
   reload: () => void;
+  status?: number;
+  /** Khung chờ riêng (vd. lưới thẻ); mặc định là các dòng skeleton. */
+  skeleton?: ReactNode;
 }) {
-  return loading ? (
-    <div className="loading-state" role="status">
-      <span className="spinner" /> Đang tải dữ liệu…
-    </div>
-  ) : error ? (
-    <Notice error>
-      {error}{" "}
-      <button className="button secondary" onClick={reload}>
-        Thử lại
-      </button>
-    </Notice>
-  ) : null;
+  if (loading) return <>{skeleton ?? <Skeleton />}</>;
+  if (!error) return null;
+  return <ErrorState status={status} message={error} onRetry={reload} />;
 }
+
 export function Empty({
   children = "Chưa có dữ liệu để hiển thị.",
+  title,
+  icon: Icon = LuInbox,
 }: {
   children?: ReactNode;
+  title?: string;
+  icon?: IconType;
 }) {
-  return <div className="empty-state">{children}</div>;
+  return (
+    <div className="empty-state">
+      <span className="state-icon" aria-hidden="true">
+        <Icon />
+      </span>
+      {title && <p className="state-title">{title}</p>}
+      <div className="state-message">{children}</div>
+    </div>
+  );
 }
+
 export function Status({ value }: { value: string }) {
   return (
     <span className={`status status-${value?.toLowerCase()}`}>
@@ -97,6 +283,52 @@ export function Status({ value }: { value: string }) {
     </span>
   );
 }
+
+export function Badge({
+  tone = "neutral",
+  icon: Icon,
+  className,
+  children,
+}: {
+  tone?: "neutral" | "info" | "success" | "warning" | "danger";
+  icon?: IconType;
+  className?: string;
+  children: ReactNode;
+}) {
+  const classes = ["badge", tone !== "neutral" && tone, className]
+    .filter(Boolean)
+    .join(" ");
+  return (
+    <span className={classes}>
+      {Icon && <Icon aria-hidden="true" />}
+      {children}
+    </span>
+  );
+}
+
+/** Thanh tiến độ. Không có `label` thì chỉ mang tính trang trí (giá trị đã hiển thị bằng chữ). */
+export function Meter({ value, label }: { value: number; label?: string }) {
+  const v = Math.max(0, Math.min(100, Math.round(value)));
+  const a11y = label
+    ? {
+        role: "progressbar",
+        "aria-label": label,
+        "aria-valuenow": v,
+        "aria-valuemin": 0,
+        "aria-valuemax": 100,
+      }
+    : { "aria-hidden": true };
+  return (
+    <div
+      className={v >= 100 ? "meter complete" : "meter"}
+      style={{ "--meter-value": `${v}%` } as CSSProperties}
+      {...a11y}
+    >
+      <span />
+    </div>
+  );
+}
+
 export function Field({
   label,
   children,
@@ -110,7 +342,11 @@ export function Field({
   const labelControls = (nodes: ReactNode): ReactNode =>
     Children.map(nodes, (child) => {
       if (!isValidElement(child)) return child;
-      const element = child as ReactElement<Record<string, any>>;
+      const element = child as ReactElement<{
+        children?: ReactNode;
+        "aria-labelledby"?: string;
+        "aria-describedby"?: string;
+      }>;
       if (
         typeof element.type === "string" &&
         ["input", "select", "textarea"].includes(element.type)
@@ -132,6 +368,7 @@ export function Field({
     </label>
   );
 }
+
 export function Pager({
   page,
   pages,
@@ -149,10 +386,11 @@ export function Pager({
         disabled={page <= 1}
         onClick={() => onChange(page - 1)}
       >
+        <LuChevronLeft aria-hidden="true" />
         Trước
       </button>
-      <span>
-        Trang {page} / {pages}
+      <span className="pager-status" aria-live="polite">
+        Trang <strong>{page}</strong> / {pages}
       </span>
       <button
         className="button secondary"
@@ -160,10 +398,12 @@ export function Pager({
         onClick={() => onChange(page + 1)}
       >
         Sau
+        <LuChevronRight aria-hidden="true" />
       </button>
     </nav>
   );
 }
+
 export function Modal({
   title,
   children,
@@ -208,13 +448,14 @@ export function Modal({
           aria-label="Đóng hộp thoại"
           onClick={onClose}
         >
-          ×
+          <LuX aria-hidden="true" />
         </button>
       </header>
       {children}
     </dialog>
   );
 }
+
 export function SecureImage({
   src,
   alt,
@@ -258,11 +499,12 @@ export function SecureImage({
     <span className="image-unavailable">{alt} — ảnh chưa tải được</span>
   );
 }
+
 export function NotFound() {
   return (
     <Page title="Không tìm thấy trang">
-      <Empty>
-        Đường dẫn không tồn tại hoặc nội dung đã được gỡ.
+      <Empty icon={LuSearchX} title="Đường dẫn không tồn tại">
+        Nội dung có thể đã được gỡ hoặc địa chỉ bị gõ nhầm.
         <p>
           <Link className="button" to="/campaigns">
             Khám phá chiến dịch

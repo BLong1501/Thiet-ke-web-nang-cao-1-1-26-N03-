@@ -16,10 +16,13 @@ export interface User {
 
 export interface Campaign {
   id: string;
+  slug?: string;
   title: string;
   description: string;
   shortDesc: string;
   category: CampaignCategory | string;
+  /** Tên danh mục lấy từ API, ưu tiên hơn nhãn cứng theo slug. */
+  categoryName?: string;
   targetAmount: number;
   raisedAmount: number;
   donorCount: number;
@@ -195,15 +198,4 @@ export const CATEGORY_LABELS: Record<CampaignCategory, string> = {
   "cong-dong": "Cộng đồng",
   "sang-tao": "Sáng tạo",
   khac: "Khác",
-};
-
-export const CATEGORY_ICONS: Record<CampaignCategory, string> = {
-  "y-te": "🏥",
-  "giao-duc": "📚",
-  "moi-truong": "🌱",
-  "cuu-tro": "🆘",
-  "dong-vat": "🐾",
-  "cong-dong": "🤝",
-  "sang-tao": "🎨",
-  khac: "💡",
 };

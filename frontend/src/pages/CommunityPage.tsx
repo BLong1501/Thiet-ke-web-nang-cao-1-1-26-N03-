@@ -1,6 +1,6 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { api } from "../services/api";
+import { communityApi } from "../services/api";
 import {
   errorMessage,
   listResult,
@@ -28,9 +28,9 @@ export default function CommunityPage() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const groups = useRemote(
-    () =>
-      api.get("/communities", { params: { page, limit: 12 } }).then(listResult),
+    () => communityApi.list({ page, limit: 12 }).then(listResult),
     [page],
+    { keepPrevious: true },
   );
   async function create(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -38,7 +38,7 @@ export default function CommunityPage() {
     setBusy(true);
     setError("");
     try {
-      const r = await api.post("/communities", {
+      const r = await communityApi.create({
         name: String(f.get("name")).trim(),
         description: String(f.get("description")).trim(),
       });
@@ -146,16 +146,17 @@ export default function CommunityPage() {
 function GroupFeed({ id, group }: { id: string; group?: RecordData }) {
   const [page, setPage] = useState(1);
   const result = useRemote(
-    () =>
-      api
-        .get(`/communities/${id}/posts`, { params: { page, limit: 10 } })
-        .then(listResult),
+    () => communityApi.listPosts(id, { page, limit: 10 }).then(listResult),
     [id, page],
+    { keepPrevious: true },
   );
-  const [joined, setJoined] = useState(!!group?.isJoined);
+  const groupId: unknown = group?.id;
+  const groupJoined = !!group?.isJoined;
+  const [joined, setJoined] = useState(groupJoined);
+  // Đồng bộ lại khi chuyển sang nhóm khác hoặc dữ liệu nhóm được làm mới.
   useEffect(() => {
-    if (group) setJoined(!!group.isJoined);
-  }, [group?.id, group?.isJoined]);
+    if (groupId !== undefined) setJoined(groupJoined);
+  }, [groupId, groupJoined]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const user = useAuthStore((s) => s.user);
@@ -163,7 +164,7 @@ function GroupFeed({ id, group }: { id: string; group?: RecordData }) {
     setBusy(true);
     setError("");
     try {
-      const r = await api.post(`/communities/${id}/join`);
+      const r = await communityApi.join(id);
       const data = payload(r);
       setJoined(typeof data?.isJoined === "boolean" ? data.isJoined : !joined);
       toast.success("Đã cập nhật tư cách thành viên.");
@@ -180,7 +181,7 @@ function GroupFeed({ id, group }: { id: string; group?: RecordData }) {
     setBusy(true);
     setError("");
     try {
-      await api.post(`/communities/${id}/posts`, {
+      await communityApi.createPost(id, {
         content: String(f.get("content")).trim(),
       });
       form.reset();
@@ -252,9 +253,7 @@ function CommunityPost({
     setBusy(true);
     setError("");
     try {
-      const data = payload(
-        await api.post(`/communities/${groupId}/posts/${post.id}/like`),
-      );
+      const data = payload(await communityApi.likePost(groupId, post.id));
       setLikes(Number(data.likeCount));
       setLiked(!!data.isLiked);
     } catch (e) {
@@ -313,10 +312,13 @@ function PostComments({
   postId: string;
 }) {
   const [page, setPage] = useState(1);
-  const path = `/communities/${groupId}/posts/${postId}/comments`;
   const result = useRemote(
-    () => api.get(path, { params: { page, limit: 10 } }).then(listResult),
-    [path, page],
+    () =>
+      communityApi
+        .listComments(groupId, postId, { page, limit: 10 })
+        .then(listResult),
+    [groupId, postId, page],
+    { keepPrevious: true },
   );
   const user = useAuthStore((s) => s.user);
   const [busy, setBusy] = useState(false);
@@ -327,7 +329,7 @@ function PostComments({
     setBusy(true);
     setError("");
     try {
-      await api.post(path, {
+      await communityApi.createComment(groupId, postId, {
         content: String(new FormData(form).get("content")).trim(),
       });
       form.reset();

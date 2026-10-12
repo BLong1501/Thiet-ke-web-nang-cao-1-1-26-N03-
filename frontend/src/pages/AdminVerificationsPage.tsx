@@ -1,11 +1,6 @@
 import { useState, type FormEvent } from "react";
 import { verificationApi, formatDate } from "../services/api";
-import {
-  errorMessage,
-  listResult,
-  payload,
-  type RecordData,
-} from "../services/platform";
+import { errorMessage, listResult, payload } from "../services/platform";
 import { useRemote } from "../hooks/useRemote";
 import {
   Page,
@@ -25,6 +20,7 @@ export default function AdminVerificationsPage() {
   const result = useRemote(
     () => verificationApi.getPending({ page, limit: 10 }).then(listResult),
     [page],
+    { keepPrevious: true },
   );
   return (
     <Page title="Xét duyệt danh tính">

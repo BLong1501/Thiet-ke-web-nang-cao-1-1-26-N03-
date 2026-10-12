@@ -18,6 +18,7 @@ export default function AdminActivityLogsPage() {
     () =>
       activityLogApi.getLogs({ ...filters, page, limit: 20 }).then(listResult),
     [filters, page],
+    { keepPrevious: true },
   );
   return (
     <Page

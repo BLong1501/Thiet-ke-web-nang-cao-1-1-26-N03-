@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from "react";
-import { api } from "../services/api";
+import axios from "axios";
+import { reportApi } from "../services/api";
 import { errorMessage } from "../services/platform";
 import { Field, Modal, Notice } from "./ui/WorkspaceUI";
 import toast from "react-hot-toast";
@@ -18,7 +19,7 @@ export default function ReportDialog({
     setBusy(true);
     setError("");
     try {
-      await api.post("/reports", {
+      await reportApi.create({
         targetType: "CAMPAIGN",
         targetId,
         reason: String(f.get("reason")).trim(),
@@ -26,9 +27,9 @@ export default function ReportDialog({
       });
       toast.success("Đã gửi báo cáo đến quản trị viên.");
       onClose();
-    } catch (e: any) {
+    } catch (e: unknown) {
       setError(
-        e?.response?.status === 404
+        axios.isAxiosError(e) && e.response?.status === 404
           ? "Dịch vụ tiếp nhận báo cáo chưa khả dụng. Báo cáo chưa được gửi."
           : errorMessage(e),
       );

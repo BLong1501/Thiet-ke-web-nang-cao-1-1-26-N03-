@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import type { User } from "../types";
+import { queryClient } from "../services/queryClient";
 
 interface AuthState {
   user: User | null;
@@ -22,10 +23,16 @@ export const useAuthStore = create<AuthState>()(
       isAuthenticated: false,
       isLoading: false,
 
-      setUser: (user, token) =>
-        set({ user, token, isAuthenticated: true, isLoading: false }),
+      setUser: (user, token) => {
+        // Không để dữ liệu cache của phiên trước lọt sang tài khoản mới.
+        queryClient.clear();
+        set({ user, token, isAuthenticated: true, isLoading: false });
+      },
 
-      logout: () => set({ user: null, token: null, isAuthenticated: false }),
+      logout: () => {
+        queryClient.clear();
+        set({ user: null, token: null, isAuthenticated: false });
+      },
 
       updateUser: (updates) =>
         set((state) => ({

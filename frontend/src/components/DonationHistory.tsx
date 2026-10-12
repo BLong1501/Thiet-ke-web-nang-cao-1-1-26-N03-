@@ -22,6 +22,7 @@ export default function DonationHistory({
         : donationApi.getMyDonations({ page, limit: 10 })
       ).then(listResult),
     [page, status, admin],
+    { keepPrevious: true },
   );
   return (
     <>

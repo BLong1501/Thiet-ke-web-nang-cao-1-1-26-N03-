@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from "react";
-import { api, formatDate } from "../services/api";
+import { api, formatDate, reportApi } from "../services/api";
 import {
   errorMessage,
   listResult,
@@ -28,6 +28,7 @@ export default function AdminReportsPage() {
         .get("/admin/reports", { params: { page, limit: 15 } })
         .then(listResult),
     [page],
+    { keepPrevious: true },
   );
   async function resolve(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -36,7 +37,7 @@ export default function AdminReportsPage() {
     setBusy(true);
     setError("");
     try {
-      await api.patch(`/admin/reports/${selected.id}/resolve`, {
+      await reportApi.resolve(String(selected.id), {
         resolution: String(f.get("resolution")).trim(),
         status: "RESOLVED",
       });

@@ -33,6 +33,7 @@ export default function UserActivityLogsPage() {
         .getMyLogs({ ...filters, page, limit: 15 })
         .then(listResult),
     [userId, filters, page],
+    { keepPrevious: true },
   );
   return (
     <Page

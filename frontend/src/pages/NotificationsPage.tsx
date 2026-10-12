@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { api, formatDate } from "../services/api";
+import { formatDate, notificationApi } from "../services/api";
+import { queryClient } from "../services/queryClient";
+import { UNREAD_KEY } from "../hooks/useUnreadNotifications";
 import { errorMessage, listResult } from "../services/platform";
 import { useRemote } from "../hooks/useRemote";
 import {
@@ -15,19 +17,16 @@ export default function NotificationsPage() {
   const [page, setPage] = useState(1);
   const [busy, setBusy] = useState(false);
   const result = useRemote(
-    () =>
-      api
-        .get("/notifications", { params: { page, limit: 15 } })
-        .then(listResult),
+    () => notificationApi.list({ page, limit: 15 }).then(listResult),
     [page],
+    { keepPrevious: true },
   );
   async function read(id?: string) {
     setBusy(true);
     try {
-      await api.patch(
-        id ? `/notifications/${id}/read` : "/notifications/read-all",
-      );
+      await (id ? notificationApi.markRead(id) : notificationApi.markAllRead());
       result.reload();
+      void queryClient.invalidateQueries({ queryKey: UNREAD_KEY });
     } catch (e) {
       toast.error(errorMessage(e));
     } finally {

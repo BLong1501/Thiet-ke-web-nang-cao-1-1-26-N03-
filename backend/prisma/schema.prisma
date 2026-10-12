@@ -116,6 +116,7 @@ model User {
   sentReports             Report[]           @relation("ReportAuthor")
   resolvedReports         Report[]           @relation("ReportResolver")
   notifications           Notification[]     @relation("UserNotifications")
+  postLikes               PostLike[]         @relation("UserPostLikes")
   auditLogs               AuditLog[]         @relation("UserAuditLogs")
 
   @@index([role])
@@ -360,11 +361,26 @@ model CommunityPost {
   author    User      @relation("UserPosts", fields: [authorId], references: [id], onDelete: Cascade)
   campaign  Campaign? @relation("CampaignPosts", fields: [campaignId], references: [id], onDelete: SetNull)
   comments  Comment[] @relation("PostComments")
+  likes     PostLike[] @relation("PostLikes")
 
   @@index([communityId])
   @@index([authorId])
   @@index([campaignId])
   @@map("community_posts")
+}
+
+model PostLike {
+  id        String   @id @default(uuid()) @db.VarChar(36)
+  postId    String   @map("post_id") @db.VarChar(36)
+  userId    String   @map("user_id") @db.VarChar(36)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  post CommunityPost @relation("PostLikes", fields: [postId], references: [id], onDelete: Cascade)
+  user User          @relation("UserPostLikes", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, userId], map: "idx_post_likes_unique")
+  @@index([userId], map: "idx_post_likes_user")
+  @@map("post_likes")
 }
 
 model Comment {

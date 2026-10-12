@@ -1,7 +1,12 @@
 import { useState, type FormEvent } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { campaignApi } from "../services/api";
-import { errorMessage, payload, type RecordData } from "../services/platform";
+import {
+  campaignPath,
+  errorMessage,
+  payload,
+  type RecordData,
+} from "../services/platform";
 import { useRemote } from "../hooks/useRemote";
 import { useAuthStore } from "../store/authStore";
 import { Page, Field, Notice, RemoteState } from "../components/ui/WorkspaceUI";
@@ -119,7 +124,7 @@ function CampaignForm({
           ? "Đã lưu bản nháp trên máy chủ."
           : "Đã gửi chiến dịch chờ duyệt.",
       );
-      navigate(`/campaigns/${payload(r).id}`);
+      navigate(campaignPath(payload(r)));
     } catch (e) {
       setError(errorMessage(e));
     } finally {

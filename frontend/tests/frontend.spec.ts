@@ -1,4 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
+import AxeBuilder from "@axe-core/playwright";
 
 const user = {
   id: "user-1",
@@ -41,10 +42,22 @@ type Options = {
   failUpload?: boolean;
   expire?: boolean;
   donationSuccess?: boolean;
+  /** Số thông báo chưa đọc trả về từ API; bỏ trống = dịch vụ thông báo không khả dụng (404). */
+  unread?: number;
+  emptyTimeline?: boolean;
+  /** Gắn slug cho chiến dịch mẫu; khi đó cả `/campaigns/campaign-1` và `/campaigns/<slug>` đều trả về chiến dịch. */
+  campaignSlug?: string;
+  /** Mã lỗi cho endpoint timeline; 0 = lỗi mạng (request bị hủy). */
+  timelineStatus?: number;
+  /** Mã lỗi khi tra cứu `/donations/donation-1`. */
+  donationLookupStatus?: number;
 };
 async function setup(page: Page, options: Options = {}) {
   const actor = { ...user, role: options.role || "FUNDRAISER" };
-  const writes: { path: string; body: any }[] = [];
+  const current = options.campaignSlug
+    ? { ...campaign, slug: options.campaignSlug }
+    : campaign;
+  const writes: { path: string; body: Record<string, unknown> }[] = [];
   let refreshes = 0;
   const errors: string[] = [];
   page.on("pageerror", (e) => errors.push(e.message));
@@ -90,7 +103,7 @@ async function setup(page: Page, options: Options = {}) {
     const fail = (status: number, message: string) =>
       route.fulfill({ status, headers, json: { success: false, message } });
     if (method === "OPTIONS") return route.fulfill({ status: 204, headers });
-    let body: any = {};
+    let body: Record<string, unknown> = {};
     if (request.headers()["content-type"]?.includes("application/json"))
       body = request.postDataJSON() || {};
     if (method !== "GET") writes.push({ path, body });
@@ -138,7 +151,7 @@ async function setup(page: Page, options: Options = {}) {
       return ok(
         [
           {
-            ...campaign,
+            ...current,
             status: path.endsWith("pending")
               ? "PENDING_APPROVAL"
               : campaign.status,
@@ -150,7 +163,51 @@ async function setup(page: Page, options: Options = {}) {
       return options.failReview
         ? fail(500, "Không thể lưu quyết định xét duyệt")
         : ok({});
-    if (path === "/campaigns/campaign-1") return ok(campaign);
+    if (
+      path === "/campaigns/campaign-1" ||
+      (options.campaignSlug && path === `/campaigns/${options.campaignSlug}`)
+    )
+      return ok(current);
+    if (
+      path === "/notifications" &&
+      method === "GET" &&
+      options.unread !== undefined
+    )
+      return ok([], {
+        page: 1,
+        limit: 1,
+        total: 0,
+        totalPages: 0,
+        unread: options.unread,
+      });
+    if (
+      path === "/donations/campaign/campaign-1/timeline" &&
+      options.timelineStatus !== undefined
+    )
+      return options.timelineStatus === 0
+        ? route.abort("failed")
+        : fail(options.timelineStatus, "Timeline service failed");
+    if (path === "/donations/campaign/campaign-1/timeline")
+      return ok({
+        target: 1000000,
+        raised: 800000,
+        points: options.emptyTimeline
+          ? []
+          : [
+              {
+                date: "2026-10-01",
+                amount: 300000,
+                donors: 2,
+                cumulative: 300000,
+              },
+              {
+                date: "2026-10-03",
+                amount: 500000,
+                donors: 1,
+                cumulative: 800000,
+              },
+            ],
+      });
     if (path === "/verifications/my-status")
       return ok({ hasSubmitted: false, status: null, verification: null });
     if (path === "/verifications/pending")
@@ -195,6 +252,15 @@ async function setup(page: Page, options: Options = {}) {
         transactionCode: "TEST-001",
         paymentStatus: "PENDING",
       });
+    if (path === "/donations/donation-1" && options.donationLookupStatus)
+      return fail(
+        options.donationLookupStatus,
+        options.donationLookupStatus === 403
+          ? "Bạn không sở hữu khoản đóng góp này"
+          : options.donationLookupStatus === 401
+            ? "Unauthorized"
+            : "Donation service failed",
+      );
     if (path === "/donations/donation-1")
       return ok({
         id: "donation-1",
@@ -236,9 +302,14 @@ test("public pages, missing campaign and 404 routes render without exceptions", 
   const state = await setup(page);
   await page.goto("/");
   await expect(
-    page.getByRole("heading", { name: /Điều nhỏ bé/ }),
+    page.getByRole("heading", {
+      level: 1,
+      name: /Sẻ chia có địa chỉ, minh bạch đến từng khoản chi/,
+    }),
   ).toBeVisible();
-  await page.getByRole("link", { name: "Khám phá chiến dịch →" }).click();
+  await page
+    .getByRole("link", { name: "Khám phá chiến dịch", exact: true })
+    .click();
   await expect(page.getByText("1 chiến dịch", { exact: true })).toBeVisible();
   await page.getByRole("heading", { name: campaign.title }).click();
   await expect(
@@ -341,9 +412,9 @@ test("campaign creation validates and posts the backend contract", async ({
   await page.getByRole("button", { name: "Gửi xét duyệt" }).click();
   await expect(page).toHaveURL(/campaigns\/campaign-1$/);
   const body = state.writes.find((w) => w.path === "/campaigns")?.body;
-  expect(body.status).toBe("PENDING_APPROVAL");
-  expect(body.targetAmount).toBe(1000000);
-  expect(body.charityCommitmentAccepted).toBe(true);
+  expect(body?.status).toBe("PENDING_APPROVAL");
+  expect(body?.targetAmount).toBe(1000000);
+  expect(body?.charityCommitmentAccepted).toBe(true);
   expect(state.errors).toEqual([]);
 });
 test("donation stays pending; no client confirmation or fake success", async ({
@@ -364,7 +435,7 @@ test("donation stays pending; no client confirmation or fake success", async ({
   ).toBeVisible();
   expect(state.writes.filter((w) => /confirm/.test(w.path))).toHaveLength(0);
   expect(
-    state.writes.find((w) => w.path === "/donations")?.body.requestKey,
+    state.writes.find((w) => w.path === "/donations")?.body?.requestKey,
   ).toBeTruthy();
 });
 test("admin review failure never removes the pending item", async ({
@@ -509,11 +580,42 @@ test("admin log navigation opens the system page, not the personal page", async 
   await expect(
     page.getByRole("navigation", { name: "Quản trị" }),
   ).toBeVisible();
+  const mainNav = page.getByRole("navigation", { name: "Điều hướng chính" });
+  await mainNav.getByRole("button", { name: /^Tài khoản/ }).click();
   await expect(
-    page
-      .getByRole("navigation", { name: "Điều hướng chính" })
-      .getByRole("link", { name: "Nhật ký hệ thống" }),
+    mainNav.getByRole("link", { name: "Nhật ký hệ thống" }),
   ).toHaveAttribute("href", "/admin/activity-logs");
+});
+
+test("account menu and mobile menu close with Escape and restore focus", async ({
+  page,
+}) => {
+  const state = await setup(page, { loggedIn: true });
+  await page.goto("/");
+  const mainNav = page.getByRole("navigation", { name: "Điều hướng chính" });
+  const account = mainNav.getByRole("button", { name: /^Tài khoản/ });
+  await account.click();
+  await expect(account).toHaveAttribute("aria-expanded", "true");
+  await expect(mainNav.getByRole("link", { name: "Hồ sơ" })).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(account).toHaveAttribute("aria-expanded", "false");
+  await expect(account).toBeFocused();
+  await expect(mainNav.getByRole("link", { name: "Hồ sơ" })).toBeHidden();
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  const toggle = page.getByRole("button", { name: "Menu", exact: true });
+  await toggle.click();
+  await expect(toggle).toHaveAttribute("aria-expanded", "true");
+  await expect(
+    mainNav.getByRole("link", { name: "Chiến dịch", exact: true }),
+  ).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(toggle).toHaveAttribute("aria-expanded", "false");
+  await expect(toggle).toBeFocused();
+  await expect(
+    mainNav.getByRole("link", { name: "Chiến dịch", exact: true }),
+  ).toBeHidden();
+  expect(state.errors).toEqual([]);
 });
 
 test("successful server confirmation closes the donation form without creating another transaction", async ({
@@ -555,6 +657,8 @@ test("unavailable notification and report services do not report false success",
 test("admin pages fit tablet and mobile widths; capture representative screens", async ({
   page,
 }, testInfo) => {
+  // Test này tải lại trang ~17 lần nên vốn dài; 30s mặc định quá sát (đo thực tế ~26s).
+  test.setTimeout(90_000);
   const state = await setup(page, { loggedIn: true, role: "ADMIN" });
   await page.setViewportSize({ width: 1440, height: 1000 });
   await page.goto("/");
@@ -597,4 +701,290 @@ test("admin pages fit tablet and mobile widths; capture representative screens",
     fullPage: true,
   });
   expect(state.errors).toEqual([]);
+});
+
+test("navbar shows unread notification badge and hides it at zero", async ({
+  page,
+}) => {
+  const state = await setup(page, { loggedIn: true, unread: 3 });
+  await page.goto("/");
+  const link = page.getByRole("link", { name: "Thông báo, 3 chưa đọc" });
+  await expect(link).toBeVisible();
+  await expect(link).toHaveAttribute("href", "/notifications");
+  expect(state.errors).toEqual([]);
+});
+
+test("navbar has no badge when there are no unread notifications", async ({
+  page,
+}) => {
+  await setup(page, { loggedIn: true, unread: 0 });
+  await page.goto("/");
+  await expect(
+    page.getByRole("link", { name: "Thông báo", exact: true }),
+  ).toBeVisible();
+  await expect(page.locator(".nav-badge")).toHaveCount(0);
+});
+
+test("campaign donors tab renders the funding progress chart with an accessible table", async ({
+  page,
+}) => {
+  const state = await setup(page);
+  await page.goto("/campaigns/campaign-1");
+  await page.getByRole("tab", { name: "Đóng góp", exact: true }).click();
+  // Chunk Recharts được tải lazy (~360 kB) nên lần đầu có thể chậm hơn timeout mặc định 5s.
+  await expect(
+    page.getByRole("heading", { name: "Tiến độ gây quỹ theo thời gian" }),
+  ).toBeVisible({ timeout: 20_000 });
+  await expect(page.locator(".progress-chart .recharts-surface")).toBeVisible({
+    timeout: 20_000,
+  });
+  await expect(page.getByRole("img", { name: /Biểu đồ lũy kế/ })).toBeVisible();
+  await page.getByText("Xem dữ liệu dạng bảng").click();
+  const rows = page.locator(".progress-chart tbody tr");
+  await expect(rows).toHaveCount(2);
+  await expect(rows.last()).toContainText("800.000");
+  expect(state.errors).toEqual([]);
+});
+
+test("progress chart shows an empty state when nothing was raised", async ({
+  page,
+}) => {
+  await setup(page, { emptyTimeline: true });
+  await page.goto("/campaigns/campaign-1");
+  await page.getByRole("tab", { name: "Đóng góp", exact: true }).click();
+  await expect(
+    page.getByText("Chưa có khoản đóng góp nào được xác nhận để vẽ biểu đồ."),
+  ).toBeVisible({ timeout: 20_000 });
+  await expect(page.locator(".recharts-surface")).toHaveCount(0);
+});
+
+test("campaign tabs follow the WAI-ARIA tabs pattern with keyboard support", async ({
+  page,
+}) => {
+  const state = await setup(page);
+  await page.goto("/campaigns/campaign-1");
+  const tablist = page.getByRole("tablist", { name: "Nội dung chiến dịch" });
+  await expect(tablist).toBeVisible();
+  const story = tablist.getByRole("tab", { name: "Câu chuyện" });
+  await expect(story).toHaveAttribute("aria-selected", "true");
+  await expect(story).toHaveAttribute("tabindex", "0");
+  await expect(tablist.getByRole("tab", { name: "Cập nhật" })).toHaveAttribute(
+    "tabindex",
+    "-1",
+  );
+
+  await story.focus();
+  await page.keyboard.press("ArrowRight");
+  const updates = tablist.getByRole("tab", { name: "Cập nhật" });
+  await expect(updates).toHaveAttribute("aria-selected", "true");
+  await expect(updates).toBeFocused();
+  await expect(page.getByRole("tabpanel")).toHaveAccessibleName("Cập nhật");
+
+  await page.keyboard.press("End");
+  await expect(tablist.getByRole("tab", { name: "Minh bạch" })).toBeFocused();
+  await page.keyboard.press("ArrowRight"); // vòng về đầu danh sách
+  await expect(story).toBeFocused();
+  await expect(story).toHaveAttribute("aria-selected", "true");
+  expect(state.errors).toEqual([]);
+});
+
+test("public pages expose SEO metadata; private pages are noindex", async ({
+  page,
+}) => {
+  await setup(page, { loggedIn: true });
+  await page.goto("/campaigns/campaign-1");
+  await expect(page).toHaveTitle(`${campaign.title} — FundTrust`);
+  await expect(page.locator('meta[name="description"]')).toHaveAttribute(
+    "content",
+    campaign.shortDescription,
+  );
+  await expect(page.locator('meta[property="og:title"]')).toHaveAttribute(
+    "content",
+    `${campaign.title} — FundTrust`,
+  );
+  await expect(page.locator('link[rel="canonical"]')).toHaveAttribute(
+    "href",
+    /\/campaigns\/campaign-1$/,
+  );
+  await expect(page.locator('meta[name="robots"]')).toHaveCount(0);
+
+  await page.goto("/dashboard");
+  await expect(page.locator('meta[name="robots"]')).toHaveAttribute(
+    "content",
+    "noindex,nofollow",
+  );
+});
+
+test("campaign links prefer the slug; id URLs still resolve with a slug canonical", async ({
+  page,
+}) => {
+  const slug = "xay-truong-vung-cao";
+  const state = await setup(page, { campaignSlug: slug });
+  await page.goto("/campaigns");
+  const card = page.getByRole("link", { name: new RegExp(campaign.title) });
+  await expect(card.first()).toHaveAttribute("href", `/campaigns/${slug}`);
+  await card.first().click();
+  await expect(page).toHaveURL(new RegExp(`/campaigns/${slug}$`));
+  await expect(
+    page.getByRole("heading", { level: 1, name: campaign.title }),
+  ).toBeVisible();
+  await page.goto("/campaigns/campaign-1");
+  await expect(
+    page.getByRole("heading", { level: 1, name: campaign.title }),
+  ).toBeVisible();
+  await expect(page.locator('link[rel="canonical"]')).toHaveAttribute(
+    "href",
+    new RegExp(`/campaigns/${slug}$`),
+  );
+  expect(state.errors).toEqual([]);
+});
+
+test("campaign links fall back to the id when the API has no slug", async ({
+  page,
+}) => {
+  await setup(page);
+  await page.goto("/campaigns");
+  await expect(
+    page.getByRole("link", { name: new RegExp(campaign.title) }).first(),
+  ).toHaveAttribute("href", "/campaigns/campaign-1");
+});
+
+test("progress chart is replaced by a neutral notice when the timeline endpoint returns 404", async ({
+  page,
+}) => {
+  const state = await setup(page, { timelineStatus: 404 });
+  await page.goto("/campaigns/campaign-1");
+  await page.getByRole("tab", { name: "Đóng góp", exact: true }).click();
+  const chart = page.locator(".progress-chart");
+  await expect(
+    chart.getByText(/Dữ liệu tiến độ đang được cập nhật/),
+  ).toBeVisible({ timeout: 20_000 });
+  await expect(chart.getByRole("alert")).toHaveCount(0);
+  await expect(chart.getByRole("button", { name: "Thử lại" })).toHaveCount(0);
+  await expect(chart.locator(".recharts-surface")).toHaveCount(0);
+  expect(state.errors).toEqual([]);
+});
+
+test("progress chart still surfaces real server errors (500)", async ({
+  page,
+}) => {
+  await setup(page, { timelineStatus: 500 });
+  await page.goto("/campaigns/campaign-1");
+  await page.getByRole("tab", { name: "Đóng góp", exact: true }).click();
+  const chart = page.locator(".progress-chart");
+  await expect(chart.getByRole("alert")).toContainText(
+    "Timeline service failed",
+    { timeout: 20_000 },
+  );
+  await expect(chart.getByRole("button", { name: "Thử lại" })).toBeVisible();
+  await expect(
+    chart.getByText(/Dữ liệu tiến độ đang được cập nhật/),
+  ).toHaveCount(0);
+});
+
+test("progress chart still surfaces network failures", async ({ page }) => {
+  await setup(page, { timelineStatus: 0 });
+  await page.goto("/campaigns/campaign-1");
+  await page.getByRole("tab", { name: "Đóng góp", exact: true }).click();
+  await expect(
+    page.locator(".progress-chart").getByRole("alert"),
+  ).toContainText("Không kết nối được máy chủ", { timeout: 20_000 });
+});
+
+test("guest donation lookup rejected with 401 explains next steps and stays pending", async ({
+  page,
+}) => {
+  const state = await setup(page, { donationLookupStatus: 401 });
+  await page.goto("/campaigns/campaign-1");
+  await page.getByRole("button", { name: "Đóng góp ngay" }).click();
+  const dialog = page.getByRole("dialog");
+  await expect(dialog.getByText(/Bạn chưa đăng nhập/)).toBeVisible();
+  await dialog.getByRole("button", { name: "Tạo yêu cầu đóng góp" }).click();
+  await expect(dialog.getByText("Đang chờ", { exact: true })).toBeVisible();
+  await expect(dialog.getByText(/Hãy lưu lại mã giao dịch/)).toBeVisible();
+  await dialog
+    .getByRole("button", { name: "Kiểm tra trạng thái thanh toán" })
+    .click();
+  await expect(
+    dialog.getByText(/chưa hỗ trợ khách chưa đăng nhập tra cứu/),
+  ).toBeVisible();
+  await expect(dialog.getByRole("alert")).toHaveCount(0);
+  await expect(dialog.getByText("Đang chờ", { exact: true })).toBeVisible();
+  await expect(dialog.getByText("Thành công", { exact: true })).toHaveCount(0);
+  expect(state.writes.filter((w) => /confirm/.test(w.path))).toHaveLength(0);
+  expect(state.errors).toEqual([]);
+});
+
+test("donation detail explains 401 instead of showing a technical error", async ({
+  page,
+}) => {
+  const state = await setup(page, { donationLookupStatus: 401 });
+  await page.goto("/donations/donation-1");
+  await expect(
+    page.getByText(/Cần đăng nhập để xem giao dịch này/),
+  ).toBeVisible();
+  await expect(page.getByRole("alert")).toHaveCount(0);
+  await expect(
+    page.getByRole("button", { name: "Cập nhật trạng thái" }),
+  ).toHaveCount(0);
+  await page
+    .getByRole("main")
+    .getByRole("link", { name: "Đăng nhập", exact: true })
+    .click();
+  await expect(page).toHaveURL(/login/);
+  expect(state.errors).toEqual([]);
+});
+
+test("donation detail explains 403 for accounts that do not own the donation", async ({
+  page,
+}) => {
+  await setup(page, { loggedIn: true, donationLookupStatus: 403 });
+  await page.goto("/donations/donation-1");
+  await expect(
+    page.getByText(/không có quyền xem giao dịch này/),
+  ).toBeVisible();
+  await expect(page.getByRole("alert")).toHaveCount(0);
+});
+
+test("donation detail still reports server errors (500)", async ({ page }) => {
+  await setup(page, { loggedIn: true, donationLookupStatus: 500 });
+  await page.goto("/donations/donation-1");
+  await expect(page.getByRole("alert")).toContainText(
+    "Donation service failed",
+    { timeout: 20_000 },
+  );
+});
+
+test.describe("accessibility (axe, WCAG 2.1 A/AA)", () => {
+  const pages: [string, string, Options][] = [
+    ["home", "/", {}],
+    ["campaigns list", "/campaigns", {}],
+    ["campaign detail", "/campaigns/campaign-1", {}],
+    ["login", "/login", {}],
+    ["register", "/register", {}],
+    ["how it works", "/how-it-works", {}],
+    ["dashboard", "/dashboard", { loggedIn: true }],
+    ["profile", "/profile", { loggedIn: true }],
+    ["notifications", "/notifications", { loggedIn: true, unread: 2 }],
+  ];
+  for (const [name, path, options] of pages) {
+    test(`${name} has no serious or critical violations`, async ({ page }) => {
+      await setup(page, options);
+      await page.goto(path);
+      await page.getByRole("heading", { level: 1 }).first().waitFor();
+      await page.waitForLoadState("networkidle");
+      const { violations } = await new AxeBuilder({ page })
+        .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"])
+        .analyze();
+      const blocking = violations
+        .filter((v) => v.impact === "serious" || v.impact === "critical")
+        .map((v) => ({
+          rule: v.id,
+          impact: v.impact,
+          help: v.help,
+          nodes: v.nodes.slice(0, 3).map((n) => n.target.join(" ")),
+        }));
+      expect(blocking).toEqual([]);
+    });
+  }
 });

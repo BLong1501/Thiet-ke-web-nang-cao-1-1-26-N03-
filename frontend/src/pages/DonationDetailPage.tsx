@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from "react";
 import { Link, useParams } from "react-router-dom";
 import { api, donationApi, formatCurrency, formatDate } from "../services/api";
-import { errorMessage, payload } from "../services/platform";
+import { campaignPath, errorMessage, payload } from "../services/platform";
 import { useRemote } from "../hooks/useRemote";
 import { useAuthStore } from "../store/authStore";
 import {
@@ -34,16 +34,46 @@ export default function DonationDetailPage() {
   const d = result.data;
   const admin = user?.role?.toUpperCase() === "ADMIN";
   const owner = !!user && d?.donorId === user.id;
+  const denied =
+    result.status === 401 || result.status === 403 || result.status === 404
+      ? result.status
+      : null;
   return (
     <Page
       title="Chi tiết giao dịch"
       actions={
-        <button className="button secondary" onClick={result.reload}>
-          Cập nhật trạng thái
-        </button>
+        !denied && (
+          <button className="button secondary" onClick={result.reload}>
+            Cập nhật trạng thái
+          </button>
+        )
       }
     >
-      <RemoteState {...result} />
+      {denied === 401 && (
+        <Notice>
+          Cần đăng nhập để xem giao dịch này. Chi tiết giao dịch chỉ hiển thị
+          cho tài khoản đã thực hiện đóng góp, người gây quỹ của chiến dịch hoặc
+          quản trị viên. Khoản đóng góp tạo khi chưa đăng nhập hiện chưa thể tra
+          cứu trực tuyến; vui lòng giữ lại mã giao dịch để đối chiếu.{" "}
+          <Link to="/login" state={{ from: `/donations/${id}` }}>
+            Đăng nhập
+          </Link>
+        </Notice>
+      )}
+      {denied === 403 && (
+        <Notice>
+          Tài khoản của bạn không có quyền xem giao dịch này. Khoản đóng góp tạo
+          khi chưa đăng nhập không gắn với tài khoản nào.{" "}
+          <Link to="/dashboard">Xem đóng góp của tôi</Link>
+        </Notice>
+      )}
+      {denied === 404 && (
+        <Notice>
+          Không tìm thấy giao dịch. Vui lòng kiểm tra lại đường dẫn.{" "}
+          <Link to="/campaigns">Khám phá chiến dịch</Link>
+        </Notice>
+      )}
+      {!denied && <RemoteState {...result} />}
       {error && <Notice error>{error}</Notice>}
       {d && (
         <div className="panel narrow receipt">
@@ -53,7 +83,9 @@ export default function DonationDetailPage() {
           </div>
           <h3>{formatCurrency(Number(d.amount))}</h3>
           <p>
-            <Link to={`/campaigns/${d.campaignId}`}>
+            <Link
+              to={campaignPath({ id: d.campaignId, slug: d.campaign?.slug })}
+            >
               {d.campaign?.title || "Xem chiến dịch"}
             </Link>
           </p>
@@ -93,6 +125,7 @@ export default function DonationDetailPage() {
           )}
           {admin &&
             d.paymentStatus === "PENDING" &&
+            !import.meta.env.PROD &&
             import.meta.env.VITE_ENABLE_PAYMENT_DEMO === "true" && (
               <div className="no-print">
                 <Notice>

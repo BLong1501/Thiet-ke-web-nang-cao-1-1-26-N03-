@@ -1,11 +1,6 @@
 import { useState, type FormEvent } from "react";
 import { userApi, formatDate } from "../services/api";
-import {
-  errorMessage,
-  listResult,
-  payload,
-  type RecordData,
-} from "../services/platform";
+import { errorMessage, listResult, payload } from "../services/platform";
 import { useRemote } from "../hooks/useRemote";
 import { useAuthStore } from "../store/authStore";
 import {
@@ -36,6 +31,7 @@ export default function AdminUsersPage() {
         })
         .then(listResult),
     [page, search, role],
+    { keepPrevious: true },
   );
   return (
     <Page title="Quản lý người dùng">

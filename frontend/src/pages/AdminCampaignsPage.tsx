@@ -2,6 +2,7 @@ import { useState, type FormEvent } from "react";
 import { Link } from "react-router-dom";
 import { api, campaignApi, formatCurrency } from "../services/api";
 import {
+  campaignPath,
   errorMessage,
   listResult,
   payload,
@@ -35,6 +36,7 @@ export default function AdminCampaignsPage() {
         : campaignApi.getAll({ page, limit: 10, status })
       ).then(listResult),
     [page, status],
+    { keepPrevious: true },
   );
   async function submit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -122,7 +124,7 @@ export default function AdminCampaignsPage() {
                   {result.data.items.map((c) => (
                     <tr key={c.id}>
                       <td>
-                        <Link to={`/campaigns/${c.id}`}>{c.title}</Link>
+                        <Link to={campaignPath(c)}>{c.title}</Link>
                         <small>{c.fundraiser?.fullName}</small>
                       </td>
                       <td>{formatCurrency(Number(c.targetAmount))}</td>
