@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { campaignApi, formatCurrency } from "../services/api";
-import { listResult } from "../services/platform";
+import { campaignPath, listResult } from "../services/platform";
 import { useRemote } from "../hooks/useRemote";
 import { useAuthStore } from "../store/authStore";
 import {
@@ -12,6 +12,7 @@ import {
   RemoteState,
   Status,
 } from "../components/ui/WorkspaceUI";
+import Tabs from "../components/ui/Tabs";
 import DonationHistory from "../components/DonationHistory";
 export default function DashboardPage() {
   const user = useAuthStore((s) => s.user);
@@ -38,27 +39,23 @@ export default function DashboardPage() {
           danh tính.
         </Notice>
       )}
-      <nav className="tabs" aria-label="Bảng điều khiển">
-        {fundraiser && (
-          <button
-            className={tab === "campaigns" ? "active" : ""}
-            onClick={() => setTab("campaigns")}
-          >
-            Chiến dịch của tôi
-          </button>
+      <Tabs
+        label="Bảng điều khiển"
+        tabs={[
+          ...(fundraiser
+            ? [{ id: "campaigns", label: "Chiến dịch của tôi" }]
+            : []),
+          { id: "donations", label: "Đóng góp của tôi" },
+        ]}
+        value={tab === "campaigns" && fundraiser ? "campaigns" : "donations"}
+        onChange={setTab}
+      >
+        {tab === "campaigns" && fundraiser ? (
+          <MyCampaigns />
+        ) : (
+          <DonationHistory />
         )}
-        <button
-          className={tab === "donations" ? "active" : ""}
-          onClick={() => setTab("donations")}
-        >
-          Đóng góp của tôi
-        </button>
-      </nav>
-      {tab === "campaigns" && fundraiser ? (
-        <MyCampaigns />
-      ) : (
-        <DonationHistory />
-      )}
+      </Tabs>
     </Page>
   );
 }
@@ -67,6 +64,7 @@ function MyCampaigns() {
   const result = useRemote(
     () => campaignApi.getMyCampaigns({ page, limit: 10 }).then(listResult),
     [page],
+    { keepPrevious: true },
   );
   return (
     <>
@@ -88,7 +86,7 @@ function MyCampaigns() {
                   {result.data.items.map((c) => (
                     <tr key={c.id}>
                       <td>
-                        <Link to={`/campaigns/${c.id}`}>{c.title}</Link>
+                        <Link to={campaignPath(c)}>{c.title}</Link>
                         <small>{c.category?.name}</small>
                       </td>
                       <td>
@@ -101,11 +99,11 @@ function MyCampaigns() {
                         </small>
                       </td>
                       <td>
-                        <Link to={`/campaigns/${c.id}`}>Quản lý</Link>
+                        <Link to={campaignPath(c)}>Quản lý</Link>
                         {["DRAFT", "PENDING_APPROVAL"].includes(c.status) && (
                           <>
                             {" "}
-                            · <Link to={`/campaigns/${c.id}/edit`}>Sửa</Link>
+                            · <Link to={`${campaignPath(c)}/edit`}>Sửa</Link>
                           </>
                         )}
                       </td>

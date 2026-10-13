@@ -1,16 +1,9 @@
-import { useState, type FormEvent } from "react";
+import { useState } from "react";
 import { Link, useParams } from "react-router-dom";
+import { campaignApi, formatCurrency, formatDate } from "../services/api";
 import {
-  campaignApi,
-  donationApi,
-  formatCurrency,
-  formatDate,
-  getProgress,
-} from "../services/api";
-import {
+  campaignPath,
   downloadCsv,
-  errorMessage,
-  listResult,
   normalizeCampaign,
   payload,
   safeUrl,
@@ -20,16 +13,24 @@ import { useRemote } from "../hooks/useRemote";
 import { useAuthStore } from "../store/authStore";
 import {
   Empty,
-  Field,
   Notice,
   Page,
-  Pager,
   RemoteState,
   Status,
 } from "../components/ui/WorkspaceUI";
+import Tabs from "../components/ui/Tabs";
 import DonationModal from "../components/ui/DonationModal";
 import ReportDialog from "../components/ReportDialog";
+import CampaignDonors from "../components/campaign/CampaignDonors";
+import ManageCampaign from "../components/campaign/ManageCampaign";
+import CampaignSummary from "../components/campaign/CampaignSummary";
+import { categoryIcon } from "../components/ui/categoryIcon";
+import { imageSources } from "../components/home/homeData";
 import toast from "react-hot-toast";
+import "./campaign-detail.css";
+
+const PLACEHOLDER = "/campaign-placeholder.svg";
+
 export default function CampaignDetailPage() {
   const { id } = useParams();
   const result = useRemote(() => campaignApi.getById(id!).then(payload), [id]);
@@ -39,7 +40,9 @@ export default function CampaignDetailPage() {
   const user = useAuthStore((s) => s.user);
   const c = result.data;
   const owner =
-    c && (c.fundraiserId === user?.id || user?.role?.toUpperCase() === "ADMIN");
+    !!c &&
+    (c.fundraiserId === user?.id || user?.role?.toUpperCase() === "ADMIN");
+
   async function share() {
     try {
       await navigator.clipboard.writeText(window.location.href);
@@ -50,51 +53,119 @@ export default function CampaignDetailPage() {
       );
     }
   }
+
+  const categoryName =
+    typeof c?.category?.name === "string" ? c.category.name : "";
+  const categoryId = typeof c?.category?.id === "string" ? c.category.id : "";
+  const CategoryIcon = categoryIcon(c?.category?.slug);
+  const cover = safeUrl(c?.coverImageUrl) || PLACEHOLDER;
+  const sources = imageSources(cover, [720, 1200, 1600]);
+
   return (
     <Page
       title={c?.title || "Chi tiết chiến dịch"}
-      actions={<Link to="/campaigns">← Tất cả chiến dịch</Link>}
+      description={c?.shortDescription}
+      image={c?.coverImageUrl}
+      canonicalPath={c ? campaignPath(c) : undefined}
+      heading={c ? "crumb" : "full"}
     >
-      <RemoteState {...result} />
+      <RemoteState
+        {...result}
+        skeleton={
+          <div className="cd" role="status">
+            <span className="visually-hidden">Đang tải chiến dịch…</span>
+            <span className="skeleton title" />
+            <span className="skeleton" />
+            <span className="cd-hero skeleton media" aria-hidden="true" />
+          </div>
+        }
+      />
       {c && (
-        <>
-          <div className="detail-grid">
-            <div>
+        <article className="cd">
+          <header className="cd-header">
+            <div className="cd-kicker">
+              {categoryName &&
+                (categoryId ? (
+                  <Link
+                    className="cd-category"
+                    to={`/campaigns?category=${encodeURIComponent(categoryId)}`}
+                  >
+                    <CategoryIcon aria-hidden="true" />
+                    {categoryName}
+                  </Link>
+                ) : (
+                  <span className="cd-category">
+                    <CategoryIcon aria-hidden="true" />
+                    {categoryName}
+                  </span>
+                ))}
+              <Status value={c.status} />
+            </div>
+            <h1 className="cd-title">{c.title}</h1>
+            {c.shortDescription && (
+              <p className="cd-dek">{c.shortDescription}</p>
+            )}
+            <ul className="cd-byline">
+              <li>
+                {c.organizerType === "ORGANIZATION" && c.organizationName
+                  ? c.organizationName
+                  : c.fundraiser?.fullName || "Người gây quỹ"}
+              </li>
+              {c.startDate && <li>Bắt đầu {formatDate(c.startDate)}</li>}
+              {c.endDate && <li>Kết thúc {formatDate(c.endDate)}</li>}
+            </ul>
+          </header>
+
+          <div className="cd-layout">
+            <figure className="cd-hero">
               <img
-                className="campaign-cover"
-                src={safeUrl(c.coverImageUrl) || "/campaign-placeholder.svg"}
+                {...sources}
+                sizes={
+                  sources.srcSet ? "(max-width: 1024px) 100vw, 62vw" : undefined
+                }
                 alt={c.title}
+                width={1200}
+                height={675}
+                decoding="async"
                 onError={(e) => {
-                  e.currentTarget.onerror = null;
-                  e.currentTarget.src = "/campaign-placeholder.svg";
+                  const img = e.currentTarget;
+                  img.onerror = null;
+                  img.removeAttribute("srcset");
+                  img.src = PLACEHOLDER;
                 }}
               />
-              <nav className="tabs" aria-label="Nội dung chiến dịch">
-                {[
-                  ["story", "Câu chuyện"],
-                  ["updates", "Cập nhật"],
-                  ["donors", "Đóng góp"],
-                  ["transparency", "Minh bạch"],
-                  ...(owner ? [["manage", "Quản lý"]] : []),
-                ].map(([key, label]) => (
-                  <button
-                    key={key}
-                    className={tab === key ? "active" : ""}
-                    onClick={() => setTab(key)}
-                  >
-                    {label}
-                  </button>
-                ))}
-              </nav>
-              <div className="panel">
+            </figure>
+
+            <CampaignSummary
+              campaign={c}
+              signedIn={!!user}
+              owner={owner}
+              onDonate={() => setDonate(true)}
+              onShare={share}
+              onReport={() => setReport(true)}
+            />
+
+            <div className="cd-main">
+              <Tabs
+                label="Nội dung chiến dịch"
+                tabs={[
+                  { id: "story", label: "Câu chuyện" },
+                  { id: "updates", label: "Cập nhật" },
+                  { id: "donors", label: "Đóng góp" },
+                  { id: "transparency", label: "Minh bạch" },
+                  ...(owner ? [{ id: "manage", label: "Quản lý" }] : []),
+                ]}
+                value={tab}
+                onChange={setTab}
+              >
                 {tab === "story" && (
-                  <>
+                  <div className="cd-story">
                     <h2>Câu chuyện chiến dịch</h2>
                     <p className="prose">{c.story}</p>
                     {c.beneficiaryDetails && (
                       <>
                         <h3>Người thụ hưởng</h3>
-                        <p>{c.beneficiaryDetails}</p>
+                        <p className="prose">{c.beneficiaryDetails}</p>
                       </>
                     )}
                     {c.media?.length > 0 && (
@@ -134,7 +205,7 @@ export default function CampaignDetailPage() {
                         Người gây quỹ đã cam kết công khai việc sử dụng quỹ.
                       </Notice>
                     )}
-                  </>
+                  </div>
                 )}
                 {tab === "updates" && (
                   <>
@@ -164,7 +235,7 @@ export default function CampaignDetailPage() {
                     )}
                   </>
                 )}
-                {tab === "donors" && <CampaignDonors id={c.id} />}{" "}
+                {tab === "donors" && <CampaignDonors id={c.id} />}
                 {tab === "transparency" && (
                   <>
                     <div className="section-heading">
@@ -239,70 +310,10 @@ export default function CampaignDetailPage() {
                 {tab === "manage" && owner && (
                   <ManageCampaign campaign={c} reload={result.reload} />
                 )}
-              </div>
+              </Tabs>
             </div>
-            <aside className="panel campaign-summary">
-              <Status value={c.status} />
-              <h2>{formatCurrency(Number(c.currentAmount))}</h2>
-              <p>trên mục tiêu {formatCurrency(Number(c.targetAmount))}</p>
-              <progress
-                max={100}
-                value={getProgress(
-                  Number(c.currentAmount),
-                  Number(c.targetAmount),
-                )}
-                aria-label="Tiến độ gây quỹ"
-              />
-              <div className="section-heading">
-                <strong>
-                  {getProgress(Number(c.currentAmount), Number(c.targetAmount))}
-                  % mục tiêu
-                </strong>
-                <span>{c.daysLeft || 0} ngày còn lại</span>
-              </div>
-              <p>{c.shortDescription}</p>
-              <hr />
-              <p>Người gây quỹ</p>
-              <strong>{c.fundraiser?.fullName}</strong>
-              {c.organizerType === "ORGANIZATION" && (
-                <p>{c.organizationName}</p>
-              )}
-              <p>Kết thúc: {formatDate(c.endDate)}</p>
-              {c.rejectionReason && <Notice error>{c.rejectionReason}</Notice>}
-              <button
-                className="button"
-                disabled={
-                  c.status !== "ACTIVE" || new Date(c.endDate) <= new Date()
-                }
-                onClick={() => setDonate(true)}
-              >
-                {c.status === "ACTIVE" && new Date(c.endDate) > new Date()
-                  ? "Đóng góp ngay"
-                  : "Hiện chưa nhận đóng góp"}
-              </button>
-              <button className="button secondary" onClick={share}>
-                Sao chép liên kết
-              </button>
-              {user ? (
-                <button
-                  className="button secondary"
-                  onClick={() => setReport(true)}
-                >
-                  Báo cáo chiến dịch
-                </button>
-              ) : (
-                <Link to="/login">Đăng nhập để báo cáo nội dung</Link>
-              )}
-              {owner && ["DRAFT", "PENDING_APPROVAL"].includes(c.status) && (
-                <Link
-                  className="button secondary"
-                  to={`/campaigns/${c.id}/edit`}
-                >
-                  Chỉnh sửa chiến dịch
-                </Link>
-              )}
-            </aside>
           </div>
+
           {donate && (
             <DonationModal
               campaign={normalizeCampaign(c)}
@@ -317,175 +328,8 @@ export default function CampaignDetailPage() {
           {report && (
             <ReportDialog targetId={c.id} onClose={() => setReport(false)} />
           )}
-        </>
+        </article>
       )}
     </Page>
-  );
-}
-function CampaignDonors({ id }: { id: string }) {
-  const [page, setPage] = useState(1);
-  const result = useRemote(
-    () =>
-      donationApi
-        .getCampaignDonations(id, { page, limit: 10 })
-        .then(listResult),
-    [id, page],
-  );
-  return (
-    <>
-      <h2>Những tấm lòng đồng hành</h2>
-      <RemoteState {...result} />
-      {result.data && (
-        <>
-          {result.data.items.length ? (
-            result.data.items.map((d) => (
-              <article className="donor-row" key={d.id}>
-                <div>
-                  <strong>
-                    {d.isAnonymous
-                      ? "Nhà hảo tâm ẩn danh"
-                      : d.donorName || "Nhà hảo tâm"}
-                  </strong>
-                  <p>{d.message}</p>
-                  <small>{formatDate(d.paidAt || d.createdAt)}</small>
-                </div>
-                <strong>{formatCurrency(Number(d.amount))}</strong>
-              </article>
-            ))
-          ) : (
-            <Empty>Chưa có đóng góp được xác nhận.</Empty>
-          )}
-          <Pager page={page} pages={result.data.pages} onChange={setPage} />
-        </>
-      )}
-    </>
-  );
-}
-function ManageCampaign({
-  campaign,
-  reload,
-}: {
-  campaign: RecordData;
-  reload: () => void;
-}) {
-  const [kind, setKind] = useState("update");
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState("");
-  async function submit(e: FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    const form = e.currentTarget;
-    const f = new FormData(form);
-    const v = (key: string) => String(f.get(key) || "").trim();
-    setBusy(true);
-    setError("");
-    try {
-      if (kind === "update")
-        await campaignApi.postUpdate(campaign.id, {
-          title: v("title"),
-          content: v("content"),
-        });
-      else if (kind === "media")
-        await campaignApi.addMedia(campaign.id, {
-          mediaType: v("type") as "IMAGE" | "VIDEO" | "DOCUMENT",
-          url: v("url"),
-          caption: v("title"),
-        });
-      else
-        await campaignApi.addDisbursement(campaign.id, {
-          title: v("title"),
-          amount: Number(v("amount")),
-          disbursementDate: v("date"),
-          proofDocuments: v("proof")
-            .split("\n")
-            .map((s) => s.trim())
-            .filter(Boolean),
-          note: v("note"),
-        });
-      toast.success("Đã lưu thông tin lên máy chủ.");
-      form.reset();
-      reload();
-    } catch (e) {
-      setError(errorMessage(e));
-    } finally {
-      setBusy(false);
-    }
-  }
-  return (
-    <>
-      <h2>Cập nhật chiến dịch</h2>
-      <div className="tabs">
-        {[
-          ["update", "Nhật ký"],
-          ["media", "Tài liệu"],
-          ["disbursement", "Giải ngân"],
-        ].map(([id, label]) => (
-          <button
-            key={id}
-            className={kind === id ? "active" : ""}
-            onClick={() => {
-              setKind(id);
-              setError("");
-            }}
-          >
-            {label}
-          </button>
-        ))}
-      </div>
-      <form key={kind} className="form-stack" onSubmit={submit}>
-        {error && <Notice error>{error}</Notice>}
-        <Field label={kind === "media" ? "Chú thích" : "Tiêu đề"}>
-          <input
-            name="title"
-            required={kind !== "media"}
-            minLength={kind === "media" ? 0 : 5}
-            maxLength={255}
-          />
-        </Field>
-        {kind === "update" && (
-          <Field label="Nội dung cập nhật">
-            <textarea name="content" required minLength={20} rows={5} />
-          </Field>
-        )}
-        {kind === "media" && (
-          <>
-            <Field label="Loại tài liệu">
-              <select name="type">
-                <option value="IMAGE">Ảnh</option>
-                <option value="VIDEO">Video</option>
-                <option value="DOCUMENT">Tài liệu</option>
-              </select>
-            </Field>
-            <Field label="URL công khai">
-              <input name="url" type="url" pattern="https?://.*" required />
-            </Field>
-          </>
-        )}
-        {kind === "disbursement" && (
-          <>
-            <Field label="Số tiền (VND)">
-              <input
-                name="amount"
-                type="number"
-                required
-                min={10000}
-                step={1}
-              />
-            </Field>
-            <Field label="Ngày giải ngân">
-              <input name="date" type="date" required />
-            </Field>
-            <Field label="URL chứng từ công khai, mỗi dòng một URL">
-              <textarea name="proof" required rows={3} />
-            </Field>
-            <Field label="Ghi chú">
-              <textarea name="note" maxLength={1000} />
-            </Field>
-          </>
-        )}
-        <button className="button" disabled={busy}>
-          {busy ? "Đang lưu…" : "Đăng thông tin"}
-        </button>
-      </form>
-    </>
   );
 }

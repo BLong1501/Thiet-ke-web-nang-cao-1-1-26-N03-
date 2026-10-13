@@ -4,6 +4,15 @@ import { prisma } from "../../core/database/prisma";
 import { CampaignStatus, PaymentMethod, PaymentStatus, UserRole, Prisma } from "@prisma/client";
 import { CreateDonationInput, ConfirmDonationInput, DonationQueryInput } from "./donation.validation";
 import { AppError } from "../../core/errors/app.error";
+import {
+  campaignCacheKeys,
+  CampaignCacheTTL,
+  invalidatePublicCampaignCache,
+  readCampaignCache,
+  writeCampaignCache,
+  type CacheStatus,
+} from "../../core/cache/campaign-cache";
+import { assertAnyObjectAccess, assertObjectAccess, type Actor } from "../../core/auth/object-access";
 
 export class DonationService {
   constructor(private repo: DonationRepository = donationRepository) {}
@@ -159,11 +168,19 @@ export class DonationService {
   /**
    * Xác nhận thanh toán thành công (Mô phỏng Webhook / IPN / Cổng thanh toán)
    */
-  async confirmPayment(donationId: string, input: ConfirmDonationInput) {
+  async confirmPayment(donationId: string, input: ConfirmDonationInput, actor: Actor) {
     const donation = await this.repo.findById(donationId);
     if (!donation) {
       throw new AppError("Không tìm thấy giao dịch quyên góp", 404);
     }
+
+    await assertObjectAccess({
+      actor,
+      ownerId: donation.donorId,
+      entityName: "Donation",
+      entityId: donationId,
+      message: "Bạn không có quyền xác nhận khoản đóng góp này",
+    });
 
     if (donation.paymentStatus === PaymentStatus.SUCCESS) {
       return {
@@ -180,6 +197,7 @@ export class DonationService {
       donationId,
       input.paymentGatewayResponse || { simulated: true, note: input.note || "Thanh toán mô phỏng thành công" }
     );
+    await invalidatePublicCampaignCache();
 
     return {
       message: "Xác nhận thanh toán quyên góp thành công! Đã gửi thông báo và cập nhật tiến độ chiến dịch.",
@@ -251,6 +269,9 @@ export class DonationService {
       const totals = await this.repo.refreshCampaign(tx, campaign.id);
       await this.record(tx, actor.userId, donation, "DEMO_PAYMENT_CONFIRMED", "Đã ghi nhận đóng góp mô phỏng");
       return { donation: updated, totals, simulated: true };
+    }).then(async (result) => {
+      await invalidatePublicCampaignCache();
+      return result;
     });
   }
 
@@ -281,9 +302,13 @@ export class DonationService {
       const donation = await this.repo.lockDonation(tx, donationId);
       if (!donation) throw new AppError("Không tìm thấy khoản đóng góp", 404);
 
-      if (user.role !== UserRole.ADMIN && donation.donorId !== user.id) {
-        throw new AppError("Bạn không có quyền sở hữu khoản đóng góp này", 403);
-      }
+      await assertObjectAccess({
+        actor: { userId: user.id, role: user.role },
+        ownerId: donation.donorId,
+        entityName: "Donation",
+        entityId: donationId,
+        message: "Bạn không có quyền sở hữu khoản đóng góp này",
+      });
 
       if (donation.paymentStatus !== PaymentStatus.SUCCESS) {
         throw new AppError("Chỉ hoàn khoản SUCCESS chưa được hoàn tiền", 422);
@@ -346,6 +371,9 @@ export class DonationService {
       }
 
       return updatedDonation;
+    }).then(async (result) => {
+      await invalidatePublicCampaignCache();
+      return result;
     });
   }
 
@@ -387,6 +415,9 @@ export class DonationService {
       });
 
       return updated;
+    }).then(async (result) => {
+      await invalidatePublicCampaignCache();
+      return result;
     });
   }
 
@@ -418,7 +449,20 @@ export class DonationService {
   /**
    * Lấy danh sách quyên góp công khai của một chiến dịch
    */
-  async getCampaignDonations(campaignId: string, page = 1, limit = 10) {
+  async getCampaignDonations(campaignId: string, page = 1, limit = 10): Promise<{
+    items: any[];
+    meta: { page: number; limit: number; total: number; totalPages: number };
+    cacheStatus: CacheStatus;
+  }> {
+    const cacheKey = campaignCacheKeys.donations(campaignId, page, limit);
+    const cached = await readCampaignCache<{
+      items: any[];
+      meta: { page: number; limit: number; total: number; totalPages: number };
+    }>(cacheKey);
+    if (cached) {
+      return { ...cached, cacheStatus: "HIT" };
+    }
+
     const skip = (page - 1) * limit;
     const [items, total] = await Promise.all([
       this.repo.findCampaignDonations(campaignId, skip, limit),
@@ -436,10 +480,12 @@ export class DonationService {
       avatarUrl: item.isAnonymous ? null : item.donor?.avatarUrl || null,
     }));
 
-    return {
+    const payload = {
       items: formattedItems,
       meta: { page, limit, total, totalPages: Math.ceil(total / limit) },
     };
+    await writeCampaignCache(cacheKey, payload, CampaignCacheTTL.donations);
+    return { ...payload, cacheStatus: "MISS" };
   }
 
   /**
@@ -467,13 +513,13 @@ export class DonationService {
       throw new AppError("Không tìm thấy giao dịch quyên góp", 404);
     }
 
-    const isOwner = currentUserId && donation.donorId === currentUserId;
-    const isFundraiser = currentUserId && (donation as any).campaign?.fundraiserId === currentUserId;
-    const isAdmin = userRole === UserRole.ADMIN;
-
-    if (!isOwner && !isFundraiser && !isAdmin) {
-      throw new AppError("Bạn không sở hữu khoản đóng góp này", 403);
-    }
+    await assertAnyObjectAccess({
+      actor: currentUserId ? { userId: currentUserId, role: userRole || UserRole.USER } : null,
+      ownerIds: [donation.donorId, (donation as any).campaign?.fundraiserId],
+      entityName: "Donation",
+      entityId: donationId,
+      message: "Bạn không sở hữu khoản đóng góp này",
+    });
 
     return donation;
   }
@@ -543,9 +589,13 @@ export class DonationService {
       throw new AppError("Chiến dịch không tồn tại", 404);
     }
 
-    if (actor.role !== UserRole.ADMIN && campaign.fundraiserId !== actor.userId) {
-      throw new AppError("Bạn không có quyền xem thông tin đối soát của chiến dịch này", 403);
-    }
+    await assertObjectAccess({
+      actor,
+      ownerId: campaign.fundraiserId,
+      entityName: "Campaign",
+      entityId: campaignId,
+      message: "Bạn không có quyền xem thông tin đối soát của chiến dịch này",
+    });
 
     const skip = (page - 1) * limit;
     const [items, total] = await Promise.all([

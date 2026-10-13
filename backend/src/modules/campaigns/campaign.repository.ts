@@ -10,6 +10,46 @@ import {
 } from "./campaign.validation";
 
 
+function toAmount(value: unknown): number {
+  if (value == null) return 0;
+  if (typeof value === "number") return Number.isFinite(value) ? value : 0;
+  if (typeof value === "bigint") return Number(value);
+  if (typeof value === "object" && value !== null && "toNumber" in value) {
+    return Number((value as { toNumber: () => number }).toNumber());
+  }
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+/**
+ * Gộp RECEIPT − REFUND theo từng chiến dịch.
+ * Tách hàm thuần để kiểm thử không cần MySQL.
+ */
+export function sumLedgerRowsToNetMap(
+  campaignIds: string[],
+  rows: Array<{ campaignId: string; kind: string; total: unknown }>
+): Map<string, number> {
+  const receipts = new Map<string, number>();
+  const refunds = new Map<string, number>();
+  for (const id of campaignIds) {
+    receipts.set(id, 0);
+    refunds.set(id, 0);
+  }
+  for (const row of rows) {
+    const amount = toAmount(row.total);
+    if (row.kind === "RECEIPT") {
+      receipts.set(row.campaignId, (receipts.get(row.campaignId) ?? 0) + amount);
+    } else if (row.kind === "REFUND") {
+      refunds.set(row.campaignId, (refunds.get(row.campaignId) ?? 0) + amount);
+    }
+  }
+  const net = new Map<string, number>();
+  for (const id of campaignIds) {
+    net.set(id, (receipts.get(id) ?? 0) - (refunds.get(id) ?? 0));
+  }
+  return net;
+}
+
 export class CampaignRepository {
   /**
    * Lấy danh sách chiến dịch có phân trang, lọc và sắp xếp
@@ -55,6 +95,31 @@ export class CampaignRepository {
    */
   async countCampaigns(where: Prisma.CampaignWhereInput): Promise<number> {
     return prisma.campaign.count({ where });
+  }
+
+  /**
+   * Một lần đọc sổ cái cho cả trang (JOIN donations), thay cho N lần groupBy.
+   * Cộng RECEIPT − REFUND trong bộ nhớ theo từng campaignId.
+   */
+  async findLedgerNetByCampaignIds(campaignIds: string[]): Promise<Map<string, number>> {
+    if (campaignIds.length === 0) return new Map();
+
+    const entries = await prisma.ledgerEntry.findMany({
+      where: { donation: { campaignId: { in: campaignIds } } },
+      select: {
+        kind: true,
+        amount: true,
+        donation: { select: { campaignId: true } },
+      },
+    });
+
+    const rows = entries.map((entry) => ({
+      campaignId: entry.donation.campaignId,
+      kind: entry.kind,
+      total: entry.amount,
+    }));
+
+    return sumLedgerRowsToNetMap(campaignIds, rows);
   }
 
   /**

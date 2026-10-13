@@ -4,14 +4,24 @@ import { campaignApi } from "../services/api";
 import { listResult, normalizeCampaign, payload } from "../services/platform";
 import { useRemote } from "../hooks/useRemote";
 import CampaignCard from "../components/ui/CampaignCard";
-import { Page, Empty, RemoteState, Pager } from "../components/ui/WorkspaceUI";
+import {
+  Page,
+  Empty,
+  RemoteState,
+  Pager,
+  CampaignGridSkeleton,
+} from "../components/ui/WorkspaceUI";
 export default function CampaignsPage() {
   const [params, setParams] = useSearchParams();
   const page = Math.max(1, Number(params.get("page")) || 1);
   const search = params.get("search") || "";
   const categoryId = params.get("category") || "";
   const sortBy = params.get("sort") || "newest";
-  const categories = useRemote(() => campaignApi.getCategories().then(payload));
+  const categories = useRemote(
+    () => campaignApi.getCategories().then(payload),
+    [],
+    { key: "categories", staleTime: 5 * 60_000 },
+  );
   const result = useRemote(
     () =>
       campaignApi
@@ -24,17 +34,24 @@ export default function CampaignsPage() {
         })
         .then(listResult),
     [page, search, categoryId, sortBy],
+    { keepPrevious: true },
   );
   function filter(key: string, value: string) {
     const next = new URLSearchParams(params);
     next.delete("page");
-    value ? next.set(key, value) : next.delete(key);
+    if (value) next.set(key, value);
+    else next.delete(key);
     setParams(next);
   }
+  const totalPages = result.data?.pages;
   useEffect(() => {
-    if (result.data && page > result.data.pages)
-      filter("page", String(result.data.pages));
-  }, [result.data]);
+    // Nếu trang hiện tại vượt quá số trang thực tế, quay về trang cuối.
+    if (totalPages && page > totalPages) {
+      const next = new URLSearchParams(params);
+      next.set("page", String(totalPages));
+      setParams(next);
+    }
+  }, [totalPages, page, params, setParams]);
   return (
     <Page
       title="Những điều tốt đẹp bắt đầu từ bạn"
@@ -70,11 +87,13 @@ export default function CampaignsPage() {
           onChange={(e) => filter("category", e.target.value)}
         >
           <option value="">Tất cả danh mục</option>
-          {categories.data?.map((c: any) => (
-            <option key={c.id} value={c.id}>
-              {c.name}
-            </option>
-          ))}
+          {categories.data?.map(
+            (c: { id: string; name: string; slug?: string }) => (
+              <option key={c.id} value={c.id}>
+                {c.name}
+              </option>
+            ),
+          )}
         </select>
         <select
           aria-label="Sắp xếp"
@@ -97,7 +116,7 @@ export default function CampaignsPage() {
         )}
       </form>
       <RemoteState {...categories} />
-      <RemoteState {...result} />
+      <RemoteState {...result} skeleton={<CampaignGridSkeleton count={6} />} />
       {result.data && (
         <>
           <p>{result.data.total} chiến dịch</p>

@@ -1,8 +1,7 @@
 import axios from "axios";
 import { useAuthStore } from "../store/authStore";
 
-const BASE_URL =
-  (import.meta as any).env.VITE_API_URL || "http://localhost:5000/api/v1";
+const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api/v1";
 
 export const api = axios.create({
   baseURL: BASE_URL,
@@ -65,9 +64,10 @@ api.interceptors.response.use(
         useAuthStore.setState({ token });
         request.headers.Authorization = `Bearer ${token}`;
         return api(request);
-      } catch (refreshError: any) {
+      } catch (refreshError: unknown) {
         if (
-          [401, 403].includes(refreshError?.response?.status) &&
+          axios.isAxiosError(refreshError) &&
+          [401, 403].includes(refreshError.response?.status ?? 0) &&
           useAuthStore.getState().token === previousToken
         )
           useAuthStore.getState().logout();
@@ -125,8 +125,9 @@ export const campaignApi = {
     api.get("/campaigns/my/list", { params }),
   getPending: (params?: Record<string, unknown>) =>
     api.get("/campaigns/admin/pending", { params }),
-  create: (data: any) => api.post("/campaigns", data),
-  update: (id: string, data: any) => api.put(`/campaigns/${id}`, data),
+  create: (data: Record<string, unknown>) => api.post("/campaigns", data),
+  update: (id: string, data: Record<string, unknown>) =>
+    api.put(`/campaigns/${id}`, data),
   review: (
     id: string,
     data: { status: "ACTIVE" | "REJECTED"; rejectionReason?: string },
@@ -177,6 +178,8 @@ export const donationApi = {
   ) => api.get(`/donations/campaign/${campaignId}`, { params }),
   getMyDonations: (params?: Record<string, unknown>) =>
     api.get("/donations/my/history", { params }),
+  getCampaignTimeline: (campaignId: string) =>
+    api.get(`/donations/campaign/${campaignId}/timeline`),
   getAllForAdmin: (params?: Record<string, unknown>) =>
     api.get("/donations/admin/all", { params }),
   getById: (id: string) => api.get(`/donations/${id}`),
@@ -191,7 +194,7 @@ export const verificationApi = {
     portraitImage: string;
     cardIssuedDate?: string;
     cardIssuedPlace?: string;
-    supportingDocuments?: any;
+    supportingDocuments?: unknown;
   }) => api.post("/verifications/request", data),
   getMyStatus: () => api.get("/verifications/my-status"),
   getPending: (params?: Record<string, unknown>) =>
@@ -236,6 +239,52 @@ export const activityLogApi = {
   getLogById: (id: string) => api.get(`/activity-logs/${id}`),
   getUserLogs: (userId: string, params?: Record<string, unknown>) =>
     api.get(`/activity-logs/user/${userId}`, { params }),
+};
+
+// --- Notification APIs ---
+export const notificationApi = {
+  list: (params?: Record<string, unknown>) =>
+    api.get("/notifications", { params }),
+  markRead: (id: string) => api.patch(`/notifications/${id}/read`),
+  markAllRead: () => api.patch("/notifications/read-all"),
+};
+
+// --- Report APIs ---
+export const reportApi = {
+  create: (data: {
+    targetType: "CAMPAIGN" | "USER" | "POST" | "COMMENT";
+    targetId: string;
+    reason: string;
+    description?: string;
+  }) => api.post("/reports", data),
+  resolve: (id: string, data: { resolution: string; status: string }) =>
+    api.patch(`/admin/reports/${id}/resolve`, data),
+};
+
+// --- Community APIs ---
+export const communityApi = {
+  list: (params?: Record<string, unknown>) =>
+    api.get("/communities", { params }),
+  create: (data: { name: string; description: string }) =>
+    api.post("/communities", data),
+  join: (id: string) => api.post(`/communities/${id}/join`),
+  listPosts: (id: string, params?: Record<string, unknown>) =>
+    api.get(`/communities/${id}/posts`, { params }),
+  createPost: (id: string, data: { content: string }) =>
+    api.post(`/communities/${id}/posts`, data),
+  listComments: (
+    communityId: string,
+    postId: string,
+    params?: Record<string, unknown>,
+  ) =>
+    api.get(`/communities/${communityId}/posts/${postId}/comments`, { params }),
+  createComment: (
+    communityId: string,
+    postId: string,
+    data: { content: string },
+  ) => api.post(`/communities/${communityId}/posts/${postId}/comments`, data),
+  likePost: (communityId: string, postId: string) =>
+    api.post(`/communities/${communityId}/posts/${postId}/like`),
 };
 
 // --- Helper Functions ---

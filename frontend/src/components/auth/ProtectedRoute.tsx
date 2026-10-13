@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { Link, Navigate, useLocation } from "react-router-dom";
 import { useAuthStore } from "../../store/authStore";
 import { Empty, Page } from "../ui/WorkspaceUI";
+import { NoIndex } from "../Seo";
 export default function ProtectedRoute({
   children,
   requiredRole,
@@ -44,5 +45,10 @@ export default function ProtectedRoute({
         </Empty>
       </Page>
     );
-  return <>{children}</>;
+  return (
+    <>
+      <NoIndex />
+      {children}
+    </>
+  );
 }

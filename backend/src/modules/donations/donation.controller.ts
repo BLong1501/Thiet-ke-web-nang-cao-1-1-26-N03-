@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from "express";
 import { donationService, DonationService } from "./donation.service";
 import { sendCreated, sendSuccess } from "../../core/utils/response.util";
 import { PaymentStatus } from "@prisma/client";
+import { applyPublicCacheHeaders, CampaignCacheTTL } from "../../core/cache/campaign-cache";
 
 export class DonationController {
   constructor(private service: DonationService = donationService) {}
@@ -29,7 +30,7 @@ export class DonationController {
   confirmPayment = async (req: Request, res: Response, next: NextFunction) => {
     try {
       const id = String(req.params.id);
-      const result = await this.service.confirmPayment(id, req.body);
+      const result = await this.service.confirmPayment(id, req.body, req.user!);
       return sendSuccess(res, 200, result.message, result.donation, {
         campaignProgress: result.campaignProgress,
       });
@@ -101,6 +102,7 @@ export class DonationController {
       const page = req.query.page ? parseInt(req.query.page as string, 10) : 1;
       const limit = req.query.limit ? parseInt(req.query.limit as string, 10) : 10;
       const result = await this.service.getCampaignDonations(campaignId, page, limit);
+      applyPublicCacheHeaders(res, result.cacheStatus, CampaignCacheTTL.donations);
       return sendSuccess(res, 200, "Lấy danh sách ủng hộ thành công", result.items, result.meta);
     } catch (error) {
       return next(error);

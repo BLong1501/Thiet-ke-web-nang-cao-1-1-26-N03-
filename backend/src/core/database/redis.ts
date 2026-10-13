@@ -271,6 +271,101 @@ export class RedisService {
     memoryStore.delete(attemptsKey);
     memoryStore.delete(lockKey);
   }
+
+  /**
+   * Đọc giá trị thô theo khóa (Redis, fallback RAM).
+   */
+  async get(key: string): Promise<string | null> {
+    if (isRedisConnected && redisClient) {
+      try {
+        return await redisClient.get(key);
+      } catch {
+        console.warn("Redis get error, using memory fallback");
+      }
+    }
+    const item = memoryStore.get(key);
+    if (!item) return null;
+    if (Date.now() > item.expiresAt) {
+      memoryStore.delete(key);
+      return null;
+    }
+    return item.value;
+  }
+
+  /**
+   * Ghi giá trị thô với TTL (giây).
+   */
+  async set(key: string, value: string, ttlSeconds: number): Promise<void> {
+    if (isRedisConnected && redisClient) {
+      try {
+        await redisClient.set(key, value, "EX", ttlSeconds);
+        return;
+      } catch {
+        console.warn("Redis set error, using memory fallback");
+      }
+    }
+    memoryStore.set(key, {
+      value,
+      expiresAt: Date.now() + ttlSeconds * 1000,
+    });
+  }
+
+  async getJSON<T>(key: string): Promise<T | null> {
+    const raw = await this.get(key);
+    if (!raw) return null;
+    try {
+      return JSON.parse(raw) as T;
+    } catch {
+      return null;
+    }
+  }
+
+  async setJSON(key: string, value: unknown, ttlSeconds: number): Promise<void> {
+    await this.set(key, JSON.stringify(value), ttlSeconds);
+  }
+
+  async del(...keys: string[]): Promise<void> {
+    if (keys.length === 0) return;
+    if (isRedisConnected && redisClient) {
+      try {
+        await redisClient.del(...keys);
+      } catch {
+        // tiếp tục xóa bản RAM
+      }
+    }
+    for (const key of keys) {
+      memoryStore.delete(key);
+    }
+  }
+
+  /**
+   * Xóa mọi khóa có cùng tiền tố (SCAN, không dùng KEYS).
+   */
+  async delByPrefix(prefix: string): Promise<number> {
+    let removed = 0;
+    if (isRedisConnected && redisClient) {
+      try {
+        let cursor = "0";
+        do {
+          const [next, keys] = await redisClient.scan(cursor, "MATCH", `${prefix}*`, "COUNT", 100);
+          cursor = String(next);
+          if (keys.length > 0) {
+            await redisClient.del(...keys);
+            removed += keys.length;
+          }
+        } while (cursor !== "0");
+      } catch {
+        console.warn("Redis SCAN/DEL prefix error, using memory fallback");
+      }
+    }
+    for (const key of [...memoryStore.keys()]) {
+      if (key.startsWith(prefix)) {
+        memoryStore.delete(key);
+        removed += 1;
+      }
+    }
+    return removed;
+  }
 }
 
 export const redisService = new RedisService();

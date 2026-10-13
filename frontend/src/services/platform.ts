@@ -1,9 +1,18 @@
+import axios from "axios";
 import { api } from "./api";
 import type { Campaign, User } from "../types";
 
-/** Wire records are normalized once at the API boundary. */
+/**
+ * Ranh giới dữ liệu API: payload từ máy chủ chưa được kiểm tra schema ở runtime nên các
+ * trang đọc thuộc tính "lỏng". Đây là chủ ý và chỉ khai báo `any` ở đúng 3 chỗ dưới đây;
+ * mọi nơi khác trong `src/` đều dùng kiểu cụ thể hoặc `unknown`.
+ * Hướng nâng cấp tiếp theo: parse bằng zod ở `payload()` cho từng endpoint.
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type RecordData = Record<string, any>;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const payload = (response: any) => response.data?.data;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function listResult(response: any): {
   items: RecordData[];
   total: number;
@@ -40,6 +49,8 @@ export function normalizeCampaign(c: RecordData): Campaign {
     description: c.story || "",
     shortDesc: c.shortDescription || "",
     category: c.category?.slug || "khac",
+    categoryName:
+      typeof c.category?.name === "string" ? c.category.name : undefined,
     targetAmount: Number(c.targetAmount || 0),
     raisedAmount: Number(c.currentAmount || 0),
     donorCount: Number(c._count?.donations || c.donorCount || 0),
@@ -51,13 +62,36 @@ export function normalizeCampaign(c: RecordData): Campaign {
     updatedAt: c.updatedAt,
   };
 }
-export function errorMessage(error: any): string {
-  if (error?.response?.data?.message) return error.response.data.message;
-  if (error?.code === "ECONNABORTED")
-    return "Máy chủ phản hồi quá lâu. Vui lòng thử lại.";
-  if (error?.isAxiosError && !error.response)
-    return "Không kết nối được máy chủ. Kiểm tra kết nối rồi thử lại.";
-  return error?.message || "Có lỗi xảy ra. Vui lòng thử lại.";
+/** Các đoạn đường dẫn tĩnh dưới `/campaigns/` mà slug không được trùng. */
+const RESERVED_CAMPAIGN_SEGMENTS = new Set(["create"]);
+/**
+ * Đường dẫn tới trang chi tiết chiến dịch. Ưu tiên slug (thân thiện SEO), quay về id
+ * khi thiếu slug. Máy chủ tra cứu theo `/campaigns/:idOrSlug` nên cả hai đều hợp lệ.
+ */
+export function campaignPath(c: { id?: unknown; slug?: unknown }): string {
+  const slug = typeof c.slug === "string" ? c.slug.trim() : "";
+  const key =
+    slug && !RESERVED_CAMPAIGN_SEGMENTS.has(slug.toLowerCase())
+      ? slug
+      : String(c.id ?? "");
+  return `/campaigns/${encodeURIComponent(key)}`;
+}
+/** Mã HTTP của lỗi từ máy chủ; `undefined` khi là lỗi mạng/timeout hoặc lỗi phía trình duyệt. */
+export function httpStatus(error: unknown): number | undefined {
+  return axios.isAxiosError(error) ? error.response?.status : undefined;
+}
+export function errorMessage(error: unknown): string {
+  if (axios.isAxiosError(error)) {
+    const message = (error.response?.data as { message?: unknown } | undefined)
+      ?.message;
+    if (typeof message === "string" && message) return message;
+    if (error.code === "ECONNABORTED")
+      return "Máy chủ phản hồi quá lâu. Vui lòng thử lại.";
+    if (!error.response)
+      return "Không kết nối được máy chủ. Kiểm tra kết nối rồi thử lại.";
+  }
+  if (error instanceof Error && error.message) return error.message;
+  return "Có lỗi xảy ra. Vui lòng thử lại.";
 }
 export function safeUrl(value: unknown): string {
   if (typeof value !== "string" || !value) return "";

@@ -17,11 +17,22 @@ import {
   Status,
 } from "../components/ui/WorkspaceUI";
 import FileUploadInput from "../components/ui/FileUploadInput";
+import Tabs from "../components/ui/Tabs";
 import DonationHistory from "../components/DonationHistory";
 import toast from "react-hot-toast";
+const PROFILE_TABS = [
+  { id: "info", label: "Thông tin cá nhân" },
+  { id: "kyc", label: "Xác minh danh tính" },
+  { id: "history", label: "Lịch sử đóng góp" },
+  { id: "security", label: "Mật khẩu" },
+];
 export default function ProfilePage() {
   const [params, setParams] = useSearchParams();
-  const tab = params.get("tab") || "info";
+  const requested = params.get("tab");
+  // `?tab=` không hợp lệ rơi về tab đầu tiên thay vì hiển thị trang trống.
+  const tab = PROFILE_TABS.some((t) => t.id === requested)
+    ? (requested as string)
+    : "info";
   const profile = useRemote(() =>
     profileApi.getMyProfile().then((r) => {
       const data = payload(r);
@@ -34,31 +45,22 @@ export default function ProfilePage() {
       title="Hồ sơ của bạn"
       intro="Quản lý tài khoản, xác minh danh tính và theo dõi đóng góp."
     >
-      <nav className="tabs" aria-label="Mục hồ sơ">
-        {[
-          ["info", "Thông tin cá nhân"],
-          ["kyc", "Xác minh danh tính"],
-          ["history", "Lịch sử đóng góp"],
-          ["security", "Mật khẩu"],
-        ].map(([id, name]) => (
-          <button
-            key={id}
-            className={tab === id ? "active" : ""}
-            onClick={() => setParams({ tab: id })}
-          >
-            {name}
-          </button>
-        ))}
-      </nav>
-      {tab === "info" && (
-        <>
-          <RemoteState {...profile} />
-          {profile.data && <ProfileForm data={profile.data} />}
-        </>
-      )}
-      {tab === "kyc" && <KycForm />}
-      {tab === "history" && <DonationHistory />}
-      {tab === "security" && <PasswordForm />}
+      <Tabs
+        label="Mục hồ sơ"
+        tabs={PROFILE_TABS}
+        value={tab}
+        onChange={(id) => setParams({ tab: id })}
+      >
+        {tab === "info" && (
+          <>
+            <RemoteState {...profile} />
+            {profile.data && <ProfileForm data={profile.data} />}
+          </>
+        )}
+        {tab === "kyc" && <KycForm />}
+        {tab === "history" && <DonationHistory />}
+        {tab === "security" && <PasswordForm />}
+      </Tabs>
     </Page>
   );
 }

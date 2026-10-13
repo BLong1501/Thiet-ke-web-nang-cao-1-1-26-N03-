@@ -47,6 +47,9 @@ import { donationRouter } from "./modules/donations/donation.routes";
 import { userRouter } from "./modules/users/user.routes";
 import { uploadRouter } from "./modules/uploads/upload.routes";
 import { activityLogRouter } from "./modules/activity-logs/activity-log.routes";
+import { notificationRouter } from "./modules/notifications/notification.routes";
+import { reportRouter, adminReportRouter } from "./modules/reports/report.routes";
+import { communityRouter } from "./modules/communities/community.routes";
 
 // Health check endpoint
 app.get("/api/v1/health", (_req: Request, res: Response) => {
@@ -66,6 +69,10 @@ app.use("/api/v1/donations", donationRouter);
 app.use("/api/v1/users", userRouter);
 app.use("/api/v1/uploads", uploadRouter);
 app.use("/api/v1/activity-logs", activityLogRouter);
+app.use("/api/v1/notifications", notificationRouter);
+app.use("/api/v1/reports", reportRouter);
+app.use("/api/v1/admin/reports", adminReportRouter);
+app.use("/api/v1/communities", communityRouter);
 
 import { sendError } from "./core/utils/response.util";
 
