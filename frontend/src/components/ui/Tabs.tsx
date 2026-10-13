@@ -1,4 +1,11 @@
-import { useId, useRef, type KeyboardEvent, type ReactNode } from "react";
+import {
+  useEffect,
+  useId,
+  useRef,
+  useState,
+  type KeyboardEvent,
+  type ReactNode,
+} from "react";
 
 export interface TabItem {
   id: string;
@@ -22,6 +29,7 @@ interface TabsProps {
  * - role tablist / tab / tabpanel, aria-selected, aria-controls, aria-labelledby
  * - roving tabindex: chỉ tab đang chọn nằm trong thứ tự Tab
  * - ← → di chuyển và chọn tab (vòng tròn), Home/End về đầu/cuối
+ * - Khi danh sách tràn ngang: fade hai mép + thanh cuộn mảnh để biết còn mục.
  */
 export default function Tabs({
   label,
@@ -33,6 +41,28 @@ export default function Tabs({
 }: TabsProps) {
   const base = useId();
   const refs = useRef<Record<string, HTMLButtonElement | null>>({});
+  const scroller = useRef<HTMLDivElement>(null);
+  const [overflow, setOverflow] = useState({ start: false, end: false });
+
+  useEffect(() => {
+    const el = scroller.current;
+    if (!el) return;
+    const update = () => {
+      const max = el.scrollWidth - el.clientWidth;
+      setOverflow({
+        start: el.scrollLeft > 4,
+        end: max > 4 && el.scrollLeft < max - 4,
+      });
+    };
+    update();
+    el.addEventListener("scroll", update, { passive: true });
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+    return () => {
+      el.removeEventListener("scroll", update);
+      ro.disconnect();
+    };
+  }, [tabs.length, value]);
 
   function onKeyDown(e: KeyboardEvent<HTMLButtonElement>, index: number) {
     let next = -1;
@@ -48,31 +78,41 @@ export default function Tabs({
     refs.current[target.id]?.focus();
   }
 
+  const shellClass = [
+    "tabs-shell",
+    overflow.start && "has-start",
+    overflow.end && "has-end",
+  ]
+    .filter(Boolean)
+    .join(" ");
+
   return (
     <>
-      <div className="tabs" role="tablist" aria-label={label}>
-        {tabs.map((tab, index) => {
-          const selected = tab.id === value;
-          return (
-            <button
-              key={tab.id}
-              ref={(el) => {
-                refs.current[tab.id] = el;
-              }}
-              type="button"
-              role="tab"
-              id={`${base}-tab-${tab.id}`}
-              aria-selected={selected}
-              aria-controls={`${base}-panel`}
-              tabIndex={selected ? 0 : -1}
-              className={selected ? "active" : ""}
-              onClick={() => onChange(tab.id)}
-              onKeyDown={(e) => onKeyDown(e, index)}
-            >
-              {tab.label}
-            </button>
-          );
-        })}
+      <div className={shellClass}>
+        <div className="tabs" role="tablist" aria-label={label} ref={scroller}>
+          {tabs.map((tab, index) => {
+            const selected = tab.id === value;
+            return (
+              <button
+                key={tab.id}
+                ref={(el) => {
+                  refs.current[tab.id] = el;
+                }}
+                type="button"
+                role="tab"
+                id={`${base}-tab-${tab.id}`}
+                aria-selected={selected}
+                aria-controls={`${base}-panel`}
+                tabIndex={selected ? 0 : -1}
+                className={selected ? "active" : ""}
+                onClick={() => onChange(tab.id)}
+                onKeyDown={(e) => onKeyDown(e, index)}
+              >
+                {tab.label}
+              </button>
+            );
+          })}
+        </div>
       </div>
       <div
         role="tabpanel"

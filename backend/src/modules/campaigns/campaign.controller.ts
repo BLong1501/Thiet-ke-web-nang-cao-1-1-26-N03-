@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from "express";
 import { campaignService } from "./campaign.service";
 import { sendSuccess, sendCreated } from "../../core/utils/response.util";
 import { CampaignQueryInput } from "./campaign.validation";
+import { applyPublicCacheHeaders, CampaignCacheTTL } from "../../core/cache/campaign-cache";
 
 export class CampaignController {
   /**
@@ -10,7 +11,8 @@ export class CampaignController {
   async getCampaigns(req: Request, res: Response, next: NextFunction) {
     try {
       const query = req.query as unknown as CampaignQueryInput;
-      const result = await campaignService.getCampaigns(query);
+      const result = await campaignService.getCampaigns(query, req.user);
+      applyPublicCacheHeaders(res, result.cacheStatus, CampaignCacheTTL.list);
       return sendSuccess(
         res,
         200,
@@ -29,8 +31,9 @@ export class CampaignController {
   async getCampaignDetail(req: Request, res: Response, next: NextFunction) {
     try {
       const idOrSlug = String(req.params.idOrSlug);
-      const campaign = await campaignService.getCampaignDetail(idOrSlug);
-      return sendSuccess(res, 200, "Lấy thông tin chi tiết chiến dịch thành công", campaign);
+      const result = await campaignService.getCampaignDetail(idOrSlug, req.user);
+      applyPublicCacheHeaders(res, result.cacheStatus, CampaignCacheTTL.detail);
+      return sendSuccess(res, 200, "Lấy thông tin chi tiết chiến dịch thành công", result.campaign);
     } catch (error) {
       next(error);
     }
@@ -171,8 +174,9 @@ export class CampaignController {
   async getCategories(req: Request, res: Response, next: NextFunction) {
     try {
       const isActiveOnly = req.query.all !== "true";
-      const categories = await campaignService.getCategories(isActiveOnly);
-      return sendSuccess(res, 200, "Lấy danh mục thành công", categories);
+      const result = await campaignService.getCategories(isActiveOnly);
+      applyPublicCacheHeaders(res, result.cacheStatus, CampaignCacheTTL.categories);
+      return sendSuccess(res, 200, "Lấy danh mục thành công", result.categories);
     } catch (error) {
       next(error);
     }

@@ -25,6 +25,10 @@ export class NotificationRepository {
     return prisma.notification.count({ where: { userId, isRead: false } });
   }
 
+  findById(id: string) {
+    return prisma.notification.findUnique({ where: { id } });
+  }
+
   /** Điều kiện `userId` nằm trong where để chặn IDOR: chỉ đánh dấu thông báo của chính mình. */
   async markRead(userId: string, id: string) {
     const result = await prisma.notification.updateMany({

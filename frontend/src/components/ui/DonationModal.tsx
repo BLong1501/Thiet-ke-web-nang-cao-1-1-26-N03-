@@ -84,7 +84,7 @@ export default function DonationModal({
         if (!busy) onClose();
       }}
     >
-      <p>{campaign.title}</p>
+      <p className="donation-campaign">{campaign.title}</p>
       {error && <Notice error>{error}</Notice>}
       {!donation ? (
         <form className="form-stack" onSubmit={submit}>
@@ -94,6 +94,7 @@ export default function DonationModal({
                 key={n}
                 type="button"
                 className={amount === n ? "button" : "button secondary"}
+                aria-pressed={amount === n}
                 onClick={() => setAmount(n)}
               >
                 {formatCurrency(n)}
@@ -149,9 +150,9 @@ export default function DonationModal({
           </button>
         </form>
       ) : (
-        <div className="form-stack">
+        <div className="form-stack donation-result">
           <Status value={donation.paymentStatus} />
-          <h3>{formatCurrency(Number(donation.amount))}</h3>
+          <h3 className="num">{formatCurrency(Number(donation.amount))}</h3>
           <p>
             Mã giao dịch: <strong>{donation.transactionCode}</strong>
           </p>
@@ -161,7 +162,7 @@ export default function DonationModal({
                 Yêu cầu đã được lưu. Khoản đóng góp chỉ được ghi nhận sau khi
                 máy chủ xác nhận thanh toán.
               </Notice>
-              <dl className="detail-list">
+              <dl className="detail-list donation-transfer">
                 <dt>Ngân hàng</dt>
                 <dd>{campaign.bankName || "Chưa được cung cấp"}</dd>
                 <dt>Số tài khoản</dt>
@@ -216,6 +217,12 @@ export default function DonationModal({
           )}
           {donation.paymentStatus === "SUCCESS" && (
             <Notice>Cảm ơn bạn. Máy chủ đã xác nhận khoản đóng góp.</Notice>
+          )}
+          {donation.paymentStatus === "FAILED" && (
+            <Notice error>
+              Máy chủ chưa ghi nhận thanh toán thành công. Bạn có thể kiểm tra
+              lại hoặc liên hệ người gây quỹ với mã giao dịch.
+            </Notice>
           )}
           {!lookupDenied && (
             <Link

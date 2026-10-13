@@ -29,7 +29,11 @@ export class NotificationController {
 
   markRead = async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const data = await this.service.markRead(req.user!.userId, String(req.params.id));
+      const data = await this.service.markRead(
+        req.user!.userId,
+        req.user!.role,
+        String(req.params.id),
+      );
       return sendSuccess(res, 200, "Đã đánh dấu đã đọc", data);
     } catch (error) {
       return next(error);

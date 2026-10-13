@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { campaignController } from "./campaign.controller";
-import { authenticate, authorize } from "../../core/middleware/auth.middleware";
+import { authenticate, authorize, optionalAuthenticate } from "../../core/middleware/auth.middleware";
 import { validate } from "../../core/middleware/validate.middleware";
 import {
   createCampaignSchema,
@@ -25,7 +25,12 @@ const router = Router();
 router.get("/categories", campaignController.getCategories);
 
 // Danh sách chiến dịch công khai có phân trang, lọc, tìm kiếm
-router.get("/", validate({ query: campaignQuerySchema }), campaignController.getCampaigns);
+router.get(
+  "/",
+  optionalAuthenticate,
+  validate({ query: campaignQuerySchema }),
+  campaignController.getCampaigns
+);
 
 // ==========================================
 // 2. FUNDRAISER ROUTES (Người gây quỹ & Admin)
@@ -133,7 +138,7 @@ router.delete(
 // ==========================================
 // 4. CHI TIẾT CHIẾN DỊCH (Đặt cuối cùng để không trùng route cụ thể)
 // ==========================================
-router.get("/:idOrSlug", campaignController.getCampaignDetail);
+router.get("/:idOrSlug", optionalAuthenticate, campaignController.getCampaignDetail);
 
 export default router;
 export { router as campaignRouter };

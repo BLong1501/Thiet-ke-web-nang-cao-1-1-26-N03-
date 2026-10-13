@@ -1,12 +1,12 @@
 import { Prisma } from "@prisma/client";
 import { AppError } from "../../core/errors/app.error";
 import { pageMeta, skipOf } from "../../core/utils/pagination.util";
-import { prisma } from "../../core/database/prisma";
 import {
   notificationRepository,
   NotificationRepository,
 } from "./notification.repository";
 import type { NotificationQueryInput } from "./notification.validation";
+import { assertObjectAccess } from "../../core/auth/object-access";
 
 /** Chỉ cho phép đường dẫn nội bộ (một dấu "/" đầu) để tránh open-redirect. */
 export function safeInternalLink(value?: string | null): string | null {
@@ -43,13 +43,20 @@ export class NotificationService {
     return { unread: await this.repo.countUnread(userId) };
   }
 
-  async markRead(userId: string, id: string) {
-    const updated = await this.repo.markRead(userId, id);
-    if (!updated) {
-      // Có thể đã đọc từ trước: phân biệt "không tồn tại/không phải của bạn" bằng 404 thống nhất.
-      const exists = await prisma.notification.count({ where: { id, userId } });
-      if (!exists) throw new AppError("Không tìm thấy thông báo", 404);
-    }
+  async markRead(userId: string, role: string, id: string) {
+    const notification = await this.repo.findById(id);
+    if (!notification) throw new AppError("Không tìm thấy thông báo", 404);
+
+    await assertObjectAccess({
+      actor: { userId, role },
+      ownerId: notification.userId,
+      entityName: "Notification",
+      entityId: id,
+      allowAdmin: false,
+      message: "Bạn không có quyền đánh dấu thông báo của người khác",
+    });
+
+    await this.repo.markRead(userId, id);
     return { id, isRead: true };
   }
 

@@ -1,8 +1,10 @@
-import { Community } from "@prisma/client";
+import { CampaignStatus, Community } from "@prisma/client";
 import { AppError } from "../../core/errors/app.error";
 import { generateUniqueSlug } from "../../core/utils/slug.util";
 import { pageMeta, skipOf, PaginationQuery } from "../../core/utils/pagination.util";
 import { communityRepository, CommunityRepository } from "./community.repository";
+import { prisma } from "../../core/database/prisma";
+import { isOwner } from "../../core/auth/object-access";
 import type {
   CreateCommentInput,
   CreateCommunityInput,
@@ -31,6 +33,14 @@ export class CommunityService {
       throw new AppError("Đây là cộng đồng riêng tư dành cho thành viên", 403);
     }
     return community;
+  }
+
+  /** Đăng bài / thích / bình luận: phải là thành viên của đúng cộng đồng đó. */
+  private async requireMember(communityId: string, userId: string) {
+    await this.getReadable(communityId, userId);
+    if (!(await this.repo.isMember(communityId, userId))) {
+      throw new AppError("Bạn cần tham gia cộng đồng để thực hiện thao tác này", 403);
+    }
   }
 
   async list(query: PaginationQuery, userId?: string) {
@@ -117,9 +127,19 @@ export class CommunityService {
   }
 
   async createPost(userId: string, communityId: string, input: CreatePostInput) {
-    await this.getReadable(communityId, userId);
-    if (!(await this.repo.isMember(communityId, userId))) {
-      throw new AppError("Bạn cần tham gia cộng đồng để đăng bài", 403);
+    await this.requireMember(communityId, userId);
+    if (input.campaignId) {
+      const campaign = await prisma.campaign.findUnique({
+        where: { id: input.campaignId },
+        select: { id: true, status: true, fundraiserId: true },
+      });
+      if (!campaign) throw new AppError("Chiến dịch gắn kèm không tồn tại", 404);
+      if (
+        campaign.status !== CampaignStatus.ACTIVE &&
+        !isOwner({ userId, role: "USER" }, campaign.fundraiserId)
+      ) {
+        throw new AppError("Chỉ được gắn chiến dịch đang gây quỹ hoặc chiến dịch của bạn", 403);
+      }
     }
     const post = await this.repo.createPost({
       communityId,
@@ -141,7 +161,7 @@ export class CommunityService {
 
   /** Bật/tắt thích; ràng buộc UNIQUE(post_id,user_id) chặn like trùng ở tầng DB. */
   async toggleLike(userId: string, communityId: string, postId: string) {
-    await this.getReadable(communityId, userId);
+    await this.requireMember(communityId, userId);
     const post = await this.repo.findPostInCommunity(postId, communityId);
     if (!post) throw new AppError("Không tìm thấy bài viết", 404);
 
@@ -190,7 +210,7 @@ export class CommunityService {
     postId: string,
     input: CreateCommentInput,
   ) {
-    await this.getReadable(communityId, userId);
+    await this.requireMember(communityId, userId);
     if (!(await this.repo.findPostInCommunity(postId, communityId))) {
       throw new AppError("Không tìm thấy bài viết", 404);
     }

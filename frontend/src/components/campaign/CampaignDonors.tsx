@@ -6,6 +6,18 @@ import { Empty, Pager, RemoteState } from "../ui/WorkspaceUI";
 
 // Recharts khá nặng nên chỉ tải khi người dùng mở tab này.
 const ProgressChart = lazy(() => import("../ProgressChart"));
+
+function initials(name: string) {
+  const words = name.trim().split(/\s+/).filter(Boolean);
+  return (
+    words
+      .slice(-2)
+      .map((w) => w[0])
+      .join("")
+      .toUpperCase() || "?"
+  );
+}
+
 export default function CampaignDonors({ id }: { id: string }) {
   const [page, setPage] = useState(1);
   const result = useRemote(
@@ -27,20 +39,26 @@ export default function CampaignDonors({ id }: { id: string }) {
       {result.data && (
         <>
           {result.data.items.length ? (
-            result.data.items.map((d) => (
-              <article className="donor-row" key={d.id}>
-                <div>
-                  <strong>
-                    {d.isAnonymous
-                      ? "Nhà hảo tâm ẩn danh"
-                      : d.donorName || "Nhà hảo tâm"}
+            result.data.items.map((d) => {
+              const name = d.isAnonymous
+                ? "Nhà hảo tâm ẩn danh"
+                : d.donorName || "Nhà hảo tâm";
+              return (
+                <article className="cd-donor donor-row" key={d.id}>
+                  <span className="avatar" aria-hidden="true">
+                    {d.isAnonymous ? "?" : initials(name)}
+                  </span>
+                  <div>
+                    <strong>{name}</strong>
+                    {d.message && <p>{d.message}</p>}
+                    <small>{formatDate(d.paidAt || d.createdAt)}</small>
+                  </div>
+                  <strong className="cd-donor-amount">
+                    {formatCurrency(Number(d.amount))}
                   </strong>
-                  <p>{d.message}</p>
-                  <small>{formatDate(d.paidAt || d.createdAt)}</small>
-                </div>
-                <strong>{formatCurrency(Number(d.amount))}</strong>
-              </article>
-            ))
+                </article>
+              );
+            })
           ) : (
             <Empty>Chưa có đóng góp được xác nhận.</Empty>
           )}

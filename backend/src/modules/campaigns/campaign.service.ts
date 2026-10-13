@@ -14,6 +14,21 @@ import { generateUniqueSlug, slugify } from "../../core/utils/slug.util";
 import { AppError } from "../../core/errors/app.error";
 import { CampaignStatus, Prisma, UserRole } from "@prisma/client";
 import { prisma } from "../../core/database/prisma";
+import {
+  campaignCacheKeys,
+  CampaignCacheTTL,
+  invalidatePublicCampaignCache,
+  readCampaignCache,
+  writeCampaignCache,
+  type CacheStatus,
+} from "../../core/cache/campaign-cache";
+import {
+  assertObjectAccess,
+  canSeeUnpublishedCampaign,
+  isAdmin,
+  PUBLIC_CAMPAIGN_STATUSES,
+  type Actor,
+} from "../../core/auth/object-access";
 
 function normalizeVietnamese(str: string): string {
   return str
@@ -29,18 +44,18 @@ export class CampaignService {
   constructor(private repo: CampaignRepository = campaignRepository) {}
 
   /**
-   * Tính toán các chỉ số bổ sung: % tiến độ, số ngày còn lại, đã kết thúc chưa
+   * Tính toán các chỉ số bổ sung: % tiến độ, số ngày còn lại, đã kết thúc chưa.
+   * Không truy vấn CSDL — số dư sổ cái được truyền vào từ hydrateCampaigns.
    */
-  private async formatCampaign(campaign: any) {
+  private formatCampaign(
+    campaign: any,
+    currentAmount: number,
+    options: { includeSensitive?: boolean } = {}
+  ) {
     if (!campaign) return null;
 
     const target = Number(campaign.targetAmount);
-    const ledger = await (prisma as any).ledgerEntry.groupBy({
-      by: ['kind'], where: { donation: { campaignId: campaign.id } }, _sum: { amount: true },
-    });
-    const received = ledger.find((row: any) => row.kind === 'RECEIPT')?._sum.amount ?? new Prisma.Decimal(0);
-    const refunded = ledger.find((row: any) => row.kind === 'REFUND')?._sum.amount ?? new Prisma.Decimal(0);
-    const current = Number(received.minus(refunded));
+    const current = Number(currentAmount);
     const progressPercentage = target > 0 ? Math.min(100, Math.round((current / target) * 100)) : 0;
     const now = new Date();
     const end = new Date(campaign.endDate);
@@ -57,6 +72,7 @@ export class CampaignService {
       }
     }
 
+    const includeSensitive = options.includeSensitive === true;
     return {
       ...campaign,
       targetAmount: target,
@@ -66,7 +82,7 @@ export class CampaignService {
       isEnded,
       organizerType: legalMetadata?.organizerType || "INDIVIDUAL",
       organizationName: legalMetadata?.organizationName || null,
-      taxCode: legalMetadata?.taxCode || null,
+      taxCode: includeSensitive ? legalMetadata?.taxCode || null : null,
       representativeRole: legalMetadata?.representativeRole || null,
       charityCommitment: legalMetadata?.charityCommitmentAccepted
         ? {
@@ -76,14 +92,69 @@ export class CampaignService {
           }
         : null,
       beneficiaryDetails: legalMetadata?.details || campaign.beneficiaryInfo,
+      bankAccountNumber: includeSensitive ? campaign.bankAccountNumber : null,
+      bankName: includeSensitive ? campaign.bankName : null,
+      bankAccountName: includeSensitive ? campaign.bankAccountName : null,
     };
+  }
+
+  /**
+   * Một lần đọc sổ cái cho cả trang, thay cho N truy vấn lặp trong formatCampaign.
+   */
+  private async hydrateCampaigns(
+    campaigns: any[],
+    options: { includeSensitive?: boolean } = {}
+  ) {
+    if (campaigns.length === 0) return [];
+    const ids = campaigns.map((item) => item.id);
+    const nets = await this.repo.findLedgerNetByCampaignIds(ids);
+    return campaigns.map((item) =>
+      this.formatCampaign(
+        item,
+        nets.get(item.id) ?? Number(item.currentAmount) ?? 0,
+        options
+      )
+    );
+  }
+
+  private async hydrateCampaign(campaign: any, options: { includeSensitive?: boolean } = {}) {
+    const [formatted] = await this.hydrateCampaigns([campaign], options);
+    return formatted;
   }
 
   /**
    * Lấy danh sách chiến dịch công khai có phân trang, tìm kiếm và lọc
    */
-  async getCampaigns(query: CampaignQueryInput) {
-    const { page, limit, categoryId, search, status, sortBy } = query;
+  async getCampaigns(
+    query: CampaignQueryInput,
+    viewer?: Actor | null
+  ): Promise<{
+    items: any[];
+    meta: { page: number; limit: number; total: number; totalPages: number };
+    cacheStatus: CacheStatus;
+  }> {
+    const requestedStatus = query.status;
+    if (!isAdmin(viewer) && requestedStatus && !PUBLIC_CAMPAIGN_STATUSES.has(requestedStatus)) {
+      throw new AppError("Không được lọc trạng thái nội bộ trên API công khai", 403);
+    }
+
+    const publicQuery = {
+      ...query,
+      status: isAdmin(viewer) ? requestedStatus : requestedStatus || CampaignStatus.ACTIVE,
+    };
+    const usePublicCache = !isAdmin(viewer);
+    const cacheKey = campaignCacheKeys.list(publicQuery);
+    if (usePublicCache) {
+      const cached = await readCampaignCache<{
+        items: any[];
+        meta: { page: number; limit: number; total: number; totalPages: number };
+      }>(cacheKey);
+      if (cached) {
+        return { ...cached, cacheStatus: "HIT" };
+      }
+    }
+
+    const { page, limit, categoryId, search, status, sortBy } = publicQuery;
     const skip = (page - 1) * limit;
 
     const where: Prisma.CampaignWhereInput = {
@@ -111,23 +182,37 @@ export class CampaignService {
       this.repo.countCampaigns(where),
     ]);
 
-    const totalPages = Math.ceil(total / limit);
-
-    return {
-      items: await Promise.all(items.map((item) => this.formatCampaign(item))),
+    const payload = {
+      items: await this.hydrateCampaigns(items, { includeSensitive: isAdmin(viewer) }),
       meta: {
         page,
         limit,
         total,
-        totalPages,
+        totalPages: Math.ceil(total / limit),
       },
     };
+    if (usePublicCache) {
+      await writeCampaignCache(cacheKey, payload, CampaignCacheTTL.list);
+    }
+    return { ...payload, cacheStatus: "MISS" };
   }
 
   /**
    * Xem chi tiết chiến dịch theo ID hoặc Slug
    */
-  async getCampaignDetail(idOrSlug: string) {
+  async getCampaignDetail(
+    idOrSlug: string,
+    viewer?: Actor | null
+  ): Promise<{ campaign: any; cacheStatus: CacheStatus }> {
+    const cacheKey = campaignCacheKeys.detail(idOrSlug);
+    const cached = await readCampaignCache<any>(cacheKey);
+    if (cached && PUBLIC_CAMPAIGN_STATUSES.has(cached.status)) {
+      const ownerView = canSeeUnpublishedCampaign(viewer, cached.fundraiserId);
+      if (!ownerView) {
+        return { campaign: cached, cacheStatus: "HIT" };
+      }
+    }
+
     let campaign = null;
 
     // Kiểm tra nếu là UUID format thì tìm theo ID trước
@@ -144,7 +229,18 @@ export class CampaignService {
       throw new AppError("Chiến dịch không tồn tại hoặc đã bị xóa", 404);
     }
 
-    return this.formatCampaign(campaign);
+    const privileged = canSeeUnpublishedCampaign(viewer, campaign.fundraiserId);
+    if (!PUBLIC_CAMPAIGN_STATUSES.has(campaign.status) && !privileged) {
+      throw new AppError("Chiến dịch không tồn tại hoặc đã bị xóa", 404);
+    }
+
+    const formatted = await this.hydrateCampaign(campaign, { includeSensitive: privileged });
+    if (!privileged) {
+      await writeCampaignCache(cacheKey, formatted, CampaignCacheTTL.detail);
+      await writeCampaignCache(campaignCacheKeys.detail(campaign.id), formatted, CampaignCacheTTL.detail);
+      await writeCampaignCache(campaignCacheKeys.detail(campaign.slug), formatted, CampaignCacheTTL.detail);
+    }
+    return { campaign: formatted, cacheStatus: "MISS" };
   }
 
   /**
@@ -160,7 +256,7 @@ export class CampaignService {
     ]);
 
     return {
-      items: await Promise.all(items.map((item) => this.formatCampaign(item))),
+      items: await this.hydrateCampaigns(items, { includeSensitive: true }),
       meta: {
         page,
         limit,
@@ -237,6 +333,7 @@ export class CampaignService {
 
     // 8. Lưu vào Database
     const campaign = await this.repo.create(fundraiserId, slug, input);
+    await invalidatePublicCampaignCache();
 
     // 9. Ghi AuditLog bảo mật hành vi khởi tạo chiến dịch
     await prisma.auditLog.create({
@@ -258,7 +355,7 @@ export class CampaignService {
       },
     });
 
-    return this.formatCampaign(campaign);
+    return this.hydrateCampaign(campaign, { includeSensitive: true });
   }
 
   /**
@@ -270,10 +367,13 @@ export class CampaignService {
       throw new AppError("Chiến dịch không tồn tại", 404);
     }
 
-    // Kiểm tra quyền sở hữu (chống IDOR)
-    if (userRole !== UserRole.ADMIN && campaign.fundraiserId !== userId) {
-      throw new AppError("Bạn không có quyền chỉnh sửa chiến dịch này", 403);
-    }
+    await assertObjectAccess({
+      actor: { userId, role: userRole },
+      ownerId: campaign.fundraiserId,
+      entityName: "Campaign",
+      entityId: campaignId,
+      message: "Bạn không có quyền chỉnh sửa chiến dịch này",
+    });
 
     // Chỉ cho phép sửa khi chiến dịch đang ở trạng thái DRAFT hoặc PENDING_APPROVAL
     if (
@@ -296,7 +396,8 @@ export class CampaignService {
     }
 
     const updated = await this.repo.update(campaignId, input);
-    return this.formatCampaign(updated);
+    await invalidatePublicCampaignCache();
+    return this.hydrateCampaign(updated, { includeSensitive: true });
   }
 
   /**
@@ -314,7 +415,7 @@ export class CampaignService {
     ]);
 
     return {
-      items: await Promise.all(items.map((item) => this.formatCampaign(item))),
+      items: await this.hydrateCampaigns(items, { includeSensitive: true }),
       meta: {
         page,
         limit,
@@ -378,12 +479,14 @@ export class CampaignService {
       return updatedCampaign;
     });
 
+    await invalidatePublicCampaignCache();
+
     return {
       message:
         input.status === CampaignStatus.ACTIVE
           ? "Phê duyệt chiến dịch thành công"
           : "Từ chối chiến dịch thành công",
-      campaign: await this.formatCampaign(result),
+      campaign: await this.hydrateCampaign(result, { includeSensitive: true }),
     };
   }
 
@@ -394,11 +497,17 @@ export class CampaignService {
     const campaign = await this.repo.findById(campaignId);
     if (!campaign) throw new AppError("Chiến dịch không tồn tại", 404);
 
-    if (userRole !== UserRole.ADMIN && campaign.fundraiserId !== userId) {
-      throw new AppError("Bạn không có quyền quản lý tài nguyên của chiến dịch này", 403);
-    }
+    await assertObjectAccess({
+      actor: { userId, role: userRole },
+      ownerId: campaign.fundraiserId,
+      entityName: "Campaign",
+      entityId: campaignId,
+      message: "Bạn không có quyền quản lý tài nguyên của chiến dịch này",
+    });
 
-    return this.repo.addMedia(campaignId, input);
+    const media = await this.repo.addMedia(campaignId, input);
+    await invalidatePublicCampaignCache();
+    return media;
   }
 
   /**
@@ -408,11 +517,17 @@ export class CampaignService {
     const campaign = await this.repo.findById(campaignId);
     if (!campaign) throw new AppError("Chiến dịch không tồn tại", 404);
 
-    if (userRole !== UserRole.ADMIN && campaign.fundraiserId !== userId) {
-      throw new AppError("Chỉ chủ chiến dịch mới có quyền đăng nhật ký cập nhật tiến độ", 403);
-    }
+    await assertObjectAccess({
+      actor: { userId, role: userRole },
+      ownerId: campaign.fundraiserId,
+      entityName: "Campaign",
+      entityId: campaignId,
+      message: "Chỉ chủ chiến dịch mới có quyền đăng nhật ký cập nhật tiến độ",
+    });
 
-    return this.repo.addUpdate(campaignId, input);
+    const update = await this.repo.addUpdate(campaignId, input);
+    await invalidatePublicCampaignCache();
+    return update;
   }
 
   /**
@@ -427,9 +542,13 @@ export class CampaignService {
     const campaign = await this.repo.findById(campaignId);
     if (!campaign) throw new AppError("Chiến dịch không tồn tại", 404);
 
-    if (userRole !== UserRole.ADMIN && campaign.fundraiserId !== userId) {
-      throw new AppError("Chỉ chủ chiến dịch mới có quyền cập nhật thông tin giải ngân", 403);
-    }
+    await assertObjectAccess({
+      actor: { userId, role: userRole },
+      ownerId: campaign.fundraiserId,
+      entityName: "Campaign",
+      entityId: campaignId,
+      message: "Chỉ chủ chiến dịch mới có quyền cập nhật thông tin giải ngân",
+    });
 
     const disbursement = await this.repo.addDisbursement(campaignId, userId, input);
 
@@ -448,6 +567,7 @@ export class CampaignService {
       },
     });
 
+    await invalidatePublicCampaignCache();
     return disbursement;
   }
 
@@ -456,8 +576,15 @@ export class CampaignService {
   // CATEGORIES SERVICES
   // ==========================================
 
-  async getCategories(isActiveOnly: boolean = true) {
-    return this.repo.findAllCategories(isActiveOnly);
+  async getCategories(isActiveOnly: boolean = true): Promise<{ categories: any; cacheStatus: CacheStatus }> {
+    const cacheKey = campaignCacheKeys.categories(isActiveOnly);
+    const cached = await readCampaignCache<any>(cacheKey);
+    if (cached) {
+      return { categories: cached, cacheStatus: "HIT" };
+    }
+    const categories = await this.repo.findAllCategories(isActiveOnly);
+    await writeCampaignCache(cacheKey, categories, CampaignCacheTTL.categories);
+    return { categories, cacheStatus: "MISS" };
   }
 
   async createCategory(input: CategoryInput) {
@@ -467,7 +594,9 @@ export class CampaignService {
       throw new AppError("Slug danh mục đã tồn tại, vui lòng chọn tên khác", 400);
     }
 
-    return this.repo.createCategory({ ...input, slug });
+    const category = await this.repo.createCategory({ ...input, slug });
+    await invalidatePublicCampaignCache();
+    return category;
   }
 
   async updateCategory(id: string, input: Partial<CategoryInput>) {
@@ -478,7 +607,9 @@ export class CampaignService {
       input.slug = slugify(input.name);
     }
 
-    return this.repo.updateCategory(id, input);
+    const updated = await this.repo.updateCategory(id, input);
+    await invalidatePublicCampaignCache();
+    return updated;
   }
 
   async deleteCategory(id: string) {
@@ -495,6 +626,7 @@ export class CampaignService {
     }
 
     await this.repo.deleteCategory(id);
+    await invalidatePublicCampaignCache();
     return { message: "Xóa danh mục thành công" };
   }
 }

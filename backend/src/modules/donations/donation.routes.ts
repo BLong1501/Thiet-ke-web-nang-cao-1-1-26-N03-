@@ -25,9 +25,10 @@ router.post(
   donationController.createDonation
 );
 
-// Mô phỏng xác nhận thanh toán thành công (Webhook / IPN / Cổng thanh toán)
+// Xác nhận thanh toán: chỉ chủ khoản đóng góp hoặc ADMIN (không cho đoán ID).
 router.post(
   "/:id/confirm",
+  authenticate,
   validate(confirmDonationSchema),
   donationController.confirmPayment
 );

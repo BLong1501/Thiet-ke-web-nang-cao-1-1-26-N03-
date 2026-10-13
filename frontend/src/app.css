@@ -321,6 +321,10 @@
   border-bottom: 1px solid var(--color-border);
 }
 
+.page-heading.crumb-only {
+  align-items: center;
+}
+
 .page-heading > div:first-child {
   min-width: 0;
 }
@@ -796,6 +800,26 @@ input[type="file"]::file-selector-button {
   gap: var(--space-2);
 }
 
+.donation-campaign {
+  margin: 0 0 var(--space-4);
+  color: var(--color-text-subtle);
+}
+
+.donation-result h3 {
+  margin: 0;
+  font-family: var(--font-sans);
+  font-size: var(--text-2xl);
+  font-weight: var(--weight-bold);
+  letter-spacing: -0.02em;
+}
+
+.donation-transfer {
+  padding: var(--space-4);
+  background: var(--color-surface-sunken);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
 .upload-field {
   display: flex;
   flex-direction: column;
@@ -1162,17 +1186,56 @@ input[type="file"]::file-selector-button {
   border-color: var(--color-primary-border);
 }
 
+.tabs-shell {
+  position: relative;
+  margin-bottom: var(--space-5);
+  overflow: hidden;
+}
+
+.tabs-shell::before,
+.tabs-shell::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 1px;
+  width: 2.25rem;
+  pointer-events: none;
+  opacity: 0;
+  z-index: 1;
+  transition: opacity var(--duration-fast) var(--ease-standard);
+}
+
+.tabs-shell::before {
+  left: 0;
+  background: linear-gradient(to right, var(--color-bg) 20%, transparent);
+}
+
+.tabs-shell::after {
+  right: 0;
+  background: linear-gradient(to left, var(--color-bg) 20%, transparent);
+}
+
+.tabs-shell.has-start::before,
+.tabs-shell.has-end::after {
+  opacity: 1;
+}
+
 .tabs {
   display: flex;
   gap: var(--space-1);
-  margin-bottom: var(--space-5);
   overflow-x: auto;
-  scrollbar-width: none;
+  scrollbar-width: thin;
+  scroll-padding-inline: var(--space-3);
   border-bottom: 1px solid var(--color-border);
 }
 
 .tabs::-webkit-scrollbar {
-  display: none;
+  height: 4px;
+}
+
+.tabs::-webkit-scrollbar-thumb {
+  background: var(--color-border-strong);
+  border-radius: var(--radius-pill);
 }
 
 .tabs a,

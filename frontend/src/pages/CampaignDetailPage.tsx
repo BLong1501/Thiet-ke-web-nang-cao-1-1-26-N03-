@@ -1,11 +1,6 @@
 import { useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import {
-  campaignApi,
-  formatCurrency,
-  formatDate,
-  getProgress,
-} from "../services/api";
+import { campaignApi, formatCurrency, formatDate } from "../services/api";
 import {
   campaignPath,
   downloadCsv,
@@ -28,7 +23,14 @@ import DonationModal from "../components/ui/DonationModal";
 import ReportDialog from "../components/ReportDialog";
 import CampaignDonors from "../components/campaign/CampaignDonors";
 import ManageCampaign from "../components/campaign/ManageCampaign";
+import CampaignSummary from "../components/campaign/CampaignSummary";
+import { categoryIcon } from "../components/ui/categoryIcon";
+import { imageSources } from "../components/home/homeData";
 import toast from "react-hot-toast";
+import "./campaign-detail.css";
+
+const PLACEHOLDER = "/campaign-placeholder.svg";
+
 export default function CampaignDetailPage() {
   const { id } = useParams();
   const result = useRemote(() => campaignApi.getById(id!).then(payload), [id]);
@@ -38,7 +40,9 @@ export default function CampaignDetailPage() {
   const user = useAuthStore((s) => s.user);
   const c = result.data;
   const owner =
-    c && (c.fundraiserId === user?.id || user?.role?.toUpperCase() === "ADMIN");
+    !!c &&
+    (c.fundraiserId === user?.id || user?.role?.toUpperCase() === "ADMIN");
+
   async function share() {
     try {
       await navigator.clipboard.writeText(window.location.href);
@@ -49,28 +53,99 @@ export default function CampaignDetailPage() {
       );
     }
   }
+
+  const categoryName =
+    typeof c?.category?.name === "string" ? c.category.name : "";
+  const categoryId = typeof c?.category?.id === "string" ? c.category.id : "";
+  const CategoryIcon = categoryIcon(c?.category?.slug);
+  const cover = safeUrl(c?.coverImageUrl) || PLACEHOLDER;
+  const sources = imageSources(cover, [720, 1200, 1600]);
+
   return (
     <Page
       title={c?.title || "Chi tiết chiến dịch"}
       description={c?.shortDescription}
       image={c?.coverImageUrl}
       canonicalPath={c ? campaignPath(c) : undefined}
-      actions={<Link to="/campaigns">← Tất cả chiến dịch</Link>}
+      heading={c ? "crumb" : "full"}
     >
-      <RemoteState {...result} />
+      <RemoteState
+        {...result}
+        skeleton={
+          <div className="cd" role="status">
+            <span className="visually-hidden">Đang tải chiến dịch…</span>
+            <span className="skeleton title" />
+            <span className="skeleton" />
+            <span className="cd-hero skeleton media" aria-hidden="true" />
+          </div>
+        }
+      />
       {c && (
-        <>
-          <div className="detail-grid">
-            <div>
+        <article className="cd">
+          <header className="cd-header">
+            <div className="cd-kicker">
+              {categoryName &&
+                (categoryId ? (
+                  <Link
+                    className="cd-category"
+                    to={`/campaigns?category=${encodeURIComponent(categoryId)}`}
+                  >
+                    <CategoryIcon aria-hidden="true" />
+                    {categoryName}
+                  </Link>
+                ) : (
+                  <span className="cd-category">
+                    <CategoryIcon aria-hidden="true" />
+                    {categoryName}
+                  </span>
+                ))}
+              <Status value={c.status} />
+            </div>
+            <h1 className="cd-title">{c.title}</h1>
+            {c.shortDescription && (
+              <p className="cd-dek">{c.shortDescription}</p>
+            )}
+            <ul className="cd-byline">
+              <li>
+                {c.organizerType === "ORGANIZATION" && c.organizationName
+                  ? c.organizationName
+                  : c.fundraiser?.fullName || "Người gây quỹ"}
+              </li>
+              {c.startDate && <li>Bắt đầu {formatDate(c.startDate)}</li>}
+              {c.endDate && <li>Kết thúc {formatDate(c.endDate)}</li>}
+            </ul>
+          </header>
+
+          <div className="cd-layout">
+            <figure className="cd-hero">
               <img
-                className="campaign-cover"
-                src={safeUrl(c.coverImageUrl) || "/campaign-placeholder.svg"}
+                {...sources}
+                sizes={
+                  sources.srcSet ? "(max-width: 1024px) 100vw, 62vw" : undefined
+                }
                 alt={c.title}
+                width={1200}
+                height={675}
+                decoding="async"
                 onError={(e) => {
-                  e.currentTarget.onerror = null;
-                  e.currentTarget.src = "/campaign-placeholder.svg";
+                  const img = e.currentTarget;
+                  img.onerror = null;
+                  img.removeAttribute("srcset");
+                  img.src = PLACEHOLDER;
                 }}
               />
+            </figure>
+
+            <CampaignSummary
+              campaign={c}
+              signedIn={!!user}
+              owner={owner}
+              onDonate={() => setDonate(true)}
+              onShare={share}
+              onReport={() => setReport(true)}
+            />
+
+            <div className="cd-main">
               <Tabs
                 label="Nội dung chiến dịch"
                 tabs={[
@@ -82,16 +157,15 @@ export default function CampaignDetailPage() {
                 ]}
                 value={tab}
                 onChange={setTab}
-                panelClassName="panel"
               >
                 {tab === "story" && (
-                  <>
+                  <div className="cd-story">
                     <h2>Câu chuyện chiến dịch</h2>
                     <p className="prose">{c.story}</p>
                     {c.beneficiaryDetails && (
                       <>
                         <h3>Người thụ hưởng</h3>
-                        <p>{c.beneficiaryDetails}</p>
+                        <p className="prose">{c.beneficiaryDetails}</p>
                       </>
                     )}
                     {c.media?.length > 0 && (
@@ -131,7 +205,7 @@ export default function CampaignDetailPage() {
                         Người gây quỹ đã cam kết công khai việc sử dụng quỹ.
                       </Notice>
                     )}
-                  </>
+                  </div>
                 )}
                 {tab === "updates" && (
                   <>
@@ -161,7 +235,7 @@ export default function CampaignDetailPage() {
                     )}
                   </>
                 )}
-                {tab === "donors" && <CampaignDonors id={c.id} />}{" "}
+                {tab === "donors" && <CampaignDonors id={c.id} />}
                 {tab === "transparency" && (
                   <>
                     <div className="section-heading">
@@ -238,68 +312,8 @@ export default function CampaignDetailPage() {
                 )}
               </Tabs>
             </div>
-            <aside className="panel campaign-summary">
-              <Status value={c.status} />
-              <h2>{formatCurrency(Number(c.currentAmount))}</h2>
-              <p>trên mục tiêu {formatCurrency(Number(c.targetAmount))}</p>
-              <progress
-                max={100}
-                value={getProgress(
-                  Number(c.currentAmount),
-                  Number(c.targetAmount),
-                )}
-                aria-label="Tiến độ gây quỹ"
-              />
-              <div className="section-heading">
-                <strong>
-                  {getProgress(Number(c.currentAmount), Number(c.targetAmount))}
-                  % mục tiêu
-                </strong>
-                <span>{c.daysLeft || 0} ngày còn lại</span>
-              </div>
-              <p>{c.shortDescription}</p>
-              <hr />
-              <p>Người gây quỹ</p>
-              <strong>{c.fundraiser?.fullName}</strong>
-              {c.organizerType === "ORGANIZATION" && (
-                <p>{c.organizationName}</p>
-              )}
-              <p>Kết thúc: {formatDate(c.endDate)}</p>
-              {c.rejectionReason && <Notice error>{c.rejectionReason}</Notice>}
-              <button
-                className="button"
-                disabled={
-                  c.status !== "ACTIVE" || new Date(c.endDate) <= new Date()
-                }
-                onClick={() => setDonate(true)}
-              >
-                {c.status === "ACTIVE" && new Date(c.endDate) > new Date()
-                  ? "Đóng góp ngay"
-                  : "Hiện chưa nhận đóng góp"}
-              </button>
-              <button className="button secondary" onClick={share}>
-                Sao chép liên kết
-              </button>
-              {user ? (
-                <button
-                  className="button secondary"
-                  onClick={() => setReport(true)}
-                >
-                  Báo cáo chiến dịch
-                </button>
-              ) : (
-                <Link to="/login">Đăng nhập để báo cáo nội dung</Link>
-              )}
-              {owner && ["DRAFT", "PENDING_APPROVAL"].includes(c.status) && (
-                <Link
-                  className="button secondary"
-                  to={`${campaignPath(c)}/edit`}
-                >
-                  Chỉnh sửa chiến dịch
-                </Link>
-              )}
-            </aside>
           </div>
+
           {donate && (
             <DonationModal
               campaign={normalizeCampaign(c)}
@@ -314,7 +328,7 @@ export default function CampaignDetailPage() {
           {report && (
             <ReportDialog targetId={c.id} onClose={() => setReport(false)} />
           )}
-        </>
+        </article>
       )}
     </Page>
   );

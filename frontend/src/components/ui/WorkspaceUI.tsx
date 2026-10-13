@@ -80,6 +80,7 @@ export function Page({
   noindex,
   canonicalPath,
   breadcrumbs,
+  heading = "full",
 }: {
   title: string;
   intro?: string;
@@ -92,11 +93,20 @@ export function Page({
   canonicalPath?: string;
   /** Ghi đè breadcrumb tự suy ra; truyền `[]` để ẩn. */
   breadcrumbs?: Crumb[];
+  /**
+   * `full`: breadcrumb + h1 + intro + actions (mặc định).
+   * `crumb`: chỉ breadcrumb — trang tự vẽ tiêu đề editorial (vd. chi tiết chiến dịch).
+   */
+  heading?: "full" | "crumb";
 }) {
   const { pathname } = useLocation();
   const crumbs = breadcrumbs ?? crumbsFor(pathname, title);
+  const showTitle = heading === "full";
+  const shell = ["workspace", "container", heading === "crumb" && "editorial"]
+    .filter(Boolean)
+    .join(" ");
   return (
-    <div className="workspace container">
+    <div className={shell}>
       <Seo
         title={title}
         description={description || intro}
@@ -104,14 +114,18 @@ export function Page({
         noindex={noindex}
         canonicalPath={canonicalPath}
       />
-      <header className="page-heading">
-        <div>
-          {crumbs.length > 0 && <Breadcrumb items={crumbs} />}
-          <h1>{title}</h1>
-          {intro && <p>{intro}</p>}
-        </div>
-        {actions && <div className="actions">{actions}</div>}
-      </header>
+      {(crumbs.length > 0 || showTitle) && (
+        <header
+          className={showTitle ? "page-heading" : "page-heading crumb-only"}
+        >
+          <div>
+            {crumbs.length > 0 && <Breadcrumb items={crumbs} />}
+            {showTitle && <h1>{title}</h1>}
+            {showTitle && intro && <p>{intro}</p>}
+          </div>
+          {showTitle && actions && <div className="actions">{actions}</div>}
+        </header>
+      )}
       {children}
     </div>
   );
