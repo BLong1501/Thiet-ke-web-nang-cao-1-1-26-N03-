@@ -9,7 +9,7 @@
     "test:session06": "tsx scripts/session06-check.ts",
     "test:security": "tsx scripts/security-check.ts",
     "dev": "tsx watch src/server.ts",
-    "build": "tsc",
+    "build": "prisma generate && tsc",
     "start": "node dist/server.js",
     "prisma:generate": "prisma generate",
     "prisma:push": "prisma db push",
