@@ -9,7 +9,6 @@ import {
   Pager,
   RemoteState,
 } from "../components/ui/WorkspaceUI";
-import AdminNav from "../components/AdminNav";
 export default function AdminActivityLogsPage() {
   const [filters, setFilters] = useState<Record<string, string>>({});
   const [page, setPage] = useState(1);
@@ -25,7 +24,6 @@ export default function AdminActivityLogsPage() {
       title="Nhật ký hệ thống — Admin"
       intro="Theo dõi hoạt động toàn hệ thống. Khu vực này chỉ dành cho quản trị viên."
     >
-      <AdminNav />
       <form
         className="filters"
         onSubmit={(e) => {
