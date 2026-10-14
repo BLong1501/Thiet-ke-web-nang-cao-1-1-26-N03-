@@ -8,7 +8,6 @@ import {
 import { listResult } from "../services/platform";
 import { useRemote } from "../hooks/useRemote";
 import { Page, RemoteState } from "../components/ui/WorkspaceUI";
-import AdminNav from "../components/AdminNav";
 import DonationHistory from "../components/DonationHistory";
 export default function AdminHomePage() {
   const result = useRemote(async () => {
@@ -25,7 +24,6 @@ export default function AdminHomePage() {
       title="Trung tâm quản trị"
       intro="Xét duyệt nội dung và theo dõi hoạt động của hệ thống."
     >
-      <AdminNav />
       <RemoteState {...result} />
       {result.data && (
         <div className="stats-grid">
@@ -49,7 +47,6 @@ export default function AdminHomePage() {
 export function AdminDonationsPage() {
   return (
     <Page title="Quản lý giao dịch">
-      <AdminNav />
       <DonationHistory admin />
     </Page>
   );
