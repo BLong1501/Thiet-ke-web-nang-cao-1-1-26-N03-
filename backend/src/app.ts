@@ -2,8 +2,10 @@ import express, { Express, Request, Response, NextFunction } from "express";
 import cors from "cors";
 import helmet from "helmet";
 import cookieParser from "cookie-parser";
+import { randomUUID } from 'node:crypto';
 
 const app: Express = express();
+app.use((_req,res,next)=>{res.setHeader('X-Request-Id',randomUUID());next();});
 
 import { xssSanitizer, csrfProtection } from "./core/middleware/security.middleware";
 
@@ -32,7 +34,7 @@ app.use(
       if (!requestOrigin) return callback(null, true);
       if (
         allowedOrigins.includes(requestOrigin) ||
-        /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(requestOrigin)
+        (process.env.NODE_ENV !== 'production' && /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(requestOrigin))
       ) {
         return callback(null, true);
       }
@@ -63,6 +65,7 @@ import { activityLogRouter } from "./modules/activity-logs/activity-log.routes";
 import { notificationRouter } from "./modules/notifications/notification.routes";
 import { reportRouter, adminReportRouter } from "./modules/reports/report.routes";
 import { communityRouter } from "./modules/communities/community.routes";
+import { analyticsRouter } from './modules/analytics/analytics.routes';
 
 // Health check endpoint
 app.get("/api/v1/health", (_req: Request, res: Response) => {
@@ -86,6 +89,7 @@ app.use("/api/v1/notifications", notificationRouter);
 app.use("/api/v1/reports", reportRouter);
 app.use("/api/v1/admin/reports", adminReportRouter);
 app.use("/api/v1/communities", communityRouter);
+app.use('/api/v1/admin/analytics', analyticsRouter);
 
 import { sendError } from "./core/utils/response.util";
 
@@ -106,7 +110,7 @@ app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
       : (err.message || "Đã xảy ra lỗi máy chủ nội bộ");
 
   const errors = isProduction && statusCode >= 500 ? undefined : err.errors;
-  return sendError(res, statusCode, clientMessage, errors);
+  return res.status(statusCode).json({success:false,message:clientMessage,requestId:res.getHeader('X-Request-Id'),...(errors!==undefined?{errors}:{})});
 });
 
 export default app;
