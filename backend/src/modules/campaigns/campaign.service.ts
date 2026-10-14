@@ -92,9 +92,9 @@ export class CampaignService {
           }
         : null,
       beneficiaryDetails: legalMetadata?.details || campaign.beneficiaryInfo,
-      bankAccountNumber: includeSensitive ? campaign.bankAccountNumber : null,
-      bankName: includeSensitive ? campaign.bankName : null,
-      bankAccountName: includeSensitive ? campaign.bankAccountName : null,
+      bankAccountNumber: campaign.bankAccountNumber,
+      bankName: campaign.bankName,
+      bankAccountName: campaign.bankAccountName,
     };
   }
 

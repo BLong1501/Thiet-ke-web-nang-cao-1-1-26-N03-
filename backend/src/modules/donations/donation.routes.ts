@@ -25,6 +25,15 @@ router.post(
   donationController.createDonation
 );
 
+// Tra cứu trạng thái thanh toán công khai (phục vụ Polling tự động tại giao diện VietQR)
+router.get("/:id/status", donationController.getPublicStatus);
+
+// Webhook tự động biến động số dư ngân hàng (SePay / Casso / PayOS / Banking Webhook)
+router.post("/webhook", donationController.handleBankingWebhook);
+
+// Mô phỏng chuyển khoản thành công (dành cho kiểm thử/demo trên modal)
+router.post("/:id/simulate-success", donationController.simulateSuccess);
+
 // Xác nhận thanh toán: chỉ chủ khoản đóng góp hoặc ADMIN (không cho đoán ID).
 router.post(
   "/:id/confirm",

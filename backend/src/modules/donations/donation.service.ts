@@ -623,6 +623,100 @@ export class DonationService {
       },
     };
   }
+
+  /**
+   * Tra cứu trạng thái thanh toán công khai (phục vụ Polling tự động tại giao diện VietQR)
+   */
+  async getPublicStatus(idOrTransactionCode: string) {
+    let donation: any = await this.repo.findById(idOrTransactionCode);
+    if (!donation) {
+      donation = await this.repo.findByTransactionCode(idOrTransactionCode);
+    }
+    if (!donation) {
+      throw new AppError("Không tìm thấy giao dịch quyên góp", 404);
+    }
+    return {
+      id: donation.id,
+      transactionCode: donation.transactionCode,
+      paymentStatus: donation.paymentStatus,
+      amount: Number(donation.amount),
+      campaignId: donation.campaignId,
+      paidAt: donation.paidAt,
+    };
+  }
+
+  /**
+   * Xử lý Webhook tự động biến động số dư ngân hàng (SePay / Casso / PayOS / Banking Webhook)
+   */
+  async handleBankingWebhook(payload: any) {
+    const content = String(
+      payload.content ||
+      payload.description ||
+      payload.transferContent ||
+      payload.transactionCode ||
+      payload.orderCode ||
+      ""
+    );
+
+    const match = content.match(/(DON-[A-Z0-9-]+)/i);
+    const transactionCode = match ? match[1] : content.trim();
+
+    if (!transactionCode) {
+      return { success: false, message: "Không tìm thấy mã giao dịch trong nội dung chuyển khoản" };
+    }
+
+    const donation = await this.repo.findByTransactionCode(transactionCode);
+    if (!donation) {
+      return { success: false, message: `Không tìm thấy khoản quyên góp với mã: ${transactionCode}` };
+    }
+
+    if (donation.paymentStatus === PaymentStatus.SUCCESS) {
+      return { success: true, message: "Giao dịch đã được thanh toán thành công trước đó", donation };
+    }
+
+    const result = await this.repo.confirmPayment(donation.id, {
+      gateway: payload.gateway || "BANKING_WEBHOOK",
+      referenceCode: payload.referenceCode || payload.id || null,
+      transferAmount: payload.transferAmount || payload.amount || Number(donation.amount),
+      note: "Xác nhận tự động qua Webhook biến động số dư ngân hàng (VietQR)",
+    });
+
+    await invalidatePublicCampaignCache();
+
+    return {
+      success: true,
+      message: "Đã xác nhận thanh toán thành công qua Webhook ngân hàng",
+      donation: result.donation,
+      campaignProgress: result.campaignProgress,
+    };
+  }
+
+  /**
+   * Mô phỏng chuyển khoản thành công (phục vụ kiểm thử/demo trên giao diện)
+   */
+  async simulateSuccess(donationId: string) {
+    const donation = await this.repo.findById(donationId);
+    if (!donation) {
+      throw new AppError("Không tìm thấy giao dịch quyên góp", 404);
+    }
+    if (donation.paymentStatus === PaymentStatus.SUCCESS) {
+      return {
+        message: "Giao dịch đã được xác nhận thanh toán thành công từ trước",
+        donation,
+      };
+    }
+    const result = await this.repo.confirmPayment(donationId, {
+      simulated: true,
+      gateway: "VIETQR_SIMULATION",
+      note: "Mô phỏng thanh toán thành công qua giao diện VietQR",
+    });
+    await invalidatePublicCampaignCache();
+    return {
+      message: "Xác nhận thanh toán mô phỏng thành công!",
+      donation: result.donation,
+      campaignProgress: result.campaignProgress,
+    };
+  }
 }
 
 export const donationService = new DonationService();

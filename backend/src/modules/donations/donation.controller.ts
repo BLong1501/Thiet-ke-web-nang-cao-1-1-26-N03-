@@ -177,6 +177,46 @@ export class DonationController {
       return next(error);
     }
   };
+
+  /**
+   * Tra cứu trạng thái thanh toán công khai (phục vụ Polling tự động tại giao diện VietQR)
+   */
+  getPublicStatus = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const id = String(req.params.id);
+      const result = await this.service.getPublicStatus(id);
+      return sendSuccess(res, 200, "Lấy trạng thái giao dịch thành công", result);
+    } catch (error) {
+      return next(error);
+    }
+  };
+
+  /**
+   * Webhook nhận biến động số dư ngân hàng (SePay / Casso / PayOS)
+   */
+  handleBankingWebhook = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const result = await this.service.handleBankingWebhook(req.body);
+      return res.status(200).json(result);
+    } catch (error) {
+      return next(error);
+    }
+  };
+
+  /**
+   * Mô phỏng chuyển khoản thành công (dành cho kiểm thử/demo trên modal)
+   */
+  simulateSuccess = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const id = String(req.params.id);
+      const result = await this.service.simulateSuccess(id);
+      return sendSuccess(res, 200, result.message, result.donation, {
+        campaignProgress: result.campaignProgress,
+      });
+    } catch (error) {
+      return next(error);
+    }
+  };
 }
 
 export const donationController = new DonationController();

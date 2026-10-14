@@ -196,6 +196,8 @@ export const donationApi = {
   getAllForAdmin: (params?: Record<string, unknown>) =>
     api.get("/donations/admin/all", { params }),
   getById: (id: string) => api.get(`/donations/${id}`),
+  getStatus: (id: string) => api.get(`/donations/${id}/status`),
+  simulateSuccess: (id: string) => api.post(`/donations/${id}/simulate-success`),
 };
 
 // --- Verification APIs (KYC) ---

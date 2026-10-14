@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { Link, useParams } from "react-router-dom";
 import { api, donationApi, formatCurrency, formatDate } from "../services/api";
 import { campaignPath, errorMessage, payload } from "../services/platform";
@@ -18,6 +18,17 @@ export default function DonationDetailPage() {
   const result = useRemote(() => donationApi.getById(id!).then(payload), [id]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+
+  const d = result.data;
+
+  // Tự động Polling cập nhật trạng thái khi PENDING
+  useEffect(() => {
+    if (!d || d.paymentStatus !== "PENDING") return;
+    const interval = setInterval(() => {
+      result.reload();
+    }, 3000);
+    return () => clearInterval(interval);
+  }, [d?.paymentStatus]);
   async function act(path: string, body: object) {
     setBusy(true);
     setError("");
@@ -31,7 +42,6 @@ export default function DonationDetailPage() {
       setBusy(false);
     }
   }
-  const d = result.data;
   const admin = user?.role?.toUpperCase() === "ADMIN";
   const owner = !!user && d?.donorId === user.id;
   const denied =
@@ -110,10 +120,90 @@ export default function DonationDetailPage() {
             <dd>{d.message || "—"}</dd>
           </dl>
           {d.paymentStatus === "PENDING" && (
-            <Notice>
-              Đang chờ máy chủ xác nhận. Không có khoản tiền nào được ghi nhận
-              thành công chỉ bằng thao tác trên trình duyệt.
-            </Notice>
+            <div style={{ marginTop: "1rem", display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+              <div
+                style={{
+                  background: "#f8fafc",
+                  border: "2px dashed #cbd5e1",
+                  borderRadius: "16px",
+                  padding: "1.25rem",
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  gap: "0.75rem",
+                  textAlign: "center",
+                }}
+              >
+                <div
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "6px",
+                    background: "#eff6ff",
+                    color: "#1d4ed8",
+                    padding: "4px 12px",
+                    borderRadius: "999px",
+                    fontSize: "0.8rem",
+                    fontWeight: 600,
+                  }}
+                >
+                  ⚡ VietQR Napas 247 - Quét thanh toán tự động
+                </div>
+
+                <div
+                  style={{
+                    background: "#ffffff",
+                    padding: "8px",
+                    borderRadius: "12px",
+                    boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)",
+                    maxWidth: "240px",
+                    width: "100%",
+                  }}
+                >
+                  <img
+                    src={`https://img.vietqr.io/image/${encodeURIComponent(d.campaign?.bankName || "Vietcombank")}-${encodeURIComponent(d.campaign?.bankAccountNumber || "123456789")}-compact2.png?amount=${d.amount}&addInfo=${encodeURIComponent(d.transactionCode)}&accountName=${encodeURIComponent(d.campaign?.bankAccountName || "CHỦ CHIẾN DỊCH")}`}
+                    alt="VietQR Napas 247"
+                    style={{ width: "100%", height: "auto", display: "block", borderRadius: "8px" }}
+                  />
+                </div>
+
+                <div style={{ fontSize: "0.85rem", color: "#2563eb", fontWeight: 500 }}>
+                  <span
+                    style={{
+                      display: "inline-block",
+                      width: "8px",
+                      height: "8px",
+                      borderRadius: "50%",
+                      background: "#22c55e",
+                      marginRight: "6px",
+                    }}
+                  />
+                  Hệ thống đang tự động nhận diện giao dịch chuyển khoản (Polling 3s)...
+                </div>
+              </div>
+
+              <Notice>
+                Quét mã VietQR trên bằng app ngân hàng của bạn. Sau khi chuyển tiền thành công,
+                hệ thống sẽ tự động cập nhật trạng thái đơn đóng góp này.
+              </Notice>
+
+              <button
+                type="button"
+                className="button secondary"
+                disabled={busy}
+                onClick={async () => {
+                  try {
+                    await donationApi.simulateSuccess(d.id);
+                    toast.success("Mô phỏng thanh toán thành công!");
+                    result.reload();
+                  } catch (err) {
+                    toast.error(errorMessage(err) || "Không thể mô phỏng");
+                  }
+                }}
+              >
+                ⚡ Test: Mô phỏng đã nhận tiền
+              </button>
+            </div>
           )}
           {d.paymentStatus === "SUCCESS" && (
             <button
