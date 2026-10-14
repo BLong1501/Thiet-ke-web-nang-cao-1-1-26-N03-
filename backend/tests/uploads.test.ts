@@ -1,4 +1,4 @@
-import test from 'node:test';
+import test, {after} from 'node:test';
 import assert from 'node:assert/strict';
 import express from 'express';
 import request from 'supertest';
@@ -9,6 +9,7 @@ import path from 'node:path';
 import jwt from 'jsonwebtoken';
 
 process.env.JWT_SECRET = 'isolated-upload-test-secret';
+after(async()=>{(await import('../src/core/database/redis')).shutdownRedis();});
 
 test('Buoi 7: real multipart upload, private storage and access checks', async t => {
   const { createUploadRouter, MAX_UPLOAD_BYTES } = await import('../src/modules/uploads/upload.routes');
