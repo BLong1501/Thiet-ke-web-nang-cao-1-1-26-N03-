@@ -2,6 +2,7 @@ import { Router } from "express";
 import { authController } from "./auth.controller";
 import { validate } from "../../core/middleware/validate.middleware";
 import { authenticate } from "../../core/middleware/auth.middleware";
+import {loginRate} from '../../core/middleware/login-rate.middleware';
 import {
   registerSchema,
   loginSchema,
@@ -24,7 +25,7 @@ router.post("/forgot-password", validate(forgotPasswordSchema), authController.f
 router.post("/reset-password", validate(resetPasswordSchema), authController.resetPassword);
 
 // 3. Đăng nhập truyền thống & Đăng nhập Google (Account Linking)
-router.post("/login", validate(loginSchema), authController.login);
+router.post("/login", loginRate, validate(loginSchema), authController.login);
 router.post("/refresh-token", authController.refreshToken);
 router.post("/google", validate(googleAuthSchema), authController.loginWithGoogle);
 

@@ -3,6 +3,7 @@ import { UserRole } from "@prisma/client";
 import { verifyAccessToken, JwtPayload } from "../utils/jwt.util";
 import { sendError } from "../utils/response.util";
 import { auditService } from "../services/audit.service";
+import { isRevoked } from '../auth/token-revocation';
 
 // Mở rộng kiểu dữ liệu Request của Express để chứa thông tin người dùng đã xác thực
 declare global {
@@ -13,7 +14,7 @@ declare global {
   }
 }
 
-export const authenticate = (req: Request, res: Response, next: NextFunction): any => {
+export const authenticate = async (req: Request, res: Response, next: NextFunction): Promise<any> => {
   let token: string | undefined;
 
   // Lấy token từ header Authorization
@@ -30,7 +31,7 @@ export const authenticate = (req: Request, res: Response, next: NextFunction): a
   }
 
   const decoded = verifyAccessToken(token);
-  if (!decoded) {
+  if (!decoded || await isRevoked(token)) {
     return sendError(res, 401, "Phiên đăng nhập không hợp lệ hoặc đã hết hạn");
   }
 
@@ -71,7 +72,7 @@ export const authorize = (...roles: UserRole[]) => {
   };
 };
 
-export const optionalAuthenticate = (req: Request, _res: Response, next: NextFunction): any => {
+export const optionalAuthenticate = async (req: Request, _res: Response, next: NextFunction): Promise<any> => {
   let token: string | undefined;
   const authHeader = req.headers.authorization;
   if (authHeader && authHeader.startsWith("Bearer ")) {
@@ -82,7 +83,7 @@ export const optionalAuthenticate = (req: Request, _res: Response, next: NextFun
 
   if (token) {
     const decoded = verifyAccessToken(token);
-    if (decoded) {
+    if (decoded && !await isRevoked(token)) {
       req.user = decoded;
     }
   }

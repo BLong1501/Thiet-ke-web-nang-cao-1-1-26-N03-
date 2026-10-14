@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from "express";
 import { authService, AuthService } from "./auth.service";
 import { sendSuccess } from "../../core/utils/response.util";
 import { auditService } from "../../core/services/audit.service";
+import { isRevoked, revoke } from '../../core/auth/token-revocation';
 
 export class AuthController {
   constructor(private service: AuthService = authService) {}
@@ -107,7 +108,9 @@ export class AuthController {
   refreshToken = async (req: Request, res: Response, next: NextFunction) => {
     try {
       const token = req.cookies?.refreshToken || req.body?.refreshToken;
+        if (typeof token==='string' && await isRevoked(token)) throw Object.assign(new Error('Phiên đã kết thúc'),{statusCode:401});
       const result = await this.service.refreshToken(token);
+        await revoke(token);
 
       res.cookie("refreshToken", result.refreshToken, {
         httpOnly: true,
@@ -156,6 +159,9 @@ export class AuthController {
 
   logout = async (_req: Request, res: Response, next: NextFunction) => {
     try {
+        await revoke(_req.headers.authorization?.startsWith('Bearer ') ? _req.headers.authorization.slice(7) : _req.cookies?.accessToken);
+        await revoke(_req.cookies?.refreshToken);
+        res.clearCookie('accessToken');
       res.clearCookie("refreshToken");
       return sendSuccess(res, 200, "Đăng xuất thành công");
     } catch (error) {

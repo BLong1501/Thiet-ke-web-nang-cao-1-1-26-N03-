@@ -97,10 +97,10 @@ export const csrfProtection = (req: Request, res: Response, next: NextFunction):
   const origin = req.headers.origin || req.headers.referer;
 
   if (origin) {
-    const allowedHost = new URL(clientUrl).origin;
     try {
+      const allowedHosts = clientUrl.split(',').map(value => new URL(value.trim()).origin);
       const requestOrigin = new URL(origin).origin;
-      if (requestOrigin !== allowedHost && !origin.includes("localhost")) {
+      if (!allowedHosts.includes(requestOrigin)) {
         auditService.log({
           req,
           action: "CSRF_BLOCKED",

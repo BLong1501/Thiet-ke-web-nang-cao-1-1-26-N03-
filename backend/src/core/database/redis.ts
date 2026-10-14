@@ -7,6 +7,10 @@ const redisPassword = process.env.REDIS_PASSWORD || undefined;
 // Bộ nhớ đệm fallback trong RAM nếu Redis chưa sẵn sàng
 const memoryStore = new Map<string, { value: string; expiresAt: number }>();
 
+export function shutdownRedis() {
+  redisClient?.disconnect();
+}
+
 let redisClient: Redis | null = null;
 let isRedisConnected = false;
 
