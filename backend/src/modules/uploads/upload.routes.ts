@@ -17,7 +17,99 @@ export function createUploadRouter(root = process.env.PRIVATE_UPLOAD_DIR || defa
     storage: multer.memoryStorage(),
     limits: { fileSize: MAX_UPLOAD_BYTES, files: 1, fields: 0, parts: 2 },
   }).single('file');
+
+  const publicRoot = path.resolve(__dirname, '../../../public-uploads');
+
+  // 1. Xem ảnh công khai (Không yêu cầu xác thực để người dùng xem chiến dịch)
+  router.get('/public/:fileName', async (req, res, next) => {
+    const fileName = String(req.params.fileName);
+    if (!/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\.png$/i.test(fileName)) {
+      sendError(res, 404, 'Không tìm thấy ảnh');
+      return;
+    }
+    try {
+      const imagePath = path.join(publicRoot, fileName);
+      const image = await readFile(imagePath);
+      res.set({
+        'Content-Type': 'image/png',
+        'Cache-Control': 'public, max-age=86400',
+        'X-Content-Type-Options': 'nosniff',
+      }).send(image);
+    } catch (error: any) {
+      if (error.code === 'ENOENT') {
+        sendError(res, 404, 'Không tìm thấy ảnh');
+        return;
+      }
+      next(error);
+    }
+  });
+
+  // Mọi route bên dưới đều yêu cầu đăng nhập
   router.use(authenticate);
+
+  // 2. Tải ảnh chiến dịch / bài viết công khai (Yêu cầu đăng nhập)
+  router.post('/public', (req, res, next) => {
+    parse(req, res, (error: unknown) => {
+      if (error instanceof multer.MulterError) {
+        sendError(
+          res,
+          error.code === 'LIMIT_FILE_SIZE' ? 413 : 400,
+          error.code === 'LIMIT_FILE_SIZE'
+            ? 'Tệp vượt quá giới hạn 5 MB'
+            : 'Chỉ gửi một tệp ở trường file'
+        );
+        return;
+      }
+      if (error) {
+        sendError(res, 400, 'Dữ liệu tải tệp không hợp lệ');
+        return;
+      }
+      next();
+    });
+  }, async (req, res, next) => {
+    const file = req.file;
+    if (!file) {
+      sendError(res, 400, 'Vui lòng chọn tệp ảnh ở trường file');
+      return;
+    }
+    const ext = path.extname(file.originalname).toLowerCase();
+    const png = file.buffer.subarray(0, 8).equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]));
+    const jpeg = file.buffer.length > 3 && file.buffer[0] === 255 && file.buffer[1] === 216 && file.buffer[2] === 255;
+    if (!((png && ext === '.png' && file.mimetype === 'image/png') ||
+          (jpeg && ['.jpg', '.jpeg'].includes(ext) && file.mimetype === 'image/jpeg'))) {
+      sendError(res, 415, 'Chỉ nhận ảnh PNG/JPEG thật; nội dung, đuôi tệp và MIME phải khớp');
+      return;
+    }
+    let output: Buffer;
+    try {
+      output = await sharp(file.buffer, { limitInputPixels: 16000000, failOn: 'warning' })
+        .rotate()
+        .png()
+        .toBuffer();
+    } catch {
+      sendError(res, 415, 'Không đọc được ảnh: tệp giả, bị hỏng hoặc vượt giới hạn 16 triệu điểm ảnh');
+      return;
+    }
+    if (output.length > MAX_UPLOAD_BYTES) {
+      sendError(res, 413, 'Ảnh sau xử lý vượt quá giới hạn 5 MB');
+      return;
+    }
+
+    const id = randomUUID();
+    try {
+      await mkdir(publicRoot, { recursive: true, mode: 0o755 });
+      await writeFile(path.join(publicRoot, `${id}.png`), output, { flag: 'wx', mode: 0o644 });
+      const hostUrl = (process.env.APP_URL || `${req.protocol}://${req.get('host')}`).replace(/\/+$/, '');
+      const url = `${hostUrl}/api/v1/uploads/public/${id}.png`;
+      sendSuccess(res, 201, 'Tải ảnh công khai thành công', {
+        id,
+        fileName: `${id}.png`,
+        url,
+      });
+    } catch (error) {
+      next(error);
+    }
+  });
 
   router.post('/', (req, res, next) => {
     parse(req, res, (error: unknown) => {

@@ -117,6 +117,16 @@ export const uploadApi = {
     });
     return res.data?.data || res.data;
   },
+  uploadPublicImage: async (
+    file: File,
+  ): Promise<{ id: string; fileName: string; url: string }> => {
+    const formData = new FormData();
+    formData.append("file", file);
+    const res = await api.post("/uploads/public", formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+    return res.data?.data || res.data;
+  },
 };
 
 // --- Campaign APIs ---

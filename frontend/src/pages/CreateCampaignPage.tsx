@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { campaignApi } from "../services/api";
+import { campaignApi, uploadApi } from "../services/api";
 import {
   campaignPath,
   errorMessage,
@@ -61,6 +61,27 @@ function CampaignForm({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [organizer, setOrganizer] = useState(c?.organizerType || "INDIVIDUAL");
+  const [coverUrl, setCoverUrl] = useState<string>(c?.coverImageUrl || "");
+  const [uploadingImage, setUploadingImage] = useState(false);
+
+  async function handleImageFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Ảnh không được vượt quá 5MB");
+      return;
+    }
+    setUploadingImage(true);
+    try {
+      const res = await uploadApi.uploadPublicImage(file);
+      setCoverUrl(res.url);
+      toast.success("Tải ảnh từ máy tính thành công!");
+    } catch (err) {
+      toast.error(errorMessage(err) || "Không thể tải ảnh lên máy chủ");
+    } finally {
+      setUploadingImage(false);
+    }
+  }
   async function submit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (busy) return;
@@ -180,16 +201,83 @@ function CampaignForm({
           />
         </Field>
         <Field
-          label="URL ảnh bìa công khai"
-          hint="Dùng đường dẫn HTTPS có thể xem công khai. Ảnh KYC riêng tư không dùng làm ảnh bìa."
+          label="Ảnh bìa chiến dịch"
+          hint="Bạn có thể tải ảnh trực tiếp từ máy tính (PNG/JPEG tối đa 5MB) hoặc nhập URL công khai."
         >
-          <input
-            name="coverImageUrl"
-            type="url"
-            pattern="https?://.*"
-            required
-            defaultValue={c?.coverImageUrl}
-          />
+          <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "12px", flexWrap: "wrap" }}>
+              <label
+                className="button secondary"
+                style={{
+                  cursor: uploadingImage || busy ? "not-allowed" : "pointer",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "6px",
+                  padding: "8px 16px",
+                  borderRadius: "6px",
+                  border: "1px solid #ccc",
+                  backgroundColor: "#f8f9fa",
+                  fontWeight: 500,
+                  fontSize: "0.95rem",
+                }}
+              >
+                {uploadingImage ? "⏳ Đang tải ảnh lên..." : "📁 Chọn ảnh từ máy tính"}
+                <input
+                  type="file"
+                  accept="image/png,image/jpeg,image/jpg"
+                  style={{ display: "none" }}
+                  disabled={uploadingImage || busy}
+                  onChange={handleImageFileChange}
+                />
+              </label>
+
+              {coverUrl && (
+                <button
+                  type="button"
+                  style={{
+                    background: "none",
+                    border: "none",
+                    color: "#dc3545",
+                    cursor: "pointer",
+                    textDecoration: "underline",
+                    fontSize: "0.9rem",
+                  }}
+                  onClick={() => setCoverUrl("")}
+                >
+                  Xóa ảnh đã chọn
+                </button>
+              )}
+            </div>
+
+            {coverUrl && (
+              <div
+                style={{
+                  width: "100%",
+                  maxWidth: "400px",
+                  borderRadius: "8px",
+                  overflow: "hidden",
+                  border: "1px solid #e2e8f0",
+                  marginTop: "4px",
+                }}
+              >
+                <img
+                  src={coverUrl}
+                  alt="Ảnh bìa xem trước"
+                  style={{ width: "100%", height: "200px", objectFit: "cover", display: "block" }}
+                />
+              </div>
+            )}
+
+            <input
+              name="coverImageUrl"
+              type="text"
+              required
+              value={coverUrl}
+              onChange={(e) => setCoverUrl(e.target.value)}
+              placeholder="Hoặc dán đường dẫn ảnh https://..."
+              style={{ width: "100%" }}
+            />
+          </div>
         </Field>
         {!c && (
           <Field label="URL ảnh minh chứng (mỗi dòng một đường dẫn)">
