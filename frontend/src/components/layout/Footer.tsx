@@ -59,7 +59,7 @@ export default function Footer() {
       </div>
       <div className="container footer-bottom">
         <p>© {new Date().getFullYear()} FundTrust</p>
-        <p>Minh bạch trong từng đóng góp.</p>
+        <p>Nhóm 9 · CSE702051 · Dữ liệu mô phỏng phục vụ mục đích học tập.</p>
       </div>
     </footer>
   );

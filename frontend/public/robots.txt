@@ -1,0 +1,8 @@
+User-agent: *
+Disallow: /admin
+Disallow: /dashboard
+Disallow: /profile
+Disallow: /notifications
+Disallow: /donations
+Disallow: /activity-logs
+Sitemap: http://localhost:5173/sitemap.xml
