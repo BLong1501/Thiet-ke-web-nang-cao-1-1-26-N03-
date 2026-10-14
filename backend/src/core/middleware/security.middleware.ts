@@ -40,7 +40,11 @@ export function sanitizeValue(value: any): any {
  */
 export const xssSanitizer = (req: Request, _res: Response, next: NextFunction): void => {
   if (req.body && typeof req.body === "object") {
+    // Profile bio is plain text, rendered through React/textarea, never HTML.
+    // Preserve it so code samples remain visible as text instead of silently disappearing.
+    const plainBio = req.method === 'PUT' && req.path === '/api/v1/profile/me' && typeof req.body.bio === 'string' ? req.body.bio : undefined;
     req.body = sanitizeValue(req.body);
+    if (plainBio !== undefined) req.body.bio = plainBio;
   }
 
   if (req.query && typeof req.query === "object") {

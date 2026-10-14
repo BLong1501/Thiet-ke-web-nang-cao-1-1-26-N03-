@@ -80,12 +80,12 @@ async function main(){
       const login=await hit('/auth/login','','POST',{email:'donor2@gmail.com',password:process.env.DEMO_TEST_PASSWORD||'Password@123'});assert.equal(login.status,200);
       assert.equal((await hit('/donations/'+donation.id,login.data.data.accessToken)).status,403);return {owner:200,crossOwner:403};
     });
-    await extra('BM2 stored XSS sanitized',async()=>{
+    await extra('BM2 stored XSS preserved as plain text',async()=>{
       const profile=await hit('/profile/me',user);const original=profile.data.data.bio;
       try{
         const attack='<script>alert(1)</script><img src=x onerror=alert(1)>';
         const r=await hit('/profile/me',user,'PUT',{bio:attack});assert.equal(r.status,200);
-        const read=await hit('/profile/me',user);assert.ok(!/script|onerror/i.test(read.data.data.bio));return {storedWithoutExecutableMarkup:true};
+        const read=await hit('/profile/me',user);assert.equal(read.data.data.bio,attack);return {storedAsPlainText:true,browserExecutionCheck:'session09-browser-audit.cjs'};
       }finally{await hit('/profile/me',user,'PUT',{bio:original||''});}
     });
     await extra('BM9 production masks internal errors',async()=>{
