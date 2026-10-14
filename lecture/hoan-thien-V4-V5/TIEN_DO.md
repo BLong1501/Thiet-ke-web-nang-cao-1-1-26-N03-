@@ -23,6 +23,8 @@ Nguồn yêu cầu: Sổ tay thực hành 10 buổi CSE702051, trang 39–54; t�
 
 ## Tiếp tục sau gián đoạn
 
+Đợt bổ sung Buổi 8 V4 / Buổi 9 V5 ngày 14/10/2026: có bộ security 12/12 trong scope script, ma trận 124/124, ảnh report HTTP/MySQL thật và ảnh Chrome thật. Axe 6 trang nối MySQL: 0 violation; Lighthouse trang chủ local Accessibility100/SEO100; hai luồng bàn phím đạt; hồi quy50/50 và tsc thành công. Hồ sơ mới ở lecture/buoi8/V4 và lecture/buoi9/V5. Cookie Chrome có properties thật nhưng vẫn cần ảnh22 tab Application; curl local không thay ảnh26 trên HTTPS. Không kết luận mọi rủi ro toàn hệ thống đã hoàn tất từ các kịch bản cụ thể này.
+
 Đọc file này trước, xem git log và evidence. Chạy backend/scripts/v4-v5-check.ts chỉ trên local. Không chạy seed/reset/kiểm thử ghi dữ liệu vào Aiven. Không apply toàn bộ stash cũ vì module reports hiện là tố giác. .env và các bản backup .env không được commit. Chỉ chọn file cụ thể khi git add.
 
 ## Xem và nộp

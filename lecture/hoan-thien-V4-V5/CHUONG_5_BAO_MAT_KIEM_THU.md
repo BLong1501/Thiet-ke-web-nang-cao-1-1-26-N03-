@@ -17,7 +17,7 @@ Production buộc khóa JWT riêng biệt có ít nhất 32 ký tự; không s�
 | Mã | Biện pháp/vị trí code | Kiểm chứng và giới hạn | Ảnh cần nộp |
 |---|---|---|---|
 | BM1 SQL injection | Prisma và Prisma.sql trong analytics; whitelist kind | TC-20 trả kết quả rỗng, không lộ SQL. Chưa thử toàn bộ search/path trong dự án. | 16 |
-| BM2 XSS | React escape đầu ra; security.middleware sanitize; CSP | security-supplement kiểm tra lưu/đọc bio không có script/onerror. Cần ảnh trình duyệt mở lại nội dung và kiểm tra mọi chỗ render HTML. | 17 |
+| BM2 XSS | React escape đầu ra; bio là plain text; các trường markup khác qua sanitizer; CSP | Đợt Buổi 8 mới giữ script/onerror nguyên dạng trong bio, lưu/đọc thật và mở lại bằng Chrome: không dialog. Ảnh ứng dụng ở lecture/buoi9/V5/evidence/Anh_17_XSS_plain_text.png. | 17 |
 | BM3 CSRF | Exact Origin whitelist, Bearer giảm rủi ro gửi tự động, cookie SameSite; cookie thiếu Origin bị 403 | TC-19 domain localhost.attacker.example bị 403. Cần kiểm trên tên miền online và mô hình cookie thực tế trước nghiệm thu. | 18 |
 | BM4 IDOR | object-access và kiểm quyền service; upload owner | Donor khác đọc donation bị 403, chủ đọc 200; upload test kiểm người khác bị 403. Không thay cho mọi đối tượng trong hệ thống. | 19 |
 | BM5 Phân quyền | authenticate/authorize, route admin analytics | TC-18 USER bị 403; bộ hồi quy Auth/KYC đã có. Cần bảng tất cả ô Không theo ma trận mới. | 20 |

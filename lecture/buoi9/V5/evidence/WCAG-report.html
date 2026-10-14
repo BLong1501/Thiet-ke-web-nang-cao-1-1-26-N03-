@@ -1,0 +1,16 @@
+<!doctype html><html lang="vi"><meta charset="UTF-8"><title>Bằng chứng thực tế WCAG</title><style>body{font:16px Arial,sans-serif;color:#17243b;background:#f4f7fb;margin:0;padding:32px}main{max-width:1300px;margin:auto;background:white;padding:28px;border:1px solid #dce4ef;border-radius:12px}h1{font-size:25px}h2{font-size:22px}p{line-height:1.5}pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#eef3f9;padding:18px;font:15px Consolas,monospace}table{border-collapse:collapse;width:100%;font-size:14px}th,td{border:1px solid #dce4ef;padding:10px;text-align:left;overflow-wrap:anywhere}th{background:#e8f0fc}strong{color:#075b3a}</style><main><h1>Báo cáo kiểm chứng tự động · Buổi 8 V4 / Buổi 9 V5</h1><p>Đây là báo cáo từ request, query và Chrome chạy thật; LOCAL, không phải bằng chứng trực tuyến. Không chứa token hay cookie value.</p><h2>Ảnh 30 — Kết quả axe WCAG 2.1 A/AA</h2><p>Quét trình duyệt thật nối API/MySQL local. Axe không cung cấp điểm Lighthouse; không tự tạo điểm số.</p><table><tr><th>URL thật</th><th>Vai trò</th><th>Thời điểm</th><th>Rule đạt</th><th>Violation</th><th>Cần kiểm thủ công</th></tr><tr><td>http://localhost:5173/</td><td>GUEST</td><td>2026-10-14T07:02:16.472Z</td><td>26</td><td>0</td><td>1</td></tr><tr><td>http://localhost:5173/login</td><td>GUEST</td><td>2026-10-14T07:02:18.130Z</td><td>23</td><td>0</td><td>0</td></tr><tr><td>http://localhost:5173/profile</td><td>USER</td><td>2026-10-14T07:02:19.408Z</td><td>26</td><td>0</td><td>1</td></tr><tr><td>http://localhost:5173/admin</td><td>ADMIN</td><td>2026-10-14T07:02:21.238Z</td><td>23</td><td>0</td><td>0</td></tr><tr><td>http://localhost:5173/admin/analytics</td><td>ADMIN</td><td>2026-10-14T07:02:22.918Z</td><td>30</td><td>0</td><td>1</td></tr><tr><td>http://localhost:5173/admin/categories</td><td>ADMIN</td><td>2026-10-14T07:02:24.057Z</td><td>27</td><td>0</td><td>0</td></tr></table><pre>[
+  {
+    &quot;flow&quot;: &quot;Login using Tab/type/Enter only&quot;,
+    &quot;result&quot;: &quot;PASS&quot;,
+    &quot;url&quot;: &quot;http://localhost:5173/dashboard&quot;,
+    &quot;role&quot;: &quot;USER&quot;,
+    &quot;time&quot;: &quot;2026-10-14T07:02:11.838Z&quot;
+  },
+  {
+    &quot;flow&quot;: &quot;Profile edit/save/reload using Tab/type/Enter&quot;,
+    &quot;result&quot;: &quot;PASS&quot;,
+    &quot;url&quot;: &quot;http://localhost:5173/profile&quot;,
+    &quot;role&quot;: &quot;USER&quot;,
+    &quot;time&quot;: &quot;2026-10-14T07:02:13.586Z&quot;
+  }
+]</pre><p>Kết quả chi tiết và selector lỗi: browser-audit.json.</p></main></html>

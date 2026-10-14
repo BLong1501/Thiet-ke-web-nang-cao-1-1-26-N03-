@@ -1,0 +1,156 @@
+{
+  "environment": "LOCAL",
+  "generatedAt": "2026-10-14T07:02:24.071Z",
+  "scope": "Real browser, API and MySQL; no intercepted network responses",
+  "results": [
+    {
+      "url": "http://localhost:5173/",
+      "role": "GUEST",
+      "time": "2026-10-14T07:02:16.472Z",
+      "metadata": {
+        "title": "Gây quỹ cộng đồng minh bạch — FundTrust",
+        "description": "FundTrust công khai chiến dịch đã được duyệt, ghi nhận đóng góp khi máy chủ xác nhận và lưu từng khoản giải ngân kèm chứng từ.",
+        "canonical": "http://localhost:5173/"
+      },
+      "passes": 26,
+      "violations": [],
+      "incomplete": [
+        {
+          "id": "color-contrast",
+          "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds"
+        }
+      ]
+    },
+    {
+      "url": "http://localhost:5173/login",
+      "role": "GUEST",
+      "time": "2026-10-14T07:02:18.130Z",
+      "metadata": {
+        "title": "Chào mừng bạn trở lại — FundTrust",
+        "description": "FundTrust — Kết nối lòng tốt. Khám phá chiến dịch, đóng góp và theo dõi việc sử dụng quỹ minh bạch.",
+        "canonical": "http://localhost:5173/login"
+      },
+      "passes": 23,
+      "violations": [],
+      "incomplete": []
+    },
+    {
+      "url": "http://localhost:5173/profile",
+      "role": "USER",
+      "time": "2026-10-14T07:02:19.408Z",
+      "metadata": {
+        "title": "Hồ sơ của bạn — FundTrust",
+        "description": "Quản lý tài khoản, xác minh danh tính và theo dõi đóng góp.",
+        "canonical": "http://localhost:5173/profile",
+        "robots": "noindex,nofollow"
+      },
+      "passes": 26,
+      "violations": [],
+      "incomplete": [
+        {
+          "id": "color-contrast",
+          "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds"
+        }
+      ]
+    },
+    {
+      "url": "http://localhost:5173/admin",
+      "role": "ADMIN",
+      "time": "2026-10-14T07:02:21.238Z",
+      "metadata": {
+        "title": "Trung tâm quản trị — FundTrust",
+        "description": "Xét duyệt nội dung và theo dõi hoạt động của hệ thống.",
+        "canonical": "http://localhost:5173/admin",
+        "robots": "noindex,nofollow"
+      },
+      "passes": 23,
+      "violations": [],
+      "incomplete": []
+    },
+    {
+      "url": "http://localhost:5173/admin/analytics",
+      "role": "ADMIN",
+      "time": "2026-10-14T07:02:22.918Z",
+      "metadata": {
+        "title": "Báo cáo thống kê — FundTrust",
+        "description": "Ba báo cáo từ sổ cái, lọc theo thời gian và xuất CSV.",
+        "canonical": "http://localhost:5173/admin/analytics",
+        "robots": "noindex,nofollow"
+      },
+      "passes": 30,
+      "violations": [],
+      "incomplete": [
+        {
+          "id": "color-contrast",
+          "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds"
+        }
+      ]
+    },
+    {
+      "url": "http://localhost:5173/admin/categories",
+      "role": "ADMIN",
+      "time": "2026-10-14T07:02:24.057Z",
+      "metadata": {
+        "title": "Quản lý danh mục — FundTrust",
+        "description": "FundTrust — Kết nối lòng tốt. Khám phá chiến dịch, đóng góp và theo dõi việc sử dụng quỹ minh bạch.",
+        "canonical": "http://localhost:5173/admin/categories",
+        "robots": "noindex,nofollow"
+      },
+      "passes": 27,
+      "violations": [],
+      "incomplete": []
+    }
+  ],
+  "publicFiles": [
+    {
+      "url": "http://localhost:5173/robots.txt",
+      "status": 200,
+      "role": "GUEST",
+      "time": "2026-10-14T07:02:24.066Z",
+      "body": "User-agent: *\nDisallow: /admin\nDisallow: /dashboard\nDisallow: /profile\nDisallow: /notifications\nDisallow: /donations\nDisallow: /activity-logs\nSitemap: http://localhost:5173/sitemap.xml\n"
+    },
+    {
+      "url": "http://localhost:5173/sitemap.xml",
+      "status": 200,
+      "role": "GUEST",
+      "time": "2026-10-14T07:02:24.071Z",
+      "body": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\"><url><loc>http://localhost:5173/</loc></url><url><loc>http://localhost:5173/campaigns</loc></url><url><loc>http://localhost:5173/how-it-works</loc></url><url><loc>http://localhost:5173/community</loc></url></urlset>\n"
+    }
+  ],
+  "keyboard": [
+    {
+      "flow": "Login using Tab/type/Enter only",
+      "result": "PASS",
+      "url": "http://localhost:5173/dashboard",
+      "role": "USER",
+      "time": "2026-10-14T07:02:11.838Z"
+    },
+    {
+      "flow": "Profile edit/save/reload using Tab/type/Enter",
+      "result": "PASS",
+      "url": "http://localhost:5173/profile",
+      "role": "USER",
+      "time": "2026-10-14T07:02:13.586Z"
+    }
+  ],
+  "xss": {
+    "url": "http://localhost:5173/profile",
+    "role": "USER",
+    "dialogs": 0,
+    "payload": "<script>alert(1)</script><img src=x onerror=alert(1)>",
+    "result": "PASS"
+  },
+  "cookie": {
+    "name": "refreshToken",
+    "httpOnly": true,
+    "secure": false,
+    "sameSite": "Strict",
+    "path": "/",
+    "expires": 1794553331.70168,
+    "value": "REDACTED",
+    "origin": "http://localhost:5173",
+    "role": "USER",
+    "time": "2026-10-14T07:02:24.059Z",
+    "note": "Actual Chrome cookie properties on local development; not a DevTools Application-tab screenshot or online Secure proof"
+  }
+}
