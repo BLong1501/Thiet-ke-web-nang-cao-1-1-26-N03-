@@ -1,0 +1,13 @@
+<!doctype html><html lang="vi"><meta charset="UTF-8"><title>Bằng chứng thực tế COOKIE</title><style>body{font:16px Arial,sans-serif;color:#17243b;background:#f4f7fb;margin:0;padding:32px}main{max-width:1300px;margin:auto;background:white;padding:28px;border:1px solid #dce4ef;border-radius:12px}h1{font-size:25px}h2{font-size:22px}p{line-height:1.5}pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#eef3f9;padding:18px;font:15px Consolas,monospace}table{border-collapse:collapse;width:100%;font-size:14px}th,td{border:1px solid #dce4ef;padding:10px;text-align:left;overflow-wrap:anywhere}th{background:#e8f0fc}strong{color:#075b3a}</style><main><h1>Báo cáo kiểm chứng tự động · Buổi 8 V4 / Buổi 9 V5</h1><p>Đây là báo cáo từ request, query và Chrome chạy thật; LOCAL, không phải bằng chứng trực tuyến. Không chứa token hay cookie value.</p><h2>BM7 — Thuộc tính cookie do Chrome đọc thật</h2><pre>{
+  &quot;name&quot;: &quot;refreshToken&quot;,
+  &quot;httpOnly&quot;: true,
+  &quot;secure&quot;: false,
+  &quot;sameSite&quot;: &quot;Strict&quot;,
+  &quot;path&quot;: &quot;/&quot;,
+  &quot;expires&quot;: 1794553331.70168,
+  &quot;value&quot;: &quot;REDACTED&quot;,
+  &quot;origin&quot;: &quot;http://localhost:5173&quot;,
+  &quot;role&quot;: &quot;USER&quot;,
+  &quot;time&quot;: &quot;2026-10-14T07:02:24.059Z&quot;,
+  &quot;note&quot;: &quot;Actual Chrome cookie properties on local development; not a DevTools Application-tab screenshot or online Secure proof&quot;
+}</pre><p>Cần bổ sung ảnh tab Application khi triển khai.</p></main></html>

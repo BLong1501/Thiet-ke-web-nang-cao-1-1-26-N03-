@@ -1,0 +1,25 @@
+<!doctype html><html lang="vi"><meta charset="UTF-8"><title>Bằng chứng thực tế BM6</title><style>body{font:16px Arial,sans-serif;color:#17243b;background:#f4f7fb;margin:0;padding:32px}main{max-width:1300px;margin:auto;background:white;padding:28px;border:1px solid #dce4ef;border-radius:12px}h1{font-size:25px}h2{font-size:22px}p{line-height:1.5}pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#eef3f9;padding:18px;font:15px Consolas,monospace}table{border-collapse:collapse;width:100%;font-size:14px}th,td{border:1px solid #dce4ef;padding:10px;text-align:left;overflow-wrap:anywhere}th{background:#e8f0fc}strong{color:#075b3a}</style><main><h1>Báo cáo kiểm chứng tự động · Buổi 8 V4 / Buổi 9 V5</h1><p>Đây là báo cáo từ request, query và Chrome chạy thật; LOCAL, không phải bằng chứng trực tuyến. Không chứa token hay cookie value.</p><h2>BM6 — MySQL password hashes and no API disclosure</h2><p>Trạng thái thực tế: <strong>PASS</strong> · 2026-10-14T06:48:34.863Z</p><pre>{
+  &quot;query&quot;: &quot;SELECT email,password_hash FROM users WHERE email IN (three demo accounts)&quot;,
+  &quot;rows&quot;: [
+    {
+      &quot;email&quot;: &quot;admin@crowdfunding.vn&quot;,
+      &quot;prefix&quot;: &quot;$2b$10$&quot;,
+      &quot;hashLength&quot;: 60,
+      &quot;hashTail&quot;: &quot;REDACTED&quot;
+    },
+    {
+      &quot;email&quot;: &quot;donor1@gmail.com&quot;,
+      &quot;prefix&quot;: &quot;$2b$10$&quot;,
+      &quot;hashLength&quot;: 60,
+      &quot;hashTail&quot;: &quot;REDACTED&quot;
+    },
+    {
+      &quot;email&quot;: &quot;fundraiser@gmail.com&quot;,
+      &quot;prefix&quot;: &quot;$2b$10$&quot;,
+      &quot;hashLength&quot;: 60,
+      &quot;hashTail&quot;: &quot;REDACTED&quot;
+    }
+  ],
+  &quot;time&quot;: &quot;2026-10-14T06:48:34.863Z&quot;,
+  &quot;role&quot;: &quot;LOCAL DB TEST OPERATOR&quot;
+}</pre></main></html>
