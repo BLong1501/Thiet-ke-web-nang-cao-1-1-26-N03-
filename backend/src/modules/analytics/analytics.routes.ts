@@ -16,6 +16,13 @@ export function encodeCsv(rows: any[]) {
   return '\uFEFF'+[['Nhóm','Số khoản có bút toán','Đã thu VND','Đã hoàn VND','Ròng VND'],...rows.map(r=>[r.label,r.donations,r.received,r.refunded,r.net])].map(row=>row.map(cell).join(',')).join('\r\n')+'\r\n';
 }
 analyticsRouter.use(authenticate,authorize('ADMIN'));
+analyticsRouter.use(async(req,res,next)=>{
+  try{
+    const actor=await prisma.user.findUnique({where:{id:req.user!.userId},select:{role:true,status:true,isEmailVerified:true}});
+    if(!actor||actor.role!=='ADMIN'||actor.status!=='ACTIVE'||!actor.isEmailVerified){sendError(res,403,'Quyền quản trị hiện tại không hợp lệ');return;}
+    next();
+  }catch(e){next(e);}
+});
 analyticsRouter.get('/:kind',async(req,res,next)=>{
   try {
     const kind=String(req.params.kind);

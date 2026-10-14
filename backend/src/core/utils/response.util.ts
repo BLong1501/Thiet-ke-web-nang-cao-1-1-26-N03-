@@ -6,6 +6,7 @@ export interface ApiResponse<T = any> {
   data?: T;
   meta?: any;
   errors?: any;
+  requestId?: string;
 }
 
 export const sendSuccess = <T>(
@@ -43,6 +44,7 @@ export const sendError = (
   const responsePayload: ApiResponse = {
     success: false,
     message,
+    requestId: res.getHeader('X-Request-Id')?.toString(),
     ...(errors !== undefined && { errors }),
   };
 

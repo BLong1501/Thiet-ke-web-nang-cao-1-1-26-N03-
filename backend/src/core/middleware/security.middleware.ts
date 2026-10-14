@@ -120,6 +120,9 @@ export const csrfProtection = (req: Request, res: Response, next: NextFunction):
     }
   }
 
+  if (!origin && (req.cookies?.accessToken || req.cookies?.refreshToken)) {
+    return sendError(res,403,'Yêu cầu dùng cookie phải có Origin/Referer hợp lệ');
+  }
   next();
 };
 
