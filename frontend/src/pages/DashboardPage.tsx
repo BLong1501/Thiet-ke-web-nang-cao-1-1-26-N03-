@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, Navigate } from "react-router-dom";
 import { campaignApi, formatCurrency } from "../services/api";
 import { campaignPath, listResult } from "../services/platform";
 import { useRemote } from "../hooks/useRemote";
@@ -16,9 +16,14 @@ import Tabs from "../components/ui/Tabs";
 import DonationHistory from "../components/DonationHistory";
 export default function DashboardPage() {
   const user = useAuthStore((s) => s.user);
-  const fundraiser = ["ADMIN", "FUNDRAISER"].includes(
-    user?.role?.toUpperCase() || "",
-  );
+  const role = user?.role?.toUpperCase();
+
+  // Admin không dùng bảng điều khiển của gây quỹ/nhà hảo tâm, tự chuyển hướng về /admin
+  if (role === "ADMIN") {
+    return <Navigate to="/admin" replace />;
+  }
+
+  const fundraiser = role === "FUNDRAISER";
   const [tab, setTab] = useState(fundraiser ? "campaigns" : "donations");
   return (
     <Page

@@ -21,9 +21,26 @@ export default function CreateCampaignPage() {
     return { categories, campaign };
   }, [id]);
   const user = useAuthStore((s) => s.user);
+  const role = user?.role?.toUpperCase();
+
+  if (role === "ADMIN") {
+    return (
+      <Page title="Không có quyền truy cập">
+        <Notice error>
+          Tài khoản Quản trị viên không thể tạo hoặc chỉnh sửa chiến dịch cá nhân.
+          Vui lòng sử dụng trang Quản trị để kiểm duyệt chiến dịch.
+        </Notice>
+        <p>
+          <Link className="button" to="/admin/campaigns">
+            Đến trang Quản lý chiến dịch (Admin)
+          </Link>
+        </p>
+      </Page>
+    );
+  }
+
   const canEdit =
     !result.data?.campaign ||
-    user?.role?.toUpperCase() === "ADMIN" ||
     (result.data.campaign.fundraiserId === user?.id &&
       ["DRAFT", "PENDING_APPROVAL"].includes(result.data.campaign.status));
   return (

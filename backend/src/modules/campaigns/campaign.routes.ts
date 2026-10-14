@@ -40,7 +40,7 @@ router.get(
 router.get(
   "/my/list",
   authenticate,
-  authorize(UserRole.FUNDRAISER, UserRole.ADMIN),
+  authorize(UserRole.FUNDRAISER),
   campaignController.getMyCampaigns
 );
 
@@ -48,7 +48,7 @@ router.get(
 router.post(
   "/",
   authenticate,
-  authorize(UserRole.FUNDRAISER, UserRole.ADMIN),
+  authorize(UserRole.FUNDRAISER),
   validate(createCampaignSchema),
   campaignController.createCampaign
 );
@@ -57,7 +57,7 @@ router.post(
 router.put(
   "/:id",
   authenticate,
-  authorize(UserRole.FUNDRAISER, UserRole.ADMIN),
+  authorize(UserRole.FUNDRAISER),
   validate(updateCampaignSchema),
   campaignController.updateCampaign
 );
@@ -66,7 +66,7 @@ router.put(
 router.post(
   "/:id/media",
   authenticate,
-  authorize(UserRole.FUNDRAISER, UserRole.ADMIN),
+  authorize(UserRole.FUNDRAISER),
   validate(addMediaSchema),
   campaignController.addMedia
 );
@@ -75,7 +75,7 @@ router.post(
 router.post(
   "/:id/updates",
   authenticate,
-  authorize(UserRole.FUNDRAISER, UserRole.ADMIN),
+  authorize(UserRole.FUNDRAISER),
   validate(createUpdateSchema),
   campaignController.addUpdate
 );
@@ -84,7 +84,7 @@ router.post(
 router.post(
   "/:id/disbursements",
   authenticate,
-  authorize(UserRole.FUNDRAISER, UserRole.ADMIN),
+  authorize(UserRole.FUNDRAISER),
   validate(createDisbursementSchema),
   campaignController.addDisbursement
 );
