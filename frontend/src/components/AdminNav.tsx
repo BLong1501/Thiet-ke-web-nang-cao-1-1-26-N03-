@@ -1,5 +1,4 @@
-import { useEffect, useRef } from "react";
-import { NavLink, useLocation } from "react-router-dom";
+import { NavLink } from "react-router-dom";
 import type { IconType } from "react-icons";
 import {
   LuFlag,
@@ -19,28 +18,19 @@ const ITEMS: [to: string, label: string, icon: IconType][] = [
   ["/admin/users", "Người dùng", LuUsers],
   ["/admin/categories", "Danh mục", LuTags],
   ["/admin/donations", "Giao dịch", LuReceipt],
-  ["/admin/reports", "Báo cáo", LuFlag],
+  ["/admin/reports", "Báo cáo vi phạm", LuFlag],
   ["/admin/activity-logs", "Nhật ký hệ thống", LuHistory],
 ];
 
-export default function AdminNav() {
-  const ref = useRef<HTMLElement>(null);
-  const { pathname } = useLocation();
-  useEffect(() => {
-    const nav = ref.current;
-    const active = nav?.querySelector<HTMLElement>(".active");
-    if (!nav || !active) return;
-    nav.scrollLeft =
-      active.offsetLeft - (nav.clientWidth - active.offsetWidth) / 2;
-  }, [pathname]);
+export default function AdminNav({ onNavigate }: { onNavigate?: () => void }) {
   return (
-    <nav ref={ref} className="tabs subnav admin-nav" aria-label="Quản trị">
+    <div className="admin-navigation-bar" role="navigation" aria-label="Quản trị">
       {ITEMS.map(([to, label, Icon]) => (
-        <NavLink key={to} to={to} end>
+        <NavLink key={to} to={to} end onClick={onNavigate}>
           <Icon aria-hidden="true" />
           {label}
         </NavLink>
       ))}
-    </nav>
+    </div>
   );
 }

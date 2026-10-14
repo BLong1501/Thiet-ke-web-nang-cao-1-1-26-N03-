@@ -15,6 +15,7 @@ import { errorMessage, safeUrl } from "../../services/platform";
 import { useUnreadNotifications } from "../../hooks/useUnreadNotifications";
 import { Dropdown } from "../ui/Dropdown";
 import toast from "react-hot-toast";
+import AdminNav from "../AdminNav";
 
 function initials(name: string) {
   const words = name.trim().split(/\s+/).filter(Boolean);
@@ -73,12 +74,12 @@ export default function Navbar() {
   }
 
   return (
-    <header className="site-header" ref={headerRef}>
+    <header className={isAdmin ? "site-header site-header--admin" : "site-header"} ref={headerRef}>
       <a className="skip-link" href="#main">
         Đến nội dung chính
       </a>
       <div className="container nav-inner">
-        <Link className="brand" to="/" onClick={close}>
+        <Link className="brand" to={isAdmin ? "/admin" : "/"} onClick={close}>
           <img
             className="brand-mark"
             src="/logo.png"
@@ -93,35 +94,34 @@ export default function Navbar() {
             id="primary-nav"
             className={open ? "primary-nav open" : "primary-nav"}
           >
-            <NavLink to="/campaigns" onClick={close}>
-              Chiến dịch
-            </NavLink>
-            <NavLink to="/how-it-works" onClick={close}>
-              Cách hoạt động
-            </NavLink>
-            <NavLink to="/community" onClick={close}>
-              Cộng đồng
-            </NavLink>
-            {isAuthenticated ? (
+            {isAdmin ? (
+              <AdminNav onNavigate={close} />
+            ) : (
               <>
-                <NavLink to="/dashboard" onClick={close}>
-                  Bảng điều khiển
+                <NavLink to="/campaigns" onClick={close}>
+                  Chiến dịch
                 </NavLink>
-                {isAdmin && (
-                  <NavLink to="/admin" onClick={close}>
-                    Quản trị
+                <NavLink to="/how-it-works" onClick={close}>
+                  Cách hoạt động
+                </NavLink>
+                <NavLink to="/community" onClick={close}>
+                  Cộng đồng
+                </NavLink>
+                {isAuthenticated ? (
+                  <NavLink to="/dashboard" onClick={close}>
+                    Bảng điều khiển
                   </NavLink>
+                ) : (
+                  <div className="nav-auth">
+                    <NavLink to="/login" onClick={close}>
+                      Đăng nhập
+                    </NavLink>
+                    <Link className="button" to="/register" onClick={close}>
+                      Tham gia
+                    </Link>
+                  </div>
                 )}
               </>
-            ) : (
-              <div className="nav-auth">
-                <NavLink to="/login" onClick={close}>
-                  Đăng nhập
-                </NavLink>
-                <Link className="button" to="/register" onClick={close}>
-                  Tham gia
-                </Link>
-              </div>
             )}
           </div>
           <div className="nav-actions">
