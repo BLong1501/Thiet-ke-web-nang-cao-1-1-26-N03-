@@ -1,0 +1,19 @@
+{
+  "kind": "categories",
+  "title": "Thu và hoàn theo danh mục",
+  "from": "2026-01-01",
+  "to": "2026-12-31",
+  "timezone": "Asia/Ho_Chi_Minh",
+  "generatedAt": "2026-10-14T05:56:00.561Z",
+  "note": "Dựa trên bút toán thu/hoàn theo ngày phát sinh UTC+7; ròng chưa trừ giải ngân. Số khoản đếm riêng từng nhóm; không cộng số khoản theo ngày để suy ra số người.",
+  "rows": [
+    {
+      "id": "5a0c94a0-3e00-4e06-82b0-8fade812b33a",
+      "label": "Y tế & Cứu trợ bệnh nhân",
+      "donations": 3,
+      "received": "35000000.00",
+      "refunded": "0.00",
+      "net": "35000000.00"
+    }
+  ]
+}

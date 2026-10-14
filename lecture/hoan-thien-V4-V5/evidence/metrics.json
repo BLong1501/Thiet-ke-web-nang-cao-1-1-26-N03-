@@ -1,0 +1,21 @@
+{
+  "environment": "LOCAL",
+  "api25": {
+    "run": 25,
+    "pass": 25,
+    "rate": 100
+  },
+  "wcagFixture": {
+    "pass": 9,
+    "fail": 0,
+    "criterion": "no serious/critical"
+  },
+  "wcagLiveAnalytics": {
+    "violations": 0
+  },
+  "onlineReleases": 0,
+  "onlineStatus": "DEFERRED_BY_USER",
+  "reportCount": 3,
+  "videoStatus": "NOT_RECORDED",
+  "signedChecklistStatus": "NOT_SIGNED"
+}
