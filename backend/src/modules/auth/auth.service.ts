@@ -221,7 +221,7 @@ export class AuthService {
     if (!user) {
       // Ghi nhận lần thử thất bại để ngăn chặn kẻ tấn công dò tìm tài khoản
       const attempts = await redisService.recordFailedLoginAttempt(email, 600);
-      if (attempts >= 5) {
+      if (attempts > 5) {
         await redisService.lockAccount(email, 600);
         const error: any = new Error(
           "Tài khoản đã bị tạm khóa đăng nhập trong 10 phút do nhập sai quá 5 lần liên tiếp. Vui lòng thử lại sau 10 phút."
@@ -260,7 +260,7 @@ export class AuthService {
     if (!isPasswordValid) {
       // Ghi nhận lần nhập sai mật khẩu (cửa sổ 10 phút = 600s)
       const attempts = await redisService.recordFailedLoginAttempt(email, 600);
-      if (attempts >= 5) {
+      if (attempts > 5) {
         await redisService.lockAccount(email, 600);
         const error: any = new Error(
           "Tài khoản đã bị tạm khóa đăng nhập trong 10 phút do nhập sai mật khẩu quá 5 lần liên tiếp. Vui lòng thử lại sau 10 phút."
@@ -268,7 +268,7 @@ export class AuthService {
         error.statusCode = 429;
         throw error;
       }
-      const remainingAttempts = 5 - attempts;
+      const remainingAttempts = Math.max(0, 5 - attempts);
       const error: any = new Error(
         `Email hoặc mật khẩu không chính xác. Bạn còn ${remainingAttempts} lần thử trước khi tài khoản bị khóa tạm 10 phút.`
       );

@@ -76,11 +76,24 @@ app.use("/api/v1/communities", communityRouter);
 
 import { sendError } from "./core/utils/response.util";
 
-// Middleware xử lý lỗi tập trung (Global Error Handler)
+// Middleware xử lý lỗi tập trung (Global Error Handler - Bảo vệ BM9: Không rò rỉ thông tin qua thông báo lỗi)
 app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
   const statusCode = err.statusCode || err.status || 500;
-  const message = err.message || "Đã xảy ra lỗi máy chủ nội bộ";
-  return sendError(res, statusCode, message, err.errors);
+  
+  // Ghi nhật ký chi tiết lỗi tại phía máy chủ
+  if (statusCode >= 500) {
+    console.error(`[INTERNAL_SERVER_ERROR ${new Date().toISOString()}]:`, err);
+  }
+
+  // Trên môi trường production, che giấu hoàn toàn chi tiết lỗi 500 để tránh rò rỉ schema / database / stack trace
+  const isProduction = process.env.NODE_ENV === "production";
+  const clientMessage =
+    statusCode >= 500 && isProduction
+      ? "Đã xảy ra lỗi hệ thống nội bộ. Vui lòng thử lại sau hoặc liên hệ ban quản trị."
+      : (err.message || "Đã xảy ra lỗi máy chủ nội bộ");
+
+  const errors = isProduction && statusCode >= 500 ? undefined : err.errors;
+  return sendError(res, statusCode, clientMessage, errors);
 });
 
 export default app;
