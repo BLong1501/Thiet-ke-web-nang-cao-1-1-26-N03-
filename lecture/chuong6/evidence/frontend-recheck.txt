@@ -1,0 +1,88 @@
+[WebServer] (node:20076) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 3 tests using 1 worker
+
+(node:15812) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x  1 [desktop] › tests\frontend.spec.ts:393:1 › campaign creation validates and posts the backend contract (30.2s)
+(node:16860) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok 2 [desktop] › tests\frontend.spec.ts:533:1 › user activity page uses its own endpoint and cannot open admin logs (1.4s)
+  x  3 [desktop] › tests\frontend.spec.ts:572:1 › admin log navigation opens the system page, not the personal page (957ms)
+
+
+  1) [desktop] › tests\frontend.spec.ts:393:1 › campaign creation validates and posts the backend contract 
+
+    Test timeout of 30000ms exceeded.
+
+    Error: locator.fill: Test timeout of 30000ms exceeded.
+    Call log:
+      - waiting for getByLabel('URL ảnh bìa công khai')
+
+
+      404 |   await page
+      405 |     .getByLabel("URL ảnh bìa công khai")
+    > 406 |     .fill("https://example.test/cover.jpg");
+          |      ^
+      407 |   await page.getByLabel("Mục tiêu (VND)").fill("1000000");
+      408 |   await page.getByLabel("Ngày kết thúc").fill("2030-12-01T12:00");
+      409 |   await page.getByLabel("Tên ngân hàng").fill("Test Bank");
+        at D:\DO_AN_WEB\Thiet-ke-web-nang-cao-1-1-26-N03-\frontend\tests\frontend.spec.ts:406:6
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results\frontend-campaign-creation-25604--posts-the-backend-contract-desktop\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\frontend-campaign-creation-25604--posts-the-backend-contract-desktop\error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results\frontend-campaign-creation-25604--posts-the-backend-contract-desktop\trace.zip
+    Usage:
+
+        npx playwright show-trace test-results\frontend-campaign-creation-25604--posts-the-backend-contract-desktop\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  2) [desktop] › tests\frontend.spec.ts:572:1 › admin log navigation opens the system page, not the personal page 
+
+    Error: expect(locator).toHaveAttribute(expected) failed
+
+    Locator: getByRole('navigation', { name: 'Điều hướng chính' }).getByRole('link', { name: 'Nhật ký hệ thống' })
+    Expected: "/admin/activity-logs"
+    Error: strict mode violation: getByRole('navigation', { name: 'Điều hướng chính' }).getByRole('link', { name: 'Nhật ký hệ thống' }) resolved to 2 elements:
+        1) <a class="active" aria-current="page" data-discover="true" href="/admin/activity-logs">…</a> aka getByRole('navigation', { name: 'Quản trị' }).getByRole('link', { name: 'Nhật ký hệ thống' })
+        2) <a class="active" aria-current="page" data-discover="true" href="/admin/activity-logs">…</a> aka getByRole('link', { name: 'Nhật ký hệ thống' }).nth(1)
+
+    Call log:
+      - Expect "toHaveAttribute" getByRole('navigation', { name: 'Điều hướng chính' }).getByRole('link', { name: 'Nhật ký hệ thống' }) with timeout 5000ms
+      - waiting for getByRole('navigation', { name: 'Điều hướng chính' }).getByRole('link', { name: 'Nhật ký hệ thống' })
+
+
+      585 |   await mainNav.getByRole("button", { name: /^Tài khoản/ }).click();
+      586 |   await expect(
+    > 587 |     mainNav.locator('.dropdown-panel').getByRole("link", { name: "Nhật ký hệ thống" }),
+          |     ^
+      588 |   ).toHaveAttribute("href", "/admin/activity-logs");
+      589 | });
+      590 |
+        at D:\DO_AN_WEB\Thiet-ke-web-nang-cao-1-1-26-N03-\frontend\tests\frontend.spec.ts:587:5
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results\frontend-admin-log-navigat-d6a30--page-not-the-personal-page-desktop\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\frontend-admin-log-navigat-d6a30--page-not-the-personal-page-desktop\error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results\frontend-admin-log-navigat-d6a30--page-not-the-personal-page-desktop\trace.zip
+    Usage:
+
+        npx playwright show-trace test-results\frontend-admin-log-navigat-d6a30--page-not-the-personal-page-desktop\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  2 failed
+    [desktop] › tests\frontend.spec.ts:393:1 › campaign creation validates and posts the backend contract 
+    [desktop] › tests\frontend.spec.ts:572:1 › admin log navigation opens the system page, not the personal page 
+  1 passed (36.3s)

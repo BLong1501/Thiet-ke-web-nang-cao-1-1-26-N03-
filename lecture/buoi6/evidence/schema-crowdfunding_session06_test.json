@@ -1,5 +1,5 @@
 {
-  "checkedAt": "2026-10-12T18:35:00.771Z",
+  "checkedAt": "2026-10-16T03:07:53.398Z",
   "database": "crowdfunding_session06_test",
   "usersPreserved": true,
   "triggers": [
@@ -9,5 +9,5 @@
     "donation_lock_financial_fields"
   ],
   "ledger": "full refund only; one entry per donation/kind",
-  "scriptSha256": "5c108eafd96c7444ade443b4ca9b66e38b08073acedb49ae879eef88c776a78b"
+  "scriptSha256": "a4ba4782396cd097668404c452f8b0cc2ef3d214ff94584d293745e416a0ea26"
 }

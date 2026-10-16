@@ -30,7 +30,11 @@ before(async () => {
   app.use((err: any, _req: express.Request, res: express.Response, _next: express.NextFunction) => { res.status(err.statusCode || 500).json({ message: err.message }); });
 });
 beforeEach(() => { filters = []; });
-after(() => { restore.reverse().forEach(fn => fn()); });
+after(async () => {
+  restore.reverse().forEach(fn => fn());
+  (await import('../src/core/database/redis')).shutdownRedis();
+  await (await import('../src/core/database/prisma')).prisma.$disconnect();
+});
 
 test('personal logs require authentication', async () => {
   const r = await request(app).get('/activity-logs/me'); assert.equal(r.status, 401); assert.equal(filters.length, 0);

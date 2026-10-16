@@ -1,0 +1,67 @@
+{
+  "environment": "LOCAL",
+  "generatedAt": "2026-10-16T03:00:35.262Z",
+  "scope": "Application HTTP, MySQL hash inspection, and one injected database failure for production masking",
+  "results": [
+    {
+      "name": "BM12 five headers",
+      "result": "PASS",
+      "detail": {
+        "content-security-policy": "default-src 'self';base-uri 'self';font-src 'self' https: data:;form-action 'self';frame-ancestors 'self';img-src 'self' data: https:;object-src 'none';script-src 'self';script-src-attr 'none';style-src 'self' 'unsafe-inline';upgrade-insecure-requests",
+        "x-frame-options": "SAMEORIGIN",
+        "x-content-type-options": "nosniff",
+        "referrer-policy": "no-referrer",
+        "strict-transport-security": "max-age=31536000; includeSubDomains"
+      }
+    },
+    {
+      "name": "BM6 bcrypt passwords",
+      "result": "PASS",
+      "detail": {
+        "count": 2,
+        "costAtLeast": 10
+      }
+    },
+    {
+      "name": "BM7 logout revokes access and refresh",
+      "result": "PASS",
+      "detail": {
+        "revoked": true,
+        "httpOnly": true,
+        "sameSite": "Strict"
+      }
+    },
+    {
+      "name": "BM10 sixth invalid login 429",
+      "result": "PASS",
+      "detail": {
+        "attempts": 6,
+        "status": 429
+      }
+    },
+    {
+      "name": "BM4 donation owner isolation",
+      "result": "PASS",
+      "detail": {
+        "owner": 200,
+        "crossOwner": 403
+      }
+    },
+    {
+      "name": "BM2 stored XSS preserved as plain text",
+      "result": "PASS",
+      "detail": {
+        "storedAsPlainText": true,
+        "browserExecutionCheck": "session09-browser-audit.cjs"
+      }
+    },
+    {
+      "name": "BM9 production masks internal errors",
+      "result": "PASS",
+      "detail": {
+        "status": 500,
+        "hasRequestId": true
+      }
+    }
+  ]
+}

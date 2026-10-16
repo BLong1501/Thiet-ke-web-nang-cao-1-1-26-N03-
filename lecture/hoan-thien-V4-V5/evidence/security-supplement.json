@@ -1,6 +1,6 @@
 {
   "environment": "LOCAL",
-  "generatedAt": "2026-10-14T05:56:02.192Z",
+  "generatedAt": "2026-10-16T03:00:35.262Z",
   "scope": "Application HTTP, MySQL hash inspection, and one injected database failure for production masking",
   "results": [
     {
@@ -48,10 +48,11 @@
       }
     },
     {
-      "name": "BM2 stored XSS sanitized",
+      "name": "BM2 stored XSS preserved as plain text",
       "result": "PASS",
       "detail": {
-        "storedWithoutExecutableMarkup": true
+        "storedAsPlainText": true,
+        "browserExecutionCheck": "session09-browser-audit.cjs"
       }
     },
     {

@@ -28,8 +28,10 @@ before(async () => {
   ({ CommunityService } = await import("../src/modules/communities/community.service"));
 });
 
-after(() => {
+after(async () => {
   restoreAudit?.();
+  (await import('../src/core/database/redis')).shutdownRedis();
+  await (await import('../src/core/database/prisma')).prisma.$disconnect();
 });
 
 function sampleCampaign(id: string, status: CampaignStatus, fundraiserId = "owner-1") {

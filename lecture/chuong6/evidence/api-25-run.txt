@@ -1,0 +1,35 @@
+◇ injected env (0) from .env // tip: ◈ secrets for agents [www.dotenvx.com]
+◇ injected env (0) from .env // tip: ⌘ custom filepath { path: '/custom/path/.env' }
+✓ Redis Client connected successfully!
+TC-01 PASS Đăng nhập ADMIN
+TC-02 PASS Đăng nhập USER
+TC-03 PASS Đăng nhập FUNDRAISER
+TC-04 PASS Danh mục thật
+TC-05 PASS Danh sách chiến dịch
+TC-06 PASS Chi tiết chiến dịch
+TC-07 PASS Hồ sơ chính mình
+TC-08 PASS Lịch sử đóng góp của tôi
+TC-09 PASS Danh sách thông báo
+TC-10 PASS Email đăng nhập sai định dạng
+TC-11 PASS Ngày không tồn tại
+TC-12 PASS Trang âm
+TC-13 PASS Giới hạn trang quá lớn
+TC-14 PASS Thiếu trường KYC
+TC-15 PASS Upload thiếu tệp
+TC-16 PASS Thiếu token
+TC-17 PASS Chữ ký token giả
+TC-18 PASS USER không được đọc thống kê admin
+TC-19 PASS CSRF domain giả chứa localhost
+TC-20 PASS SQL injection tìm kiếm
+TC-21 PASS Script đổi đuôi ảnh
+TC-22 PASS Tệp riêng tư yêu cầu đăng nhập
+TC-23 PASS Báo cáo daily và xuất CSV
+TC-24 PASS Báo cáo campaigns và xuất CSV
+TC-25 PASS Báo cáo categories và xuất CSV
+[INTERNAL_SERVER_ERROR 2026-10-16T03:00:35.256Z]: Error: SELECT secret FROM users D:/private/internal.ts
+    at Proxy.db.user.findUnique (D:\DO_AN_WEB\Thiet-ke-web-nang-cao-1-1-26-N03-\backend\scripts\v4-v5-check.ts:93:89)
+    at AuthRepository.findByEmail (D:\DO_AN_WEB\Thiet-ke-web-nang-cao-1-1-26-N03-\backend\src\modules\auth\auth.repository.ts:6:24)
+    at AuthService.login (D:\DO_AN_WEB\Thiet-ke-web-nang-cao-1-1-26-N03-\backend\src\modules\auth\auth.service.ts:220:34)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async login (D:\DO_AN_WEB\Thiet-ke-web-nang-cao-1-1-26-N03-\backend\src\modules\auth\auth.controller.ts:66:22)
+RESULT 25/25; SECURITY 7/7

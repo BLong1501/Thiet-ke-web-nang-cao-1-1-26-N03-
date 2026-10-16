@@ -1,0 +1,317 @@
+[
+  {
+    "id": "TC-01",
+    "name": "Đăng nhập ADMIN",
+    "pre": "Tài khoản mẫu admin@crowdfunding.vn đang ACTIVE và đã xác minh email.",
+    "steps": "POST /auth/login với email đúng và biến demoPassword; kiểm tra vai trò và token trả về.",
+    "expected": "HTTP 200; role=ADMIN; có accessToken; không có passwordHash.",
+    "actual": "POST 200; 2/2 xác nhận đạt",
+    "result": "PASS"
+  },
+  {
+    "id": "TC-02",
+    "name": "Đăng nhập USER",
+    "pre": "Tài khoản mẫu donor1@gmail.com đang ACTIVE và đã xác minh email.",
+    "steps": "POST /auth/login với email đúng và biến demoPassword; kiểm tra vai trò và token trả về.",
+    "expected": "HTTP 200; role=USER; có accessToken; không có passwordHash.",
+    "actual": "POST 200; 2/2 xác nhận đạt",
+    "result": "PASS"
+  },
+  {
+    "id": "TC-03",
+    "name": "Đăng nhập FUNDRAISER",
+    "pre": "Tài khoản mẫu fundraiser@gmail.com đang ACTIVE và đã xác minh email.",
+    "steps": "POST /auth/login với email đúng và biến demoPassword; kiểm tra vai trò và token trả về.",
+    "expected": "HTTP 200; role=FUNDRAISER; có accessToken; không có passwordHash.",
+    "actual": "POST 200; 2/2 xác nhận đạt",
+    "result": "PASS"
+  },
+  {
+    "id": "TC-04",
+    "name": "Danh mục công khai",
+    "pre": "CSDL local có danh mục mẫu.",
+    "steps": "GET /campaigns/categories không kèm token.",
+    "expected": "HTTP 200; mảng danh mục không rỗng.",
+    "actual": "GET 200; 2/2 xác nhận đạt",
+    "result": "PASS"
+  },
+  {
+    "id": "TC-05",
+    "name": "Danh sách chiến dịch",
+    "pre": "Có ít nhất một chiến dịch công khai.",
+    "steps": "GET /campaigns; lưu id chiến dịch đầu tiên để dùng tại TC-06.",
+    "expected": "HTTP 200; danh sách không rỗng và có meta phân trang.",
+    "actual": "GET 200; 2/2 xác nhận đạt",
+    "result": "PASS"
+  },
+  {
+    "id": "TC-06",
+    "name": "Chi tiết chiến dịch",
+    "pre": "TC-05 đã lấy được campaign.",
+    "steps": "GET /campaigns/{{campaign}}.",
+    "expected": "HTTP 200; data.id khớp campaign đã chọn.",
+    "actual": "GET 200; 2/2 xác nhận đạt",
+    "result": "PASS"
+  },
+  {
+    "id": "TC-07",
+    "name": "Hồ sơ chính mình",
+    "pre": "Token USER từ TC-02 còn hiệu lực.",
+    "steps": "GET /auth/me với Bearer USER.",
+    "expected": "HTTP 200; email đúng donor1@gmail.com; không trả passwordHash.",
+    "actual": "GET 200; 2/2 xác nhận đạt",
+    "result": "PASS"
+  },
+  {
+    "id": "TC-08",
+    "name": "Lịch sử đóng góp",
+    "pre": "USER đã đăng nhập.",
+    "steps": "GET /donations/my/history với Bearer USER.",
+    "expected": "HTTP 200; data là mảng giao dịch của người dùng.",
+    "actual": "GET 200; 2/2 xác nhận đạt",
+    "result": "PASS"
+  },
+  {
+    "id": "TC-09",
+    "name": "Thông báo cá nhân",
+    "pre": "USER đã đăng nhập.",
+    "steps": "GET /notifications với Bearer USER.",
+    "expected": "HTTP 200; data là mảng thông báo.",
+    "actual": "GET 200; 2/2 xác nhận đạt",
+    "result": "PASS"
+  },
+  {
+    "id": "TC-10",
+    "name": "Email sai định dạng",
+    "pre": "Không cần phiên đăng nhập.",
+    "steps": "POST /auth/login với email=bad và mật khẩu chuỗi.",
+    "expected": "HTTP 400; success=false.",
+    "actual": "POST 400; 2/2 xác nhận đạt",
+    "result": "PASS"
+  },
+  {
+    "id": "TC-11",
+    "name": "Ngày không tồn tại",
+    "pre": "Token ADMIN hợp lệ.",
+    "steps": "GET /admin/analytics/daily?from=2026-02-30&to=2026-03-01.",
+    "expected": "HTTP 400; từ chối ngày 30/02.",
+    "actual": "GET 400; 2/2 xác nhận đạt",
+    "result": "PASS"
+  },
+  {
+    "id": "TC-12",
+    "name": "Trang âm",
+    "pre": "Endpoint danh sách hoạt động.",
+    "steps": "GET /campaigns?page=-1.",
+    "expected": "HTTP 400; không thực hiện phân trang âm.",
+    "actual": "GET 400; 2/2 xác nhận đạt",
+    "result": "PASS"
+  },
+  {
+    "id": "TC-13",
+    "name": "Kích thước trang vượt giới hạn",
+    "pre": "Endpoint danh sách hoạt động.",
+    "steps": "GET /campaigns?limit=999999.",
+    "expected": "HTTP 400; từ chối limit vượt giới hạn.",
+    "actual": "GET 400; 2/2 xác nhận đạt",
+    "result": "PASS"
+  },
+  {
+    "id": "TC-14",
+    "name": "KYC thiếu dữ liệu",
+    "pre": "USER có quyền gửi hồ sơ.",
+    "steps": "POST /verifications/request với body {} và Bearer USER.",
+    "expected": "HTTP 400; dữ liệu thiếu trường không được chấp nhận.",
+    "actual": "POST 400; 2/2 xác nhận đạt",
+    "result": "PASS"
+  },
+  {
+    "id": "TC-15",
+    "name": "Upload thiếu tệp",
+    "pre": "USER đã đăng nhập.",
+    "steps": "POST /uploads, không gửi trường file.",
+    "expected": "HTTP 400; không báo tải lên thành công.",
+    "actual": "POST 400; 2/2 xác nhận đạt",
+    "result": "PASS"
+  },
+  {
+    "id": "TC-16",
+    "name": "Thiếu Bearer token",
+    "pre": "Không gửi Authorization.",
+    "steps": "GET /auth/me không gửi token.",
+    "expected": "HTTP 401; yêu cầu đăng nhập.",
+    "actual": "GET 401; 2/2 xác nhận đạt",
+    "result": "PASS"
+  },
+  {
+    "id": "TC-17",
+    "name": "JWT sai chữ ký",
+    "pre": "Có token ký bằng khóa kiểm thử sai.",
+    "steps": "GET /auth/me với Bearer badToken.",
+    "expected": "HTTP 401; không chấp nhận JWT giả.",
+    "actual": "GET 401; 2/2 xác nhận đạt",
+    "result": "PASS"
+  },
+  {
+    "id": "TC-18",
+    "name": "USER bị cấm đọc thống kê ADMIN",
+    "pre": "Token USER hợp lệ.",
+    "steps": "GET /admin/analytics/daily?from=2026-01-01&to=2026-12-31 với Bearer USER.",
+    "expected": "HTTP 403; không trả dữ liệu thống kê.",
+    "actual": "GET 403; 2/2 xác nhận đạt",
+    "result": "PASS"
+  },
+  {
+    "id": "TC-19",
+    "name": "Origin giả chứa localhost",
+    "pre": "Yêu cầu xuất phát từ Origin không được tin cậy.",
+    "steps": "POST /auth/login, đặt Origin=https://localhost.attacker.example.",
+    "expected": "HTTP 403 trước bước đăng nhập.",
+    "actual": "POST 403; 2/2 xác nhận đạt",
+    "result": "PASS"
+  },
+  {
+    "id": "TC-20",
+    "name": "Chuỗi SQL injection tìm kiếm",
+    "pre": "CSDL mẫu không có tên chiến dịch trùng chuỗi tấn công.",
+    "steps": "GET /campaigns?search=' OR '1'='1 (URL encoded).",
+    "expected": "HTTP 200 với mảng rỗng; không lộ truy vấn/stack Prisma.",
+    "actual": "GET 200; 2/2 xác nhận đạt",
+    "result": "PASS"
+  },
+  {
+    "id": "TC-21",
+    "name": "Mã PHP đổi đuôi JPG",
+    "pre": "USER có quyền upload; invalid-image.jpg chứa mã PHP thuần.",
+    "steps": "POST /uploads multipart/form-data: file=invalid-image.jpg, MIME image/jpeg.",
+    "expected": "HTTP 415; từ chối nội dung giả ảnh.",
+    "actual": "POST 415; 2/2 xác nhận đạt",
+    "result": "PASS"
+  },
+  {
+    "id": "TC-22",
+    "name": "Tệp riêng tư thiếu xác thực",
+    "pre": "Không có Bearer token; ID dùng để kiểm tra chặn trước lookup.",
+    "steps": "GET /uploads/00000000-0000-4000-8000-000000000001 không token.",
+    "expected": "HTTP 401; chặn trước tra cứu tệp. Ca này không chứng minh tệp tồn tại.",
+    "actual": "GET 401; 2/2 xác nhận đạt",
+    "result": "PASS"
+  },
+  {
+    "id": "TC-23",
+    "name": "Báo cáo daily và CSV",
+    "pre": "ADMIN hợp lệ; tổng RECEIPT từ SQL độc lập trong 2026-01-01–2026-12-31 là 35000000.00 VND.",
+    "steps": "1. GET /admin/analytics/daily?from=2026-01-01&to=2026-12-31. 2. Cộng received các nhóm và đối chiếu SQL. 3. Gửi lại với format=csv.",
+    "expected": "JSON HTTP 200; tổng received=35000000.00; CSV HTTP 200, Content-Type text/csv, có cột Đã thu VND.",
+    "actual": "GET 200; 2/2 xác nhận đạt | GET 200; 2/2 xác nhận đạt; tổng thu đối chiếu 35000000.00 VND.",
+    "result": "PASS"
+  },
+  {
+    "id": "TC-24",
+    "name": "Báo cáo campaigns và CSV",
+    "pre": "ADMIN hợp lệ; tổng RECEIPT từ SQL độc lập trong 2026-01-01–2026-12-31 là 35000000.00 VND.",
+    "steps": "1. GET /admin/analytics/campaigns?from=2026-01-01&to=2026-12-31. 2. Cộng received các nhóm và đối chiếu SQL. 3. Gửi lại với format=csv.",
+    "expected": "JSON HTTP 200; tổng received=35000000.00; CSV HTTP 200, Content-Type text/csv, có cột Đã thu VND.",
+    "actual": "GET 200; 2/2 xác nhận đạt | GET 200; 2/2 xác nhận đạt; tổng thu đối chiếu 35000000.00 VND.",
+    "result": "PASS"
+  },
+  {
+    "id": "TC-25",
+    "name": "Báo cáo categories và CSV",
+    "pre": "ADMIN hợp lệ; tổng RECEIPT từ SQL độc lập trong 2026-01-01–2026-12-31 là 35000000.00 VND.",
+    "steps": "1. GET /admin/analytics/categories?from=2026-01-01&to=2026-12-31. 2. Cộng received các nhóm và đối chiếu SQL. 3. Gửi lại với format=csv.",
+    "expected": "JSON HTTP 200; tổng received=35000000.00; CSV HTTP 200, Content-Type text/csv, có cột Đã thu VND.",
+    "actual": "GET 200; 2/2 xác nhận đạt | GET 200; 2/2 xác nhận đạt; tổng thu đối chiếu 35000000.00 VND.",
+    "result": "PASS"
+  },
+  {
+    "id": "TC-26",
+    "name": "Tạo yêu cầu và gửi lặp idempotent",
+    "pre": "Tài khoản USER và chiến dịch ACTIVE trong DB riêng.",
+    "steps": "POST /donations với amount=100000, requestKey mới; gửi lại cùng dữ liệu.",
+    "expected": "Lần đầu 201/PENDING, lần sau 200 cùng id; DB chỉ có 1 transactionCode.",
+    "actual": "201 rồi 200; cùng id; count=1.",
+    "result": "PASS"
+  },
+  {
+    "id": "TC-27",
+    "name": "Xác thực, quyền và khác chủ sở hữu",
+    "pre": "TC-26 đã tạo donation của USER.",
+    "steps": "GET donation không token; USER gọi confirm-demo; USER khác đọc chi tiết.",
+    "expected": "Lần lượt 401, 403, 403.",
+    "actual": "Các mã 401/403/403 khớp mong đợi.",
+    "result": "PASS"
+  },
+  {
+    "id": "TC-28",
+    "name": "Số tiền sai, khóa lặp khác dữ liệu, hoàn PENDING",
+    "pre": "Donation ở TC-26 còn PENDING.",
+    "steps": "Tạo amount=-1; gửi cùng requestKey nhưng amount=200000; hoàn khoản PENDING.",
+    "expected": "Lần lượt 400, 409, 422.",
+    "actual": "Các mã 400/409/422 khớp mong đợi.",
+    "result": "PASS"
+  },
+  {
+    "id": "TC-29",
+    "name": "Rollback khi lỗi ghi sự kiện",
+    "pre": "Donation PENDING; không có ledger.",
+    "steps": "Thay record bằng hàm ném TEST_INJECTED_AFTER_LEDGER; gọi confirm; phục hồi hàm; đọc DB.",
+    "expected": "Lỗi được ném; donation vẫn PENDING, ledger=0, currentAmount=0.",
+    "actual": "Tất cả điều kiện rollback đúng.",
+    "result": "PASS"
+  },
+  {
+    "id": "TC-30",
+    "name": "ADMIN xác nhận và đối soát",
+    "pre": "Donation PENDING hợp lệ.",
+    "steps": "ADMIN POST confirm-demo; gọi lại; GET reconciliation.",
+    "expected": "200/SUCCESS; lần hai 422; net=100000; matches=true.",
+    "actual": "200/SUCCESS, 422; net=100000, matches=true.",
+    "result": "PASS"
+  },
+  {
+    "id": "TC-31",
+    "name": "Điều kiện hoàn và quyền hủy",
+    "pre": "Donation SUCCESS, campaign ACTIVE.",
+    "steps": "USER hoàn; USER hủy campaign; ADMIN hủy campaign.",
+    "expected": "422; 403; 200.",
+    "actual": "422/403/200 đúng thứ tự.",
+    "result": "PASS"
+  },
+  {
+    "id": "TC-32",
+    "name": "CSDL chặn hoàn vượt mức",
+    "pre": "Đã thu 100000; chưa có REFUND.",
+    "steps": "Tạo ledger REFUND=100001 trực tiếp qua Prisma.",
+    "expected": "Trigger từ chối; không phát sinh REFUND.",
+    "actual": "DB lỗi 1644 theo điều kiện trigger; count REFUND=0.",
+    "result": "PASS"
+  },
+  {
+    "id": "TC-33",
+    "name": "50 yêu cầu hoàn tiền đồng thời",
+    "pre": "Donation SUCCESS; campaign đã hủy tại TC-31.",
+    "steps": "Gửi 50 POST refund đồng thời; đọc donation, ledger, audit và notification.",
+    "expected": "1 HTTP 200; 49 HTTP 422; 1 REFUND=100000; 1 audit; 1 notification.",
+    "actual": "Đúng 1/49; donation REFUNDED; chỉ một bút toán, nhật ký và thông báo.",
+    "result": "PASS"
+  },
+  {
+    "id": "TC-34",
+    "name": "Cấm hoàn lặp và sửa dữ liệu đã chốt",
+    "pre": "Donation đã REFUNDED; receipt/refund đã tồn tại.",
+    "steps": "Chèn REFUND lần hai; sửa ledger; sửa amount donation; đọc reconciliation và campaign.",
+    "expected": "Ba thao tác ghi bị trigger chặn; net=0, refunded=100000, matches=true; campaign.currentAmount=0.",
+    "actual": "Ba lệnh bị từ chối; đối soát và số tiền công khai đúng.",
+    "result": "PASS"
+  },
+  {
+    "id": "TC-35",
+    "name": "Xử lý chiến dịch hết hạn",
+    "pre": "Tạo campaign ACTIVE riêng có endDate trong quá khứ.",
+    "steps": "Gọi trực tiếp service.expireCampaigns; truy vấn lại campaign.",
+    "expected": "Trạng thái COMPLETED; không cần yêu cầu HTTP tới chiến dịch.",
+    "actual": "COMPLETED. Chưa kiểm bộ lập lịch tự động dài hạn.",
+    "result": "PASS"
+  }
+]

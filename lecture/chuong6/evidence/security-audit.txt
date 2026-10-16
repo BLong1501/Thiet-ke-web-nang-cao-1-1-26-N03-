@@ -1,0 +1,22 @@
+◇ injected env (0) from .env // tip: ⌘ override existing { override: true }
+◇ injected env (0) from .env // tip: ◈ secrets for agents [www.dotenvx.com]
+✓ Redis Client connected successfully!
+BM1 PASS
+BM2 PASS
+BM3 PASS
+BM4 PASS
+BM5 PASS
+BM6 PASS
+BM7 PASS
+BM8 PASS
+[INTERNAL_SERVER_ERROR 2026-10-16T03:18:34.788Z]: Error: Injected DB failure: SELECT password_hash FROM users D:/internal/private.ts
+    at Proxy.db.user.findUnique (D:\DO_AN_WEB\Thiet-ke-web-nang-cao-1-1-26-N03-\backend\scripts\session08-audit.ts:108:89)
+    at AuthRepository.findByEmail (D:\DO_AN_WEB\Thiet-ke-web-nang-cao-1-1-26-N03-\backend\src\modules\auth\auth.repository.ts:6:24)
+    at AuthService.login (D:\DO_AN_WEB\Thiet-ke-web-nang-cao-1-1-26-N03-\backend\src\modules\auth\auth.service.ts:220:34)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async login (D:\DO_AN_WEB\Thiet-ke-web-nang-cao-1-1-26-N03-\backend\src\modules\auth\auth.controller.ts:66:22)
+BM9 PASS
+BM10 PASS
+BM11 PASS
+BM12 PASS
+RESULT 12/12 MATRIX 124/124

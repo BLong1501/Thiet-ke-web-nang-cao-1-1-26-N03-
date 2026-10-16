@@ -1,0 +1,170 @@
+◇ injected env (0) from .env // tip: ⌘ suppress logs { quiet: true }
+◇ injected env (0) from .env // tip: ◈ secrets for agents [www.dotenvx.com]
+(node:16132) [DEP0176] DeprecationWarning: fs.F_OK is deprecated, use fs.constants.F_OK instead
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✓ Redis Client connected successfully!
+newman
+
+CSE702051 Chuong 6 - 25 ca API local
+
+→ TC-01 Đăng nhập ADMIN [ADMIN]
+  POST http://127.0.0.1:64016/api/v1/auth/login [200 OK, 2.36kB, 309ms]
+  √  TC-01 HTTP 200
+  √  TC-01 noi dung
+
+→ TC-02 Đăng nhập USER [USER]
+  POST http://127.0.0.1:64016/api/v1/auth/login [200 OK, 2.31kB, 178ms]
+  √  TC-02 HTTP 200
+  √  TC-02 noi dung
+
+→ TC-03 Đăng nhập FUNDRAISER [FUNDRAISER]
+  POST http://127.0.0.1:64016/api/v1/auth/login [200 OK, 2.37kB, 170ms]
+  √  TC-03 HTTP 200
+  √  TC-03 noi dung
+
+→ TC-04 Danh mục công khai [GUEST]
+  GET http://127.0.0.1:64016/api/v1/campaigns/categories [200 OK, 2.79kB, 5ms]
+  √  TC-04 HTTP 200
+  √  TC-04 noi dung
+
+→ TC-05 Danh sách chiến dịch [GUEST]
+  GET http://127.0.0.1:64016/api/v1/campaigns [200 OK, 2.75kB, 45ms]
+  √  TC-05 HTTP 200
+  √  TC-05 noi dung
+
+→ TC-06 Chi tiết chiến dịch [GUEST]
+  GET http://127.0.0.1:64016/api/v1/campaigns/ecbf1a43-61ce-434e-937c-aced3435f8ed [200 OK, 5.21kB, 37ms]
+  √  TC-06 HTTP 200
+  √  TC-06 noi dung
+
+→ TC-07 Hồ sơ chính mình [USER]
+  GET http://127.0.0.1:64016/api/v1/auth/me [200 OK, 1.56kB, 9ms]
+  √  TC-07 HTTP 200
+  √  TC-07 noi dung
+
+→ TC-08 Lịch sử đóng góp [USER]
+  GET http://127.0.0.1:64016/api/v1/donations/my/history [200 OK, 2.02kB, 14ms]
+  √  TC-08 HTTP 200
+  √  TC-08 noi dung
+
+→ TC-09 Thông báo cá nhân [USER]
+  GET http://127.0.0.1:64016/api/v1/notifications [200 OK, 1.18kB, 21ms]
+  √  TC-09 HTTP 200
+  √  TC-09 noi dung
+
+→ TC-10 Email sai định dạng [GUEST]
+  POST http://127.0.0.1:64016/api/v1/auth/login [400 Bad Request, 1.24kB, 9ms]
+  √  TC-10 HTTP 400
+  √  TC-10 noi dung
+
+→ TC-11 Ngày không tồn tại [ADMIN]
+  GET http://127.0.0.1:64016/api/v1/admin/analytics/daily?from=2026-02-30&to=2026-03-01 [400 Bad Request, 1.2kB, 15ms]
+  √  TC-11 HTTP 400
+  √  TC-11 noi dung
+
+→ TC-12 Trang âm [GUEST]
+  GET http://127.0.0.1:64016/api/v1/campaigns?page=-1 [400 Bad Request, 1.24kB, 4ms]
+  √  TC-12 HTTP 400
+  √  TC-12 noi dung
+
+→ TC-13 Kích thước trang vượt giới hạn [GUEST]
+  GET http://127.0.0.1:64016/api/v1/campaigns?limit=999999 [400 Bad Request, 1.24kB, 2ms]
+  √  TC-13 HTTP 400
+  √  TC-13 noi dung
+
+→ TC-14 KYC thiếu dữ liệu [USER]
+  POST http://127.0.0.1:64016/api/v1/verifications/request [400 Bad Request, 1.53kB, 7ms]
+  √  TC-14 HTTP 400
+  √  TC-14 noi dung
+
+→ TC-15 Upload thiếu tệp [USER]
+  POST http://127.0.0.1:64016/api/v1/uploads [400 Bad Request, 1.17kB, 9ms]
+  √  TC-15 HTTP 400
+  √  TC-15 noi dung
+
+→ TC-16 Thiếu Bearer token [GUEST]
+  GET http://127.0.0.1:64016/api/v1/auth/me [401 Unauthorized, 1.18kB, 4ms]
+  √  TC-16 HTTP 401
+  √  TC-16 noi dung
+
+→ TC-17 JWT sai chữ ký [GUEST]
+  GET http://127.0.0.1:64016/api/v1/auth/me [401 Unauthorized, 1.19kB, 4ms]
+  √  TC-17 HTTP 401
+  √  TC-17 noi dung
+
+→ TC-18 USER bị cấm đọc thống kê ADMIN [USER]
+  GET http://127.0.0.1:64016/api/v1/admin/analytics/daily?from=2026-01-01&to=2026-12-31 [403 Forbidden, 1.21kB, 8ms]
+  √  TC-18 HTTP 403
+  √  TC-18 noi dung
+
+→ TC-19 Origin giả chứa localhost [GUEST]
+  POST http://127.0.0.1:64016/api/v1/auth/login [403 Forbidden, 1.1kB, 7ms]
+  √  TC-19 HTTP 403
+  √  TC-19 noi dung
+
+→ TC-20 Chuỗi SQL injection tìm kiếm [GUEST]
+  GET http://127.0.0.1:64016/api/v1/campaigns?search='%20OR%20'1'%3D'1 [200 OK, 1.25kB, 18ms]
+  √  TC-20 HTTP 200
+  √  TC-20 noi dung
+
+→ TC-21 Mã PHP đổi đuôi JPG [USER]
+(node:16132) [DEP0044] DeprecationWarning: The `util.isArray` API is deprecated. Please use `Array.isArray()` instead.
+  POST http://127.0.0.1:64016/api/v1/uploads [415 Unsupported Media Type, 1.22kB, 22ms]
+  √  TC-21 HTTP 415
+  √  TC-21 noi dung
+
+→ TC-22 Tệp riêng tư thiếu xác thực [GUEST]
+  GET http://127.0.0.1:64016/api/v1/uploads/00000000-0000-4000-8000-000000000001 [401 Unauthorized, 1.18kB, 3ms]
+  √  TC-22 HTTP 401
+  √  TC-22 noi dung
+
+→ TC-23 Báo cáo daily và CSV [ADMIN]
+  GET http://127.0.0.1:64016/api/v1/admin/analytics/daily?from=2026-01-01&to=2026-12-31 [200 OK, 1.88kB, 13ms]
+  √  TC-23 HTTP 200
+  √  TC-23 noi dung
+
+→ TC-23 CSV [ADMIN]
+  GET http://127.0.0.1:64016/api/v1/admin/analytics/daily?from=2026-01-01&to=2026-12-31&format=csv [200 OK, 1.38kB, 14ms]
+  √  TC-23 CSV HTTP 200
+  √  TC-23 CSV content
+
+→ TC-24 Báo cáo campaigns và CSV [ADMIN]
+  GET http://127.0.0.1:64016/api/v1/admin/analytics/campaigns?from=2026-01-01&to=2026-12-31 [200 OK, 1.73kB, 11ms]
+  √  TC-24 HTTP 200
+  √  TC-24 noi dung
+
+→ TC-24 CSV [ADMIN]
+  GET http://127.0.0.1:64016/api/v1/admin/analytics/campaigns?from=2026-01-01&to=2026-12-31&format=csv [200 OK, 1.33kB, 12ms]
+  √  TC-24 CSV HTTP 200
+  √  TC-24 CSV content
+
+→ TC-25 Báo cáo categories và CSV [ADMIN]
+  GET http://127.0.0.1:64016/api/v1/admin/analytics/categories?from=2026-01-01&to=2026-12-31 [200 OK, 1.7kB, 11ms]
+  √  TC-25 HTTP 200
+  √  TC-25 noi dung
+
+→ TC-25 CSV [ADMIN]
+  GET http://127.0.0.1:64016/api/v1/admin/analytics/categories?from=2026-01-01&to=2026-12-31&format=csv [200 OK, 1.3kB, 15ms]
+  √  TC-25 CSV HTTP 200
+  √  TC-25 CSV content
+
+┌─────────────────────────┬───────────────────┬──────────────────┐
+│                         │          executed │           failed │
+├─────────────────────────┼───────────────────┼──────────────────┤
+│              iterations │                 1 │                0 │
+├─────────────────────────┼───────────────────┼──────────────────┤
+│                requests │                28 │                0 │
+├─────────────────────────┼───────────────────┼──────────────────┤
+│            test-scripts │                28 │                0 │
+├─────────────────────────┼───────────────────┼──────────────────┤
+│      prerequest-scripts │                 0 │                0 │
+├─────────────────────────┼───────────────────┼──────────────────┤
+│              assertions │                56 │                0 │
+├─────────────────────────┴───────────────────┴──────────────────┤
+│ total run duration: 2.5s                                       │
+├────────────────────────────────────────────────────────────────┤
+│ total data received: 16.82kB (approx)                          │
+├────────────────────────────────────────────────────────────────┤
+│ average response time: 34ms [min: 2ms, max: 309ms, s.d.: 67ms] │
+└────────────────────────────────────────────────────────────────┘
+CHAPTER06 25/25 cases; 28 actual HTTP requests

@@ -1,0 +1,68 @@
+{
+  "generatedAt": "2026-10-16T03:24:04.128Z",
+  "environment": "Visible Chrome + actual frontend/API/MySQL local; no response mocking",
+  "annotation": "Only a provenance strip with actual URL, timestamp and verified role is added for screenshots. Application results are unchanged.",
+  "results": [
+    {
+      "id": "UI-3",
+      "file": "Hinh_6_3_San_pham_dang_nhap.png",
+      "url": "http://localhost:5173/dashboard",
+      "role": "USER",
+      "timestamp": "2026-10-16T03:23:58.497Z",
+      "result": "PASS",
+      "description": "Đăng nhập bằng form thật; API 200 trả USER; trang dashboard hiển thị."
+    },
+    {
+      "id": "UI-4",
+      "file": "Hinh_6_4_San_pham_luu_ho_so.png",
+      "url": "http://localhost:5173/profile",
+      "role": "USER",
+      "timestamp": "2026-10-16T03:23:59.314Z",
+      "result": "PASS",
+      "description": "Lưu qua UI; PUT 200; tải lại trang và đối chiếu nội dung từ API thật."
+    },
+    {
+      "id": "UI-5",
+      "file": "Hinh_6_5_San_pham_chan_quan_tri.png",
+      "url": "http://localhost:5173/admin/analytics",
+      "role": "USER",
+      "timestamp": "2026-10-16T03:23:59.498Z",
+      "result": "PASS",
+      "description": "Route guard chặn USER mở trang thống kê quản trị; kiểm quyền backend riêng tại TC-18."
+    },
+    {
+      "id": "UI-6",
+      "file": "Hinh_6_6_San_pham_tu_choi_anh_gia.png",
+      "url": "http://localhost:5173/profile?tab=kyc",
+      "role": "USER",
+      "timestamp": "2026-10-16T03:23:59.779Z",
+      "result": "PASS",
+      "description": "Chọn JPG giả trên form KYC; API thật trả 415; UI hiển thị lỗi, không gửi hồ sơ."
+    },
+    {
+      "id": "UI-7",
+      "file": "Hinh_6_7_San_pham_chien_dich.png",
+      "url": "http://localhost:5173/campaigns/phau-thuat-tim-be-bap-3-tuoi",
+      "role": "USER",
+      "timestamp": "2026-10-16T03:24:00.090Z",
+      "result": "PASS",
+      "description": "Mở danh sách, chọn đúng chiến dịch trong API, đối chiếu tiêu đề và URL trang chi tiết."
+    },
+    {
+      "id": "UI-8",
+      "file": "Hinh_6_8_San_pham_thong_ke.png",
+      "url": "http://localhost:5173/admin/analytics",
+      "role": "ADMIN",
+      "timestamp": "2026-10-16T03:24:03.522Z",
+      "result": "PASS",
+      "description": "Ba báo cáo gọi API thật; biểu đồ và bảng số liệu từ MySQL local."
+    },
+    {
+      "id": "UI-CSV",
+      "result": "PASS",
+      "role": "ADMIN",
+      "timestamp": "2026-10-16T03:24:03.969Z",
+      "description": "Nhấn xuất CSV trên sản phẩm, nhận tệp thật; ba báo cáo đều có tổng thu 35.000.000 VND."
+    }
+  ]
+}

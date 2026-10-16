@@ -1,0 +1,212 @@
+[
+  {
+    "id": "YCCN01",
+    "name": "Đăng ký tài khoản",
+    "status": "Có mã, chưa kiểm đủ",
+    "evidence": "Auth register/verify-email; unit và UI fixture đạt. Chưa chạy đăng ký–OTP–SMTP thật trong đợt này."
+  },
+  {
+    "id": "YCCN02",
+    "name": "Đăng nhập, đăng xuất",
+    "status": "Đạt phạm vi kiểm thử",
+    "evidence": "TC-01–03; E09 kiểm logout thu hồi access/refresh; Hình C.1."
+  },
+  {
+    "id": "YCCN03",
+    "name": "Quản lý thông tin cá nhân",
+    "status": "Đạt phạm vi kiểm thử",
+    "evidence": "TC-07; lưu qua UI và đọc lại MySQL tại Hình C.2, E07."
+  },
+  {
+    "id": "YCCN04",
+    "name": "Đổi mật khẩu và quản lý phiên",
+    "status": "Một phần",
+    "evidence": "Có change-password, refresh/logout. Chưa chứng minh thu hồi mọi phiên cũ khi đổi mật khẩu."
+  },
+  {
+    "id": "YCCN05",
+    "name": "Xác minh email hoặc điện thoại",
+    "status": "Một phần",
+    "evidence": "Có OTP email và UI fixture. Chưa kiểm nhận thư thật; không có bằng chứng xác minh điện thoại."
+  },
+  {
+    "id": "YCCN06",
+    "name": "Gửi hồ sơ Fundraiser",
+    "status": "Có mã, chưa kiểm đủ",
+    "evidence": "Có request/my-status; TC-14 và phân quyền đạt. Chưa chạy lại nộp hồ sơ hợp lệ đến duyệt trên MySQL."
+  },
+  {
+    "id": "YCCN07",
+    "name": "Tài liệu xác minh danh tính",
+    "status": "Đạt phạm vi kiểm thử",
+    "evidence": "Upload riêng tư PNG/JPEG, kiểm nội dung/đuôi/MIME, quyền truy cập; E01/E05; Hình 6.1."
+  },
+  {
+    "id": "YCCN08",
+    "name": "Theo dõi hồ sơ xác minh",
+    "status": "Có mã, chưa kiểm đủ",
+    "evidence": "Có my-status và giao diện KYC; kiểm token/identity thành phần; chưa E2E tất cả trạng thái."
+  },
+  {
+    "id": "YCCN09",
+    "name": "Duyệt, từ chối, yêu cầu bổ sung KYC",
+    "status": "Một phần",
+    "evidence": "APPROVED/REJECTED có xử lý; chưa có quy trình yêu cầu bổ sung riêng."
+  },
+  {
+    "id": "YCCN10",
+    "name": "Cấp hoặc thu hồi quyền Fundraiser",
+    "status": "Một phần",
+    "evidence": "Duyệt KYC nâng vai trò; chưa có bằng chứng luồng thu hồi quyền Fundraiser riêng."
+  },
+  {
+    "id": "YCCN11",
+    "name": "Tạo Campaign",
+    "status": "Có mã, chưa kiểm đủ",
+    "evidence": "Có POST /campaigns; UI contract đạt bằng fixture. Chưa E2E tạo–duyệt trên MySQL trong đợt này."
+  },
+  {
+    "id": "YCCN12",
+    "name": "Lưu nháp và chỉnh sửa Campaign",
+    "status": "Có mã, chưa kiểm đủ",
+    "evidence": "Schema nhận DRAFT/PENDING_APPROVAL; sửa theo quyền sở hữu. Chưa kiểm đủ các chuyển trạng thái."
+  },
+  {
+    "id": "YCCN13",
+    "name": "Mục tiêu và thời hạn gây quỹ",
+    "status": "Đạt phạm vi kiểm thử",
+    "evidence": "Có validation; TC-35 kiểm xử lý hết hạn. Chưa chứng nhận cron dài hạn."
+  },
+  {
+    "id": "YCCN14",
+    "name": "Ảnh, video, tài liệu Campaign",
+    "status": "Một phần",
+    "evidence": "Có upload ảnh và metadata media URL; chưa kiểm đủ video/tài liệu, dung lượng và lưu trữ bền vững."
+  },
+  {
+    "id": "YCCN15",
+    "name": "Gửi Campaign kiểm duyệt",
+    "status": "Có mã, chưa kiểm đủ",
+    "evidence": "Có PENDING_APPROVAL và chỉnh trạng thái; UI fixture gửi xét duyệt đạt, chưa E2E DB."
+  },
+  {
+    "id": "YCCN16",
+    "name": "Duyệt, từ chối, yêu cầu sửa Campaign",
+    "status": "Một phần",
+    "evidence": "Có review và thông báo; chưa chứng minh vòng yêu cầu sửa và gửi lại hoàn chỉnh."
+  },
+  {
+    "id": "YCCN17",
+    "name": "Xem và tìm kiếm Campaign",
+    "status": "Đạt phạm vi kiểm thử",
+    "evidence": "TC-05–06, TC-12–13, TC-20; Hình C.4; cache/object-access tests."
+  },
+  {
+    "id": "YCCN18",
+    "name": "Thực hiện Donation",
+    "status": "Đạt phạm vi kiểm thử",
+    "evidence": "TC-26–35: tạo PENDING, xác nhận mô phỏng, hủy/hoàn/đối soát. Không phải chuyển tiền thật."
+  },
+  {
+    "id": "YCCN19",
+    "name": "Donation ẩn danh",
+    "status": "Có mã, chưa kiểm đủ",
+    "evidence": "Có isAnonymous và xử lý hiển thị; chưa có ca đầy đủ kiểm ẩn danh qua mọi endpoint."
+  },
+  {
+    "id": "YCCN20",
+    "name": "Thanh toán trực tuyến",
+    "status": "Chưa hoàn thiện",
+    "evidence": "Luồng xác nhận đang mô phỏng; chưa chứng minh cổng thanh toán/webhook có chữ ký và đối soát ngân hàng."
+  },
+  {
+    "id": "YCCN21",
+    "name": "Theo dõi trạng thái Payment",
+    "status": "Đạt phạm vi kiểm thử",
+    "evidence": "TC-26, TC-30, TC-33: PENDING → SUCCESS → REFUNDED trong mô phỏng."
+  },
+  {
+    "id": "YCCN22",
+    "name": "Lịch sử Donation và biên lai",
+    "status": "Một phần",
+    "evidence": "TC-08 và chi tiết giao dịch có; chưa kiểm xuất biên lai hoàn chỉnh."
+  },
+  {
+    "id": "YCCN23",
+    "name": "Công khai số tiền huy động",
+    "status": "Đạt phạm vi kiểm thử",
+    "evidence": "TC-34 đối chiếu chi tiết chiến dịch sau hoàn; TC-23–25 đối chiếu sổ cái."
+  },
+  {
+    "id": "YCCN24",
+    "name": "Ghi nhận Expense",
+    "status": "Có mã, chưa kiểm đủ",
+    "evidence": "Có disbursements và repository; chưa chạy luồng chi/hoàn duyệt theo đầy đủ quy tắc tài chính."
+  },
+  {
+    "id": "YCCN25",
+    "name": "Chứng từ Expense",
+    "status": "Một phần",
+    "evidence": "Có trường tài liệu/chứng từ theo URL; chưa đủ ca quyền truy cập và tính đầy đủ chứng từ."
+  },
+  {
+    "id": "YCCN26",
+    "name": "Báo cáo tài chính Campaign",
+    "status": "Một phần",
+    "evidence": "Ba báo cáo thu/hoàn, CSV và đối soát đạt; ròng chưa trừ giải ngân, không phải báo cáo thu–chi đầy đủ."
+  },
+  {
+    "id": "YCCN27",
+    "name": "Đăng cập nhật Campaign",
+    "status": "Có mã, chưa kiểm đủ",
+    "evidence": "Có updates; chưa có vòng tạo–đọc–quyền sở hữu trên MySQL trong đợt này."
+  },
+  {
+    "id": "YCCN28",
+    "name": "Tạo và tham gia Community",
+    "status": "Có mã, chưa kiểm đủ",
+    "evidence": "Có create/join/list; phạm vi Community cần thống nhất với tài liệu phạm vi ban đầu."
+  },
+  {
+    "id": "YCCN29",
+    "name": "Bài viết, bình luận, like, chia sẻ",
+    "status": "Một phần",
+    "evidence": "Có post/comment/like và test thành viên; chưa chứng minh trọn luồng chia sẻ."
+  },
+  {
+    "id": "YCCN30",
+    "name": "Báo cáo nội dung vi phạm",
+    "status": "Có mã, chưa kiểm đủ",
+    "evidence": "Có reports và admin resolve; UI không báo thành công giả khi lỗi, chưa E2E tạo–xử lý report."
+  },
+  {
+    "id": "YCCN31",
+    "name": "Admin quản lý User và Role",
+    "status": "Một phần",
+    "evidence": "Có danh sách/chi tiết/đổi trạng thái; chưa có quản lý cấp/thu hồi mọi role theo yêu cầu."
+  },
+  {
+    "id": "YCCN32",
+    "name": "Admin quản lý Donation/Payment",
+    "status": "Một phần",
+    "evidence": "Có đối soát, danh sách và xác nhận demo; TC-30–34 đạt; payment thật chưa hoàn thiện."
+  },
+  {
+    "id": "YCCN33",
+    "name": "Xử lý Report và Suspend/Ban",
+    "status": "Một phần",
+    "evidence": "Có resolve report, trạng thái user và hủy campaign; chưa kiểm trọn chuỗi report → chế tài → token cũ."
+  },
+  {
+    "id": "YCCN34",
+    "name": "Thông báo nghiệp vụ",
+    "status": "Một phần",
+    "evidence": "TC-09; TC-33 kiểm đúng một thông báo hoàn. Chưa kiểm đủ mọi sự kiện KYC/campaign/donation/email."
+  },
+  {
+    "id": "YCCN35",
+    "name": "Audit Log hành động quan trọng",
+    "status": "Đạt phạm vi kiểm thử",
+    "evidence": "E01 kiểm quyền tra cứu; E05 thử login429 và nhật ký; TC-33 đúng một log hoàn. Chưa tuyên bố mọi thao tác đều được ghi."
+  }
+]

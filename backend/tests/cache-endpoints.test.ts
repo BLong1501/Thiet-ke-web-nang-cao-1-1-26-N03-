@@ -1,4 +1,4 @@
-import test, { before, beforeEach } from "node:test";
+import test, { before, beforeEach, after } from "node:test";
 import assert from "node:assert/strict";
 import { CampaignStatus } from "@prisma/client";
 
@@ -51,6 +51,11 @@ before(async () => {
     campaignCacheKeys,
     invalidatePublicCampaignCache,
   } = await import("../src/core/cache/campaign-cache"));
+});
+
+after(async () => {
+  (await import('../src/core/database/redis')).shutdownRedis();
+  await (await import('../src/core/database/prisma')).prisma.$disconnect();
 });
 
 beforeEach(async () => {
