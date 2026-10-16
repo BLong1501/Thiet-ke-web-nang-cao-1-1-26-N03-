@@ -1,0 +1,338 @@
+<!doctype html><html lang="vi"><meta charset="UTF-8"><title>Bằng chứng thực tế BM1</title><style>body{font:16px Arial,sans-serif;color:#17243b;background:#f4f7fb;margin:0;padding:32px}main{max-width:1300px;margin:auto;background:white;padding:28px;border:1px solid #dce4ef;border-radius:12px}h1{font-size:25px}h2{font-size:22px}p{line-height:1.5}pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#eef3f9;padding:18px;font:15px Consolas,monospace}table{border-collapse:collapse;width:100%;font-size:14px}th,td{border:1px solid #dce4ef;padding:10px;text-align:left;overflow-wrap:anywhere}th{background:#e8f0fc}strong{color:#075b3a}</style><main><h1>Báo cáo kiểm chứng tự động · Buổi 8 V4 / Buổi 9 V5</h1><p>Đây là báo cáo từ request, query và Chrome chạy thật; LOCAL, không phải bằng chứng trực tuyến. Không chứa token hay cookie value.</p><h2>BM1 — SQL injection search and path parameters</h2><p>Trạng thái thực tế: <strong>PASS</strong> · 2026-10-14T06:48:33.608Z</p><pre>[
+  {
+    &quot;method&quot;: &quot;GET&quot;,
+    &quot;url&quot;: &quot;http://127.0.0.1:51471/api/v1/campaigns?search=&#39;%20OR%20&#39;1&#39;%3D&#39;1&quot;,
+    &quot;role&quot;: &quot;ADMIN&quot;,
+    &quot;status&quot;: 200,
+    &quot;data&quot;: {
+      &quot;success&quot;: true,
+      &quot;message&quot;: &quot;Lấy danh sách chiến dịch thành công&quot;,
+      &quot;data&quot;: [],
+      &quot;meta&quot;: {
+        &quot;page&quot;: 1,
+        &quot;limit&quot;: 10,
+        &quot;total&quot;: 0,
+        &quot;totalPages&quot;: 0
+      }
+    },
+    &quot;headers&quot;: {
+      &quot;access-control-allow-credentials&quot;: &quot;true&quot;,
+      &quot;cache-control&quot;: &quot;public, max-age=60, stale-while-revalidate=120&quot;,
+      &quot;connection&quot;: &quot;keep-alive&quot;,
+      &quot;content-length&quot;: &quot;137&quot;,
+      &quot;content-security-policy&quot;: &quot;default-src &#39;self&#39;;base-uri &#39;self&#39;;font-src &#39;self&#39; https: data:;form-action &#39;self&#39;;frame-ancestors &#39;self&#39;;img-src &#39;self&#39; data: https:;object-src &#39;none&#39;;script-src &#39;self&#39;;script-src-attr &#39;none&#39;;style-src &#39;self&#39; &#39;unsafe-inline&#39;;upgrade-insecure-requests&quot;,
+      &quot;content-type&quot;: &quot;application/json; charset=utf-8&quot;,
+      &quot;cross-origin-opener-policy&quot;: &quot;same-origin&quot;,
+      &quot;cross-origin-resource-policy&quot;: &quot;same-origin&quot;,
+      &quot;date&quot;: &quot;Wed, 14 Oct 2026 06:48:33 GMT&quot;,
+      &quot;etag&quot;: &quot;W/\&quot;89-wS0Mm2i+r7969gymERffga9NBqY\&quot;&quot;,
+      &quot;keep-alive&quot;: &quot;timeout=5&quot;,
+      &quot;origin-agent-cluster&quot;: &quot;?1&quot;,
+      &quot;referrer-policy&quot;: &quot;no-referrer&quot;,
+      &quot;strict-transport-security&quot;: &quot;max-age=31536000; includeSubDomains&quot;,
+      &quot;vary&quot;: &quot;Origin&quot;,
+      &quot;x-cache&quot;: &quot;MISS&quot;,
+      &quot;x-content-type-options&quot;: &quot;nosniff&quot;,
+      &quot;x-dns-prefetch-control&quot;: &quot;off&quot;,
+      &quot;x-download-options&quot;: &quot;noopen&quot;,
+      &quot;x-frame-options&quot;: &quot;SAMEORIGIN&quot;,
+      &quot;x-permitted-cross-domain-policies&quot;: &quot;none&quot;,
+      &quot;x-request-id&quot;: &quot;62f2d00d-3dff-4ed9-ac79-88162160077c&quot;,
+      &quot;x-xss-protection&quot;: &quot;0&quot;
+    },
+    &quot;time&quot;: &quot;2026-10-14T06:48:33.530Z&quot;
+  },
+  {
+    &quot;method&quot;: &quot;GET&quot;,
+    &quot;url&quot;: &quot;http://127.0.0.1:51471/api/v1/campaigns/&#39;%20OR%20&#39;1&#39;%3D&#39;1&quot;,
+    &quot;role&quot;: &quot;ADMIN&quot;,
+    &quot;status&quot;: 404,
+    &quot;data&quot;: {
+      &quot;success&quot;: false,
+      &quot;message&quot;: &quot;Chiến dịch không tồn tại hoặc đã bị xóa&quot;,
+      &quot;requestId&quot;: &quot;7dbb90ca-e7e3-4310-9be5-37734cd84e9a&quot;
+    },
+    &quot;headers&quot;: {
+      &quot;access-control-allow-credentials&quot;: &quot;true&quot;,
+      &quot;connection&quot;: &quot;keep-alive&quot;,
+      &quot;content-length&quot;: &quot;136&quot;,
+      &quot;content-security-policy&quot;: &quot;default-src &#39;self&#39;;base-uri &#39;self&#39;;font-src &#39;self&#39; https: data:;form-action &#39;self&#39;;frame-ancestors &#39;self&#39;;img-src &#39;self&#39; data: https:;object-src &#39;none&#39;;script-src &#39;self&#39;;script-src-attr &#39;none&#39;;style-src &#39;self&#39; &#39;unsafe-inline&#39;;upgrade-insecure-requests&quot;,
+      &quot;content-type&quot;: &quot;application/json; charset=utf-8&quot;,
+      &quot;cross-origin-opener-policy&quot;: &quot;same-origin&quot;,
+      &quot;cross-origin-resource-policy&quot;: &quot;same-origin&quot;,
+      &quot;date&quot;: &quot;Wed, 14 Oct 2026 06:48:33 GMT&quot;,
+      &quot;etag&quot;: &quot;W/\&quot;88-JxidiMIalS4344Vrplq+3mA2eGQ\&quot;&quot;,
+      &quot;keep-alive&quot;: &quot;timeout=5&quot;,
+      &quot;origin-agent-cluster&quot;: &quot;?1&quot;,
+      &quot;referrer-policy&quot;: &quot;no-referrer&quot;,
+      &quot;strict-transport-security&quot;: &quot;max-age=31536000; includeSubDomains&quot;,
+      &quot;vary&quot;: &quot;Origin&quot;,
+      &quot;x-content-type-options&quot;: &quot;nosniff&quot;,
+      &quot;x-dns-prefetch-control&quot;: &quot;off&quot;,
+      &quot;x-download-options&quot;: &quot;noopen&quot;,
+      &quot;x-frame-options&quot;: &quot;SAMEORIGIN&quot;,
+      &quot;x-permitted-cross-domain-policies&quot;: &quot;none&quot;,
+      &quot;x-request-id&quot;: &quot;7dbb90ca-e7e3-4310-9be5-37734cd84e9a&quot;,
+      &quot;x-xss-protection&quot;: &quot;0&quot;
+    },
+    &quot;time&quot;: &quot;2026-10-14T06:48:33.540Z&quot;
+  },
+  {
+    &quot;method&quot;: &quot;GET&quot;,
+    &quot;url&quot;: &quot;http://127.0.0.1:51471/api/v1/users?search=&#39;%20OR%20&#39;1&#39;%3D&#39;1&quot;,
+    &quot;role&quot;: &quot;ADMIN&quot;,
+    &quot;status&quot;: 200,
+    &quot;data&quot;: {
+      &quot;success&quot;: true,
+      &quot;message&quot;: &quot;Lấy danh sách người dùng thành công&quot;,
+      &quot;data&quot;: [],
+      &quot;meta&quot;: {
+        &quot;page&quot;: 1,
+        &quot;limit&quot;: 10,
+        &quot;total&quot;: 0,
+        &quot;totalPages&quot;: 0
+      }
+    },
+    &quot;headers&quot;: {
+      &quot;access-control-allow-credentials&quot;: &quot;true&quot;,
+      &quot;connection&quot;: &quot;keep-alive&quot;,
+      &quot;content-length&quot;: &quot;137&quot;,
+      &quot;content-security-policy&quot;: &quot;default-src &#39;self&#39;;base-uri &#39;self&#39;;font-src &#39;self&#39; https: data:;form-action &#39;self&#39;;frame-ancestors &#39;self&#39;;img-src &#39;self&#39; data: https:;object-src &#39;none&#39;;script-src &#39;self&#39;;script-src-attr &#39;none&#39;;style-src &#39;self&#39; &#39;unsafe-inline&#39;;upgrade-insecure-requests&quot;,
+      &quot;content-type&quot;: &quot;application/json; charset=utf-8&quot;,
+      &quot;cross-origin-opener-policy&quot;: &quot;same-origin&quot;,
+      &quot;cross-origin-resource-policy&quot;: &quot;same-origin&quot;,
+      &quot;date&quot;: &quot;Wed, 14 Oct 2026 06:48:33 GMT&quot;,
+      &quot;etag&quot;: &quot;W/\&quot;89-WggJw6wn7/byRmEwzflhSxtGdbU\&quot;&quot;,
+      &quot;keep-alive&quot;: &quot;timeout=5&quot;,
+      &quot;origin-agent-cluster&quot;: &quot;?1&quot;,
+      &quot;referrer-policy&quot;: &quot;no-referrer&quot;,
+      &quot;strict-transport-security&quot;: &quot;max-age=31536000; includeSubDomains&quot;,
+      &quot;vary&quot;: &quot;Origin&quot;,
+      &quot;x-content-type-options&quot;: &quot;nosniff&quot;,
+      &quot;x-dns-prefetch-control&quot;: &quot;off&quot;,
+      &quot;x-download-options&quot;: &quot;noopen&quot;,
+      &quot;x-frame-options&quot;: &quot;SAMEORIGIN&quot;,
+      &quot;x-permitted-cross-domain-policies&quot;: &quot;none&quot;,
+      &quot;x-request-id&quot;: &quot;5917c3de-bca3-4dd1-a1f8-50d7f0776eaa&quot;,
+      &quot;x-xss-protection&quot;: &quot;0&quot;
+    },
+    &quot;time&quot;: &quot;2026-10-14T06:48:33.549Z&quot;
+  },
+  {
+    &quot;method&quot;: &quot;GET&quot;,
+    &quot;url&quot;: &quot;http://127.0.0.1:51471/api/v1/activity-logs?search=&#39;%20OR%20&#39;1&#39;%3D&#39;1&quot;,
+    &quot;role&quot;: &quot;ADMIN&quot;,
+    &quot;status&quot;: 200,
+    &quot;data&quot;: {
+      &quot;success&quot;: true,
+      &quot;message&quot;: &quot;Lấy danh sách nhật ký hệ thống thành công&quot;,
+      &quot;data&quot;: {
+        &quot;items&quot;: [],
+        &quot;meta&quot;: {
+          &quot;page&quot;: 1,
+          &quot;limit&quot;: 10,
+          &quot;total&quot;: 0,
+          &quot;totalPages&quot;: 1
+        }
+      },
+      &quot;meta&quot;: {
+        &quot;page&quot;: 1,
+        &quot;limit&quot;: 10,
+        &quot;total&quot;: 0,
+        &quot;totalPages&quot;: 1
+      }
+    },
+    &quot;headers&quot;: {
+      &quot;access-control-allow-credentials&quot;: &quot;true&quot;,
+      &quot;connection&quot;: &quot;keep-alive&quot;,
+      &quot;content-length&quot;: &quot;210&quot;,
+      &quot;content-security-policy&quot;: &quot;default-src &#39;self&#39;;base-uri &#39;self&#39;;font-src &#39;self&#39; https: data:;form-action &#39;self&#39;;frame-ancestors &#39;self&#39;;img-src &#39;self&#39; data: https:;object-src &#39;none&#39;;script-src &#39;self&#39;;script-src-attr &#39;none&#39;;style-src &#39;self&#39; &#39;unsafe-inline&#39;;upgrade-insecure-requests&quot;,
+      &quot;content-type&quot;: &quot;application/json; charset=utf-8&quot;,
+      &quot;cross-origin-opener-policy&quot;: &quot;same-origin&quot;,
+      &quot;cross-origin-resource-policy&quot;: &quot;same-origin&quot;,
+      &quot;date&quot;: &quot;Wed, 14 Oct 2026 06:48:33 GMT&quot;,
+      &quot;etag&quot;: &quot;W/\&quot;d2-PTqrM/gUBInXzpF/SoZqmOsmZGs\&quot;&quot;,
+      &quot;keep-alive&quot;: &quot;timeout=5&quot;,
+      &quot;origin-agent-cluster&quot;: &quot;?1&quot;,
+      &quot;referrer-policy&quot;: &quot;no-referrer&quot;,
+      &quot;strict-transport-security&quot;: &quot;max-age=31536000; includeSubDomains&quot;,
+      &quot;vary&quot;: &quot;Origin&quot;,
+      &quot;x-content-type-options&quot;: &quot;nosniff&quot;,
+      &quot;x-dns-prefetch-control&quot;: &quot;off&quot;,
+      &quot;x-download-options&quot;: &quot;noopen&quot;,
+      &quot;x-frame-options&quot;: &quot;SAMEORIGIN&quot;,
+      &quot;x-permitted-cross-domain-policies&quot;: &quot;none&quot;,
+      &quot;x-request-id&quot;: &quot;0da20115-22f0-40bb-858a-b65540e6821a&quot;,
+      &quot;x-xss-protection&quot;: &quot;0&quot;
+    },
+    &quot;time&quot;: &quot;2026-10-14T06:48:33.563Z&quot;
+  },
+  {
+    &quot;method&quot;: &quot;GET&quot;,
+    &quot;url&quot;: &quot;http://127.0.0.1:51471/api/v1/campaigns?search=&#39;)%3BDROP%20TABLE%20users%3B--&quot;,
+    &quot;role&quot;: &quot;ADMIN&quot;,
+    &quot;status&quot;: 200,
+    &quot;data&quot;: {
+      &quot;success&quot;: true,
+      &quot;message&quot;: &quot;Lấy danh sách chiến dịch thành công&quot;,
+      &quot;data&quot;: [],
+      &quot;meta&quot;: {
+        &quot;page&quot;: 1,
+        &quot;limit&quot;: 10,
+        &quot;total&quot;: 0,
+        &quot;totalPages&quot;: 0
+      }
+    },
+    &quot;headers&quot;: {
+      &quot;access-control-allow-credentials&quot;: &quot;true&quot;,
+      &quot;cache-control&quot;: &quot;public, max-age=60, stale-while-revalidate=120&quot;,
+      &quot;connection&quot;: &quot;keep-alive&quot;,
+      &quot;content-length&quot;: &quot;137&quot;,
+      &quot;content-security-policy&quot;: &quot;default-src &#39;self&#39;;base-uri &#39;self&#39;;font-src &#39;self&#39; https: data:;form-action &#39;self&#39;;frame-ancestors &#39;self&#39;;img-src &#39;self&#39; data: https:;object-src &#39;none&#39;;script-src &#39;self&#39;;script-src-attr &#39;none&#39;;style-src &#39;self&#39; &#39;unsafe-inline&#39;;upgrade-insecure-requests&quot;,
+      &quot;content-type&quot;: &quot;application/json; charset=utf-8&quot;,
+      &quot;cross-origin-opener-policy&quot;: &quot;same-origin&quot;,
+      &quot;cross-origin-resource-policy&quot;: &quot;same-origin&quot;,
+      &quot;date&quot;: &quot;Wed, 14 Oct 2026 06:48:33 GMT&quot;,
+      &quot;etag&quot;: &quot;W/\&quot;89-wS0Mm2i+r7969gymERffga9NBqY\&quot;&quot;,
+      &quot;keep-alive&quot;: &quot;timeout=5&quot;,
+      &quot;origin-agent-cluster&quot;: &quot;?1&quot;,
+      &quot;referrer-policy&quot;: &quot;no-referrer&quot;,
+      &quot;strict-transport-security&quot;: &quot;max-age=31536000; includeSubDomains&quot;,
+      &quot;vary&quot;: &quot;Origin&quot;,
+      &quot;x-cache&quot;: &quot;MISS&quot;,
+      &quot;x-content-type-options&quot;: &quot;nosniff&quot;,
+      &quot;x-dns-prefetch-control&quot;: &quot;off&quot;,
+      &quot;x-download-options&quot;: &quot;noopen&quot;,
+      &quot;x-frame-options&quot;: &quot;SAMEORIGIN&quot;,
+      &quot;x-permitted-cross-domain-policies&quot;: &quot;none&quot;,
+      &quot;x-request-id&quot;: &quot;4180aef7-5153-469f-96c8-91fcd1702628&quot;,
+      &quot;x-xss-protection&quot;: &quot;0&quot;
+    },
+    &quot;time&quot;: &quot;2026-10-14T06:48:33.574Z&quot;
+  },
+  {
+    &quot;method&quot;: &quot;GET&quot;,
+    &quot;url&quot;: &quot;http://127.0.0.1:51471/api/v1/campaigns/&#39;)%3BDROP%20TABLE%20users%3B--&quot;,
+    &quot;role&quot;: &quot;ADMIN&quot;,
+    &quot;status&quot;: 404,
+    &quot;data&quot;: {
+      &quot;success&quot;: false,
+      &quot;message&quot;: &quot;Chiến dịch không tồn tại hoặc đã bị xóa&quot;,
+      &quot;requestId&quot;: &quot;39e8c138-566d-4a0f-8730-cb356a0ae90a&quot;
+    },
+    &quot;headers&quot;: {
+      &quot;access-control-allow-credentials&quot;: &quot;true&quot;,
+      &quot;connection&quot;: &quot;keep-alive&quot;,
+      &quot;content-length&quot;: &quot;136&quot;,
+      &quot;content-security-policy&quot;: &quot;default-src &#39;self&#39;;base-uri &#39;self&#39;;font-src &#39;self&#39; https: data:;form-action &#39;self&#39;;frame-ancestors &#39;self&#39;;img-src &#39;self&#39; data: https:;object-src &#39;none&#39;;script-src &#39;self&#39;;script-src-attr &#39;none&#39;;style-src &#39;self&#39; &#39;unsafe-inline&#39;;upgrade-insecure-requests&quot;,
+      &quot;content-type&quot;: &quot;application/json; charset=utf-8&quot;,
+      &quot;cross-origin-opener-policy&quot;: &quot;same-origin&quot;,
+      &quot;cross-origin-resource-policy&quot;: &quot;same-origin&quot;,
+      &quot;date&quot;: &quot;Wed, 14 Oct 2026 06:48:33 GMT&quot;,
+      &quot;etag&quot;: &quot;W/\&quot;88-LO+80NBLbMNN0s2wrCpN19+9aZE\&quot;&quot;,
+      &quot;keep-alive&quot;: &quot;timeout=5&quot;,
+      &quot;origin-agent-cluster&quot;: &quot;?1&quot;,
+      &quot;referrer-policy&quot;: &quot;no-referrer&quot;,
+      &quot;strict-transport-security&quot;: &quot;max-age=31536000; includeSubDomains&quot;,
+      &quot;vary&quot;: &quot;Origin&quot;,
+      &quot;x-content-type-options&quot;: &quot;nosniff&quot;,
+      &quot;x-dns-prefetch-control&quot;: &quot;off&quot;,
+      &quot;x-download-options&quot;: &quot;noopen&quot;,
+      &quot;x-frame-options&quot;: &quot;SAMEORIGIN&quot;,
+      &quot;x-permitted-cross-domain-policies&quot;: &quot;none&quot;,
+      &quot;x-request-id&quot;: &quot;39e8c138-566d-4a0f-8730-cb356a0ae90a&quot;,
+      &quot;x-xss-protection&quot;: &quot;0&quot;
+    },
+    &quot;time&quot;: &quot;2026-10-14T06:48:33.583Z&quot;
+  },
+  {
+    &quot;method&quot;: &quot;GET&quot;,
+    &quot;url&quot;: &quot;http://127.0.0.1:51471/api/v1/users?search=&#39;)%3BDROP%20TABLE%20users%3B--&quot;,
+    &quot;role&quot;: &quot;ADMIN&quot;,
+    &quot;status&quot;: 200,
+    &quot;data&quot;: {
+      &quot;success&quot;: true,
+      &quot;message&quot;: &quot;Lấy danh sách người dùng thành công&quot;,
+      &quot;data&quot;: [],
+      &quot;meta&quot;: {
+        &quot;page&quot;: 1,
+        &quot;limit&quot;: 10,
+        &quot;total&quot;: 0,
+        &quot;totalPages&quot;: 0
+      }
+    },
+    &quot;headers&quot;: {
+      &quot;access-control-allow-credentials&quot;: &quot;true&quot;,
+      &quot;connection&quot;: &quot;keep-alive&quot;,
+      &quot;content-length&quot;: &quot;137&quot;,
+      &quot;content-security-policy&quot;: &quot;default-src &#39;self&#39;;base-uri &#39;self&#39;;font-src &#39;self&#39; https: data:;form-action &#39;self&#39;;frame-ancestors &#39;self&#39;;img-src &#39;self&#39; data: https:;object-src &#39;none&#39;;script-src &#39;self&#39;;script-src-attr &#39;none&#39;;style-src &#39;self&#39; &#39;unsafe-inline&#39;;upgrade-insecure-requests&quot;,
+      &quot;content-type&quot;: &quot;application/json; charset=utf-8&quot;,
+      &quot;cross-origin-opener-policy&quot;: &quot;same-origin&quot;,
+      &quot;cross-origin-resource-policy&quot;: &quot;same-origin&quot;,
+      &quot;date&quot;: &quot;Wed, 14 Oct 2026 06:48:33 GMT&quot;,
+      &quot;etag&quot;: &quot;W/\&quot;89-WggJw6wn7/byRmEwzflhSxtGdbU\&quot;&quot;,
+      &quot;keep-alive&quot;: &quot;timeout=5&quot;,
+      &quot;origin-agent-cluster&quot;: &quot;?1&quot;,
+      &quot;referrer-policy&quot;: &quot;no-referrer&quot;,
+      &quot;strict-transport-security&quot;: &quot;max-age=31536000; includeSubDomains&quot;,
+      &quot;vary&quot;: &quot;Origin&quot;,
+      &quot;x-content-type-options&quot;: &quot;nosniff&quot;,
+      &quot;x-dns-prefetch-control&quot;: &quot;off&quot;,
+      &quot;x-download-options&quot;: &quot;noopen&quot;,
+      &quot;x-frame-options&quot;: &quot;SAMEORIGIN&quot;,
+      &quot;x-permitted-cross-domain-policies&quot;: &quot;none&quot;,
+      &quot;x-request-id&quot;: &quot;bf541be7-0587-4a07-8538-1f9eb6919454&quot;,
+      &quot;x-xss-protection&quot;: &quot;0&quot;
+    },
+    &quot;time&quot;: &quot;2026-10-14T06:48:33.596Z&quot;
+  },
+  {
+    &quot;method&quot;: &quot;GET&quot;,
+    &quot;url&quot;: &quot;http://127.0.0.1:51471/api/v1/activity-logs?search=&#39;)%3BDROP%20TABLE%20users%3B--&quot;,
+    &quot;role&quot;: &quot;ADMIN&quot;,
+    &quot;status&quot;: 200,
+    &quot;data&quot;: {
+      &quot;success&quot;: true,
+      &quot;message&quot;: &quot;Lấy danh sách nhật ký hệ thống thành công&quot;,
+      &quot;data&quot;: {
+        &quot;items&quot;: [],
+        &quot;meta&quot;: {
+          &quot;page&quot;: 1,
+          &quot;limit&quot;: 10,
+          &quot;total&quot;: 0,
+          &quot;totalPages&quot;: 1
+        }
+      },
+      &quot;meta&quot;: {
+        &quot;page&quot;: 1,
+        &quot;limit&quot;: 10,
+        &quot;total&quot;: 0,
+        &quot;totalPages&quot;: 1
+      }
+    },
+    &quot;headers&quot;: {
+      &quot;access-control-allow-credentials&quot;: &quot;true&quot;,
+      &quot;connection&quot;: &quot;keep-alive&quot;,
+      &quot;content-length&quot;: &quot;210&quot;,
+      &quot;content-security-policy&quot;: &quot;default-src &#39;self&#39;;base-uri &#39;self&#39;;font-src &#39;self&#39; https: data:;form-action &#39;self&#39;;frame-ancestors &#39;self&#39;;img-src &#39;self&#39; data: https:;object-src &#39;none&#39;;script-src &#39;self&#39;;script-src-attr &#39;none&#39;;style-src &#39;self&#39; &#39;unsafe-inline&#39;;upgrade-insecure-requests&quot;,
+      &quot;content-type&quot;: &quot;application/json; charset=utf-8&quot;,
+      &quot;cross-origin-opener-policy&quot;: &quot;same-origin&quot;,
+      &quot;cross-origin-resource-policy&quot;: &quot;same-origin&quot;,
+      &quot;date&quot;: &quot;Wed, 14 Oct 2026 06:48:33 GMT&quot;,
+      &quot;etag&quot;: &quot;W/\&quot;d2-PTqrM/gUBInXzpF/SoZqmOsmZGs\&quot;&quot;,
+      &quot;keep-alive&quot;: &quot;timeout=5&quot;,
+      &quot;origin-agent-cluster&quot;: &quot;?1&quot;,
+      &quot;referrer-policy&quot;: &quot;no-referrer&quot;,
+      &quot;strict-transport-security&quot;: &quot;max-age=31536000; includeSubDomains&quot;,
+      &quot;vary&quot;: &quot;Origin&quot;,
+      &quot;x-content-type-options&quot;: &quot;nosniff&quot;,
+      &quot;x-dns-prefetch-control&quot;: &quot;off&quot;,
+      &quot;x-download-options&quot;: &quot;noopen&quot;,
+      &quot;x-frame-options&quot;: &quot;SAMEORIGIN&quot;,
+      &quot;x-permitted-cross-domain-policies&quot;: &quot;none&quot;,
+      &quot;x-request-id&quot;: &quot;f15286a5-bb7b-4884-a63d-0643ab40c8ea&quot;,
+      &quot;x-xss-protection&quot;: &quot;0&quot;
+    },
+    &quot;time&quot;: &quot;2026-10-14T06:48:33.608Z&quot;
+  }
+]</pre></main></html>

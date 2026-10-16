@@ -1,0 +1,86 @@
+<!doctype html><html lang="vi"><meta charset="UTF-8"><title>Bằng chứng thực tế BM10</title><style>body{font:16px Arial,sans-serif;color:#17243b;background:#f4f7fb;margin:0;padding:32px}main{max-width:1300px;margin:auto;background:white;padding:28px;border:1px solid #dce4ef;border-radius:12px}h1{font-size:25px}h2{font-size:22px}p{line-height:1.5}pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#eef3f9;padding:18px;font:15px Consolas,monospace}table{border-collapse:collapse;width:100%;font-size:14px}th,td{border:1px solid #dce4ef;padding:10px;text-align:left;overflow-wrap:anywhere}th{background:#e8f0fc}strong{color:#075b3a}</style><main><h1>Báo cáo kiểm chứng tự động · Buổi 8 V4 / Buổi 9 V5</h1><p>Đây là báo cáo từ request, query và Chrome chạy thật; LOCAL, không phải bằng chứng trực tuyến. Không chứa token hay cookie value.</p><h2>BM10 — Six failures yield 429 and are recorded in audit log</h2><p>Trạng thái thực tế: <strong>PASS</strong> · 2026-10-14T06:48:35.918Z</p><pre>{
+  &quot;url&quot;: &quot;http://127.0.0.1:51471/api/v1/auth/login&quot;,
+  &quot;role&quot;: &quot;INVALID TEST ACCOUNT&quot;,
+  &quot;attempts&quot;: [
+    {
+      &quot;attempt&quot;: 1,
+      &quot;status&quot;: 401,
+      &quot;response&quot;: {
+        &quot;success&quot;: false,
+        &quot;message&quot;: &quot;Email hoặc mật khẩu không chính xác&quot;,
+        &quot;requestId&quot;: &quot;f47c8654-95ef-44a8-a57d-138c244b8a48&quot;
+      }
+    },
+    {
+      &quot;attempt&quot;: 2,
+      &quot;status&quot;: 401,
+      &quot;response&quot;: {
+        &quot;success&quot;: false,
+        &quot;message&quot;: &quot;Email hoặc mật khẩu không chính xác&quot;,
+        &quot;requestId&quot;: &quot;6b4ed77d-5648-474c-80ae-f435aa24af0f&quot;
+      }
+    },
+    {
+      &quot;attempt&quot;: 3,
+      &quot;status&quot;: 401,
+      &quot;response&quot;: {
+        &quot;success&quot;: false,
+        &quot;message&quot;: &quot;Email hoặc mật khẩu không chính xác&quot;,
+        &quot;requestId&quot;: &quot;ab01d544-b19c-4967-9ad9-25e4ce6871e8&quot;
+      }
+    },
+    {
+      &quot;attempt&quot;: 4,
+      &quot;status&quot;: 401,
+      &quot;response&quot;: {
+        &quot;success&quot;: false,
+        &quot;message&quot;: &quot;Email hoặc mật khẩu không chính xác&quot;,
+        &quot;requestId&quot;: &quot;32b0e268-c1fa-4bdf-9bde-50f1ec0ccc41&quot;
+      }
+    },
+    {
+      &quot;attempt&quot;: 5,
+      &quot;status&quot;: 401,
+      &quot;response&quot;: {
+        &quot;success&quot;: false,
+        &quot;message&quot;: &quot;Email hoặc mật khẩu không chính xác&quot;,
+        &quot;requestId&quot;: &quot;fb413dde-fd5a-4d2e-9ecf-462be887662a&quot;
+      }
+    },
+    {
+      &quot;attempt&quot;: 6,
+      &quot;status&quot;: 429,
+      &quot;response&quot;: {
+        &quot;success&quot;: false,
+        &quot;message&quot;: &quot;Tài khoản đã bị tạm khóa đăng nhập trong 10 phút do nhập sai quá 5 lần liên tiếp. Vui lòng thử lại sau 10 phút.&quot;,
+        &quot;requestId&quot;: &quot;609e6a74-a88f-47be-8b9d-3488b37d27af&quot;
+      }
+    }
+  ],
+  &quot;logs&quot;: [
+    {
+      &quot;action&quot;: &quot;LOGIN_FAILED&quot;,
+      &quot;createdAt&quot;: &quot;2026-10-14T06:48:35.236Z&quot;
+    },
+    {
+      &quot;action&quot;: &quot;LOGIN_FAILED&quot;,
+      &quot;createdAt&quot;: &quot;2026-10-14T06:48:35.356Z&quot;
+    },
+    {
+      &quot;action&quot;: &quot;LOGIN_FAILED&quot;,
+      &quot;createdAt&quot;: &quot;2026-10-14T06:48:35.463Z&quot;
+    },
+    {
+      &quot;action&quot;: &quot;LOGIN_FAILED&quot;,
+      &quot;createdAt&quot;: &quot;2026-10-14T06:48:35.597Z&quot;
+    },
+    {
+      &quot;action&quot;: &quot;LOGIN_FAILED&quot;,
+      &quot;createdAt&quot;: &quot;2026-10-14T06:48:35.703Z&quot;
+    },
+    {
+      &quot;action&quot;: &quot;ACCOUNT_LOCKED_TEMPORARY&quot;,
+      &quot;createdAt&quot;: &quot;2026-10-14T06:48:35.812Z&quot;
+    }
+  ]
+}</pre></main></html>

@@ -21,6 +21,7 @@ const HowItWorksPage = lazy(() => import("./pages/HowItWorksPage"));
 const CommunityPage = lazy(() => import("./pages/CommunityPage"));
 const NotificationsPage = lazy(() => import("./pages/NotificationsPage"));
 const AdminReportsPage = lazy(() => import("./pages/AdminReportsPage"));
+const AdminAnalyticsPage = lazy(() => import('./pages/AdminAnalyticsPage'));
 const InformationPage = lazy(() => import("./pages/InformationPage"));
 const DonationDetailPage = lazy(() => import("./pages/DonationDetailPage"));
 const AdminHomePage = lazy(() => import("./pages/AdminHomePage"));
@@ -208,6 +209,7 @@ export default function App() {
                         </ProtectedRoute>
                       }
                     />
+                    <Route path="/admin/analytics" element={<ProtectedRoute requiredRole="ADMIN"><AdminAnalyticsPage /></ProtectedRoute>} />
                     <Route path="*" element={<NotFound />} />
                   </Routes>
                 </Suspense>

@@ -1,0 +1,35 @@
+{
+  "kind": "daily",
+  "title": "Thu và hoàn theo ngày",
+  "from": "2026-01-01",
+  "to": "2026-12-31",
+  "timezone": "Asia/Ho_Chi_Minh",
+  "generatedAt": "2026-10-14T05:56:00.518Z",
+  "note": "Dựa trên bút toán thu/hoàn theo ngày phát sinh UTC+7; ròng chưa trừ giải ngân. Số khoản đếm riêng từng nhóm; không cộng số khoản theo ngày để suy ra số người.",
+  "rows": [
+    {
+      "id": "2026-10-11",
+      "label": "2026-10-11",
+      "donations": 1,
+      "received": "20000000.00",
+      "refunded": "0.00",
+      "net": "20000000.00"
+    },
+    {
+      "id": "2026-10-12",
+      "label": "2026-10-12",
+      "donations": 1,
+      "received": "10000000.00",
+      "refunded": "0.00",
+      "net": "10000000.00"
+    },
+    {
+      "id": "2026-10-13",
+      "label": "2026-10-13",
+      "donations": 1,
+      "received": "5000000.00",
+      "refunded": "0.00",
+      "net": "5000000.00"
+    }
+  ]
+}

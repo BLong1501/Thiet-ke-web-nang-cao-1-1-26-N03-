@@ -17,6 +17,7 @@ router.use(authenticate);
  */
 router.post(
   "/request",
+  authorize(UserRole.USER),
   validate(submitVerificationSchema),
   verificationController.handleSubmitVerification
 );

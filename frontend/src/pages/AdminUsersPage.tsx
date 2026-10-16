@@ -13,7 +13,6 @@ import {
   RemoteState,
   Status,
 } from "../components/ui/WorkspaceUI";
-import AdminNav from "../components/AdminNav";
 import toast from "react-hot-toast";
 export default function AdminUsersPage() {
   const [search, setSearch] = useState("");
@@ -35,7 +34,6 @@ export default function AdminUsersPage() {
   );
   return (
     <Page title="Quản lý người dùng">
-      <AdminNav />
       <form
         className="filters"
         onSubmit={(e) => {

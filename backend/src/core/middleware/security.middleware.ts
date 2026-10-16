@@ -40,7 +40,11 @@ export function sanitizeValue(value: any): any {
  */
 export const xssSanitizer = (req: Request, _res: Response, next: NextFunction): void => {
   if (req.body && typeof req.body === "object") {
+    // Profile bio is plain text, rendered through React/textarea, never HTML.
+    // Preserve it so code samples remain visible as text instead of silently disappearing.
+    const plainBio = req.method === 'PUT' && req.path === '/api/v1/profile/me' && typeof req.body.bio === 'string' ? req.body.bio : undefined;
     req.body = sanitizeValue(req.body);
+    if (plainBio !== undefined) req.body.bio = plainBio;
   }
 
   if (req.query && typeof req.query === "object") {
@@ -97,10 +101,10 @@ export const csrfProtection = (req: Request, res: Response, next: NextFunction):
   const origin = req.headers.origin || req.headers.referer;
 
   if (origin) {
-    const allowedHost = new URL(clientUrl).origin;
     try {
+      const allowedHosts = clientUrl.split(',').map(value => new URL(value.trim()).origin);
       const requestOrigin = new URL(origin).origin;
-      if (requestOrigin !== allowedHost && !origin.includes("localhost")) {
+      if (!allowedHosts.includes(requestOrigin)) {
         auditService.log({
           req,
           action: "CSRF_BLOCKED",
@@ -120,6 +124,9 @@ export const csrfProtection = (req: Request, res: Response, next: NextFunction):
     }
   }
 
+  if (!origin && (req.cookies?.accessToken || req.cookies?.refreshToken)) {
+    return sendError(res,403,'Yêu cầu dùng cookie phải có Origin/Referer hợp lệ');
+  }
   next();
 };
 

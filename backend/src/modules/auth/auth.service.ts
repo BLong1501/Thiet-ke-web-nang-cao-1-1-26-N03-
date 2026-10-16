@@ -270,7 +270,7 @@ export class AuthService {
       }
       const remainingAttempts = Math.max(0, 5 - attempts);
       const error: any = new Error(
-        `Email hoặc mật khẩu không chính xác. Bạn còn ${remainingAttempts} lần thử trước khi tài khoản bị khóa tạm 10 phút.`
+        'Email hoặc mật khẩu không chính xác'
       );
       error.statusCode = 401;
       throw error;

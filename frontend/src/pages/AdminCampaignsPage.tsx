@@ -19,7 +19,6 @@ import {
   RemoteState,
   Status,
 } from "../components/ui/WorkspaceUI";
-import AdminNav from "../components/AdminNav";
 import toast from "react-hot-toast";
 export default function AdminCampaignsPage() {
   const [page, setPage] = useState(1);
@@ -79,7 +78,6 @@ export default function AdminCampaignsPage() {
   }
   return (
     <Page title="Quản lý chiến dịch">
-      <AdminNav />
       <div className="filters">
         <select
           aria-label="Trạng thái chiến dịch"

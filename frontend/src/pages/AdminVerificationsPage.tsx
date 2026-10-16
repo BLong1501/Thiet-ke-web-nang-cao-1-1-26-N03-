@@ -12,7 +12,6 @@ import {
   RemoteState,
   SecureImage,
 } from "../components/ui/WorkspaceUI";
-import AdminNav from "../components/AdminNav";
 import toast from "react-hot-toast";
 export default function AdminVerificationsPage() {
   const [page, setPage] = useState(1);
@@ -24,7 +23,6 @@ export default function AdminVerificationsPage() {
   );
   return (
     <Page title="Xét duyệt danh tính">
-      <AdminNav />
       <button className="button secondary" onClick={result.reload}>
         Làm mới danh sách
       </button>

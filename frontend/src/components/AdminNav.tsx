@@ -9,6 +9,7 @@ import {
   LuShieldCheck,
   LuTags,
   LuUsers,
+  LuChartColumn,
 } from "react-icons/lu";
 
 const ITEMS: [to: string, label: string, icon: IconType][] = [
@@ -18,6 +19,7 @@ const ITEMS: [to: string, label: string, icon: IconType][] = [
   ["/admin/users", "Người dùng", LuUsers],
   ["/admin/categories", "Danh mục", LuTags],
   ["/admin/donations", "Giao dịch", LuReceipt],
+  ["/admin/analytics", "Thống kê", LuChartColumn],
   ["/admin/reports", "Báo cáo vi phạm", LuFlag],
   ["/admin/activity-logs", "Nhật ký hệ thống", LuHistory],
 ];

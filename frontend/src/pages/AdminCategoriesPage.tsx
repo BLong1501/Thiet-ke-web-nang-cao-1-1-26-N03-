@@ -10,7 +10,6 @@ import {
   Page,
   RemoteState,
 } from "../components/ui/WorkspaceUI";
-import AdminNav from "../components/AdminNav";
 import toast from "react-hot-toast";
 export default function AdminCategoriesPage() {
   const result = useRemote(() =>
@@ -54,7 +53,6 @@ export default function AdminCategoriesPage() {
   }
   return (
     <Page title="Quản lý danh mục">
-      <AdminNav />
       <div className="actions">
         <button className="button" onClick={() => open({})}>
           Thêm danh mục

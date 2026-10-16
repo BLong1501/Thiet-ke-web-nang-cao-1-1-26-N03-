@@ -15,7 +15,6 @@ import {
   Pager,
   RemoteState,
 } from "../components/ui/WorkspaceUI";
-import AdminNav from "../components/AdminNav";
 import toast from "react-hot-toast";
 export default function AdminReportsPage() {
   const [page, setPage] = useState(1);
@@ -52,7 +51,6 @@ export default function AdminReportsPage() {
   }
   return (
     <Page title="Báo cáo vi phạm">
-      <AdminNav />
       {result.error ? (
         <Notice>
           Dịch vụ xử lý báo cáo hiện chưa khả dụng trên máy chủ.

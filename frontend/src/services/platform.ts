@@ -121,7 +121,7 @@ export function downloadCsv(
 ) {
   const cell = (v: unknown) => {
     let s = String(v ?? "");
-    if (/^[=+@\-\t\r]/.test(s)) s = "'" + s;
+    if (/^\s*[=+@\-]/.test(s) || /^[\t\r]/.test(s)) s = "'" + s;
     return '"' + s.replace(/"/g, '""') + '"';
   };
   const blob = new Blob(

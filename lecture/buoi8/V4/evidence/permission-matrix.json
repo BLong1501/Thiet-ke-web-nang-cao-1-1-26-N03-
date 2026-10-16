@@ -1,0 +1,1742 @@
+{
+  "environment": "LOCAL",
+  "generatedAt": "2026-10-14T06:48:35.921Z",
+  "rows": [
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:51471/api/v1/users",
+      "role": "GUEST",
+      "expected": 401,
+      "actual": 401,
+      "result": "PASS",
+      "time": "2026-10-14T06:48:34.104Z",
+      "response": {
+        "success": false,
+        "message": "Yêu cầu đăng nhập để truy cập tài nguyên này",
+        "requestId": "a248a5e7-b3a2-44c1-80f4-27c53ad31a00"
+      }
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:51471/api/v1/users",
+      "role": "USER",
+      "expected": 403,
+      "actual": 403,
+      "result": "PASS",
+      "time": "2026-10-14T06:48:34.109Z",
+      "response": {
+        "success": false,
+        "message": "Bạn không có quyền hạn (Permission Denied) để thực hiện hành động này",
+        "requestId": "9a846cdb-8ede-414c-ae66-8e08b77e0d03"
+      }
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:51471/api/v1/users",
+      "role": "FUNDRAISER",
+      "expected": 403,
+      "actual": 403,
+      "result": "PASS",
+      "time": "2026-10-14T06:48:34.113Z",
+      "response": {
+        "success": false,
+        "message": "Bạn không có quyền hạn (Permission Denied) để thực hiện hành động này",
+        "requestId": "944724f0-90ff-469d-9b90-732e9ba006b9"
+      }
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:51471/api/v1/users/audit-logs",
+      "role": "GUEST",
+      "expected": 401,
+      "actual": 401,
+      "result": "PASS",
+      "time": "2026-10-14T06:48:34.115Z",
+      "response": {
+        "success": false,
+        "message": "Yêu cầu đăng nhập để truy cập tài nguyên này",
+        "requestId": "8be8607c-0885-4c63-8f26-051e342683af"
+      }
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:51471/api/v1/users/audit-logs",
+      "role": "USER",
+      "expected": 403,
+      "actual": 403,
+      "result": "PASS",
+      "time": "2026-10-14T06:48:34.121Z",
+      "response": {
+        "success": false,
+        "message": "Bạn không có quyền hạn (Permission Denied) để thực hiện hành động này",
+        "requestId": "bc63807d-d1ef-4a60-a18e-0fac7dd4e459"
+      }
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:51471/api/v1/users/audit-logs",
+      "role": "FUNDRAISER",
+      "expected": 403,
+      "actual": 403,
+      "result": "PASS",
+      "time": "2026-10-14T06:48:34.127Z",
+      "response": {
+        "success": false,
+        "message": "Bạn không có quyền hạn (Permission Denied) để thực hiện hành động này",
+        "requestId": "66c980f4-ba06-4648-ba5c-e6d8177ba6d9"
+      }
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:51471/api/v1/users/99f55f31-d1e9-450b-932f-2ab9eceedac4",
+      "role": "GUEST",
+      "expected": 401,
+      "actual": 401,
+      "result": "PASS",
+      "time": "2026-10-14T06:48:34.130Z",
+      "response": {
+        "success": false,
+        "message": "Yêu cầu đăng nhập để truy cập tài nguyên này",
+        "requestId": "7829440d-7c2b-40b9-a936-037c82123e25"
+      }
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:51471/api/v1/users/99f55f31-d1e9-450b-932f-2ab9eceedac4",
+      "role": "USER",
+      "expected": 403,
+      "actual": 403,
+      "result": "PASS",
+      "time": "2026-10-14T06:48:34.135Z",
+      "response": {
+        "success": false,
+        "message": "Bạn không có quyền hạn (Permission Denied) để thực hiện hành động này",
+        "requestId": "a7e0fabf-f28e-4fcd-b0ed-4d8e8b3db97a"
+      }
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:51471/api/v1/users/99f55f31-d1e9-450b-932f-2ab9eceedac4",
+      "role": "FUNDRAISER",
+      "expected": 403,
+      "actual": 403,
+      "result": "PASS",
+      "time": "2026-10-14T06:48:34.139Z",
+      "response": {
+        "success": false,
+        "message": "Bạn không có quyền hạn (Permission Denied) để thực hiện hành động này",
+        "requestId": "c673b08d-9756-4afd-90ba-f288ae7db4d2"
+      }
+    },
+    {
+      "method": "PATCH",
+      "url": "http://127.0.0.1:51471/api/v1/users/99f55f31-d1e9-450b-932f-2ab9eceedac4/status",
+      "role": "GUEST",
+      "expected": 401,
+      "actual": 401,
+      "result": "PASS",
+      "time": "2026-10-14T06:48:34.143Z",
+      "response": {
+        "success": false,
+        "message": "Yêu cầu đăng nhập để truy cập tài nguyên này",
+        "requestId": "d6f32f6d-88f6-44cc-a39a-cc59f98bcd3f"
+      }
+    },
+    {
+      "method": "PATCH",
+      "url": "http://127.0.0.1:51471/api/v1/users/99f55f31-d1e9-450b-932f-2ab9eceedac4/status",
+      "role": "USER",
+      "expected": 403,
+      "actual": 403,
+      "result": "PASS",
+      "time": "2026-10-14T06:48:34.148Z",
+      "response": {
+        "success": false,
+        "message": "Bạn không có quyền hạn (Permission Denied) để thực hiện hành động này",
+        "requestId": "4b3bc0b5-58b6-4939-a3c5-63ff94a39113"
+      }
+    },
+    {
+      "method": "PATCH",
+      "url": "http://127.0.0.1:51471/api/v1/users/99f55f31-d1e9-450b-932f-2ab9eceedac4/status",
+      "role": "FUNDRAISER",
+      "expected": 403,
+      "actual": 403,
+      "result": "PASS",
+      "time": "2026-10-14T06:48:34.152Z",
+      "response": {
+        "success": false,
+        "message": "Bạn không có quyền hạn (Permission Denied) để thực hiện hành động này",
+        "requestId": "a3efbec4-4b68-40e5-9401-c2431ad195dc"
+      }
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:51471/api/v1/verifications/pending",
+      "role": "GUEST",
+      "expected": 401,
+      "actual": 401,
+      "result": "PASS",
+      "time": "2026-10-14T06:48:34.155Z",
+      "response": {
+        "success": false,
+        "message": "Yêu cầu đăng nhập để truy cập tài nguyên này",
+        "requestId": "e86e6dac-be59-4506-9473-818ddb6d0680"
+      }
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:51471/api/v1/verifications/pending",
+      "role": "USER",
+      "expected": 403,
+      "actual": 403,
+      "result": "PASS",
+      "time": "2026-10-14T06:48:34.161Z",
+      "response": {
+        "success": false,
+        "message": "Bạn không có quyền hạn (Permission Denied) để thực hiện hành động này",
+        "requestId": "4a00432e-91cc-4be1-9a59-72b0108f1453"
+      }
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:51471/api/v1/verifications/pending",
+      "role": "FUNDRAISER",
+      "expected": 403,
+      "actual": 403,
+      "result": "PASS",
+      "time": "2026-10-14T06:48:34.165Z",
+      "response": {
+        "success": false,
+        "message": "Bạn không có quyền hạn (Permission Denied) để thực hiện hành động này",
+        "requestId": "7e6b1b73-3319-452c-8810-e4d4a3088f2a"
+      }
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:51471/api/v1/verifications/812e78cd-684e-459d-b951-87ae486bb35b",
+      "role": "GUEST",
+      "expected": 401,
+      "actual": 401,
+      "result": "PASS",
+      "time": "2026-10-14T06:48:34.167Z",
+      "response": {
+        "success": false,
+        "message": "Yêu cầu đăng nhập để truy cập tài nguyên này",
+        "requestId": "d02cbd65-ddea-40e1-9431-b526fadb2887"
+      }
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:51471/api/v1/verifications/812e78cd-684e-459d-b951-87ae486bb35b",
+      "role": "USER",
+      "expected": 403,
+      "actual": 403,
+      "result": "PASS",
+      "time": "2026-10-14T06:48:34.170Z",
+      "response": {
+        "success": false,
+        "message": "Bạn không có quyền hạn (Permission Denied) để thực hiện hành động này",
+        "requestId": "348f02d0-6886-47f0-96ac-b3c9fc6171a8"
+      }
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:51471/api/v1/verifications/812e78cd-684e-459d-b951-87ae486bb35b",
+      "role": "FUNDRAISER",
+      "expected": 403,
+      "actual": 403,
+      "result": "PASS",
+      "time": "2026-10-14T06:48:34.175Z",
+      "response": {
+        "success": false,
+        "message": "Bạn không có quyền hạn (Permission Denied) để thực hiện hành động này",
+        "requestId": "15dd2e25-de58-430f-b40d-76a7c3b93818"
+      }
+    },
+    {
+      "method": "PATCH",
+      "url": "http://127.0.0.1:51471/api/v1/verifications/812e78cd-684e-459d-b951-87ae486bb35b/review",
+      "role": "GUEST",
+      "expected": 401,
+      "actual": 401,
+      "result": "PASS",
+      "time": "2026-10-14T06:48:34.178Z",
+      "response": {
+        "success": false,
+        "message": "Yêu cầu đăng nhập để truy cập tài nguyên này",
+        "requestId": "cbe431a5-bb0f-4793-a73e-10cfc3eac3de"
+      }
+    },
+    {
+      "method": "PATCH",
+      "url": "http://127.0.0.1:51471/api/v1/verifications/812e78cd-684e-459d-b951-87ae486bb35b/review",
+      "role": "USER",
+      "expected": 403,
+      "actual": 403,
+      "result": "PASS",
+      "time": "2026-10-14T06:48:34.182Z",
+      "response": {
+        "success": false,
+        "message": "Bạn không có quyền hạn (Permission Denied) để thực hiện hành động này",
+        "requestId": "ae229114-5817-40b2-8655-f37d8606513f"
+      }
+    },
+    {
+      "method": "PATCH",
+      "url": "http://127.0.0.1:51471/api/v1/verifications/812e78cd-684e-459d-b951-87ae486bb35b/review",
+      "role": "FUNDRAISER",
+      "expected": 403,
+      "actual": 403,
+      "result": "PASS",
+      "time": "2026-10-14T06:48:34.187Z",
+      "response": {
+        "success": false,
+        "message": "Bạn không có quyền hạn (Permission Denied) để thực hiện hành động này",
+        "requestId": "d5bfad88-0922-4226-90fc-e8c4da05a98a"
+      }
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:51471/api/v1/campaigns/admin/pending",
+      "role": "GUEST",
+      "expected": 401,
+      "actual": 401,
+      "result": "PASS",
+      "time": "2026-10-14T06:48:34.188Z",
+      "response": {
+        "success": false,
+        "message": "Yêu cầu đăng nhập để truy cập tài nguyên này",
+        "requestId": "18b08d9e-551d-4be5-86ec-f4e3ee031ae2"
+      }
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:51471/api/v1/campaigns/admin/pending",
+      "role": "USER",
+      "expected": 403,
+      "actual": 403,
+      "result": "PASS",
+      "time": "2026-10-14T06:48:34.192Z",
+      "response": {
+        "success": false,
+        "message": "Bạn không có quyền hạn (Permission Denied) để thực hiện hành động này",
+        "requestId": "433a3fa0-1549-4c66-823e-a17da4564504"
+      }
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:51471/api/v1/campaigns/admin/pending",
+      "role": "FUNDRAISER",
+      "expected": 403,
+      "actual": 403,
+      "result": "PASS",
+      "time": "2026-10-14T06:48:34.196Z",
+      "response": {
+        "success": false,
+        "message": "Bạn không có quyền hạn (Permission Denied) để thực hiện hành động này",
+        "requestId": "b3d4dd76-25d2-4b45-88dc-7de440df5e1b"
+      }
+    },
+    {
+      "method": "PATCH",
+      "url": "http://127.0.0.1:51471/api/v1/campaigns/ecbf1a43-61ce-434e-937c-aced3435f8ed/review",
+      "role": "GUEST",
+      "expected": 401,
+      "actual": 401,
+      "result": "PASS",
+      "time": "2026-10-14T06:48:34.199Z",
+      "response": {
+        "success": false,
+        "message": "Yêu cầu đăng nhập để truy cập tài nguyên này",
+        "requestId": "5d8bed3f-141b-45ea-8f60-29febb603b8f"
+      }
+    },
+    {
+      "method": "PATCH",
+      "url": "http://127.0.0.1:51471/api/v1/campaigns/ecbf1a43-61ce-434e-937c-aced3435f8ed/review",
+      "role": "USER",
+      "expected": 403,
+      "actual": 403,
+      "result": "PASS",
+      "time": "2026-10-14T06:48:34.205Z",
+      "response": {
+        "success": false,
+        "message": "Bạn không có quyền hạn (Permission Denied) để thực hiện hành động này",
+        "requestId": "e66fd8a5-c63e-4234-a081-b99530a34911"
+      }
+    },
+    {
+      "method": "PATCH",
+      "url": "http://127.0.0.1:51471/api/v1/campaigns/ecbf1a43-61ce-434e-937c-aced3435f8ed/review",
+      "role": "FUNDRAISER",
+      "expected": 403,
+      "actual": 403,
+      "result": "PASS",
+      "time": "2026-10-14T06:48:34.209Z",
+      "response": {
+        "success": false,
+        "message": "Bạn không có quyền hạn (Permission Denied) để thực hiện hành động này",
+        "requestId": "93497232-bcc2-4aae-bb50-ceaecaeb311e"
+      }
+    },
+    {
+      "method": "POST",
+      "url": "http://127.0.0.1:51471/api/v1/campaigns/categories",
+      "role": "GUEST",
+      "expected": 401,
+      "actual": 401,
+      "result": "PASS",
+      "time": "2026-10-14T06:48:34.210Z",
+      "response": {
+        "success": false,
+        "message": "Yêu cầu đăng nhập để truy cập tài nguyên này",
+        "requestId": "7c7b1928-8ff6-4ebe-ad7b-d567f6f1393f"
+      }
+    },
+    {
+      "method": "POST",
+      "url": "http://127.0.0.1:51471/api/v1/campaigns/categories",
+      "role": "USER",
+      "expected": 403,
+      "actual": 403,
+      "result": "PASS",
+      "time": "2026-10-14T06:48:34.214Z",
+      "response": {
+        "success": false,
+        "message": "Bạn không có quyền hạn (Permission Denied) để thực hiện hành động này",
+        "requestId": "b82b5e12-a7b2-4123-9431-0b16eb35339c"
+      }
+    },
+    {
+      "method": "POST",
+      "url": "http://127.0.0.1:51471/api/v1/campaigns/categories",
+      "role": "FUNDRAISER",
+      "expected": 403,
+      "actual": 403,
+      "result": "PASS",
+      "time": "2026-10-14T06:48:34.222Z",
+      "response": {
+        "success": false,
+        "message": "Bạn không có quyền hạn (Permission Denied) để thực hiện hành động này",
+        "requestId": "042d0813-d9ed-4a17-9c58-7bb8815ccc95"
+      }
+    },
+    {
+      "method": "PUT",
+      "url": "http://127.0.0.1:51471/api/v1/campaigns/categories/5a0c94a0-3e00-4e06-82b0-8fade812b33a",
+      "role": "GUEST",
+      "expected": 401,
+      "actual": 401,
+      "result": "PASS",
+      "time": "2026-10-14T06:48:34.228Z",
+      "response": {
+        "success": false,
+        "message": "Yêu cầu đăng nhập để truy cập tài nguyên này",
+        "requestId": "f170d537-8112-422e-acfc-6c42ba2048c9"
+      }
+    },
+    {
+      "method": "PUT",
+      "url": "http://127.0.0.1:51471/api/v1/campaigns/categories/5a0c94a0-3e00-4e06-82b0-8fade812b33a",
+      "role": "USER",
+      "expected": 403,
+      "actual": 403,
+      "result": "PASS",
+      "time": "2026-10-14T06:48:34.234Z",
+      "response": {
+        "success": false,
+        "message": "Bạn không có quyền hạn (Permission Denied) để thực hiện hành động này",
+        "requestId": "b0b35af2-755b-4351-b9e6-13fad663bec2"
+      }
+    },
+    {
+      "method": "PUT",
+      "url": "http://127.0.0.1:51471/api/v1/campaigns/categories/5a0c94a0-3e00-4e06-82b0-8fade812b33a",
+      "role": "FUNDRAISER",
+      "expected": 403,
+      "actual": 403,
+      "result": "PASS",
+      "time": "2026-10-14T06:48:34.240Z",
+      "response": {
+        "success": false,
+        "message": "Bạn không có quyền hạn (Permission Denied) để thực hiện hành động này",
+        "requestId": "25ff6294-a620-4e5c-9d3e-bd4fdf9c1daa"
+      }
+    },
+    {
+      "method": "DELETE",
+      "url": "http://127.0.0.1:51471/api/v1/campaigns/categories/5a0c94a0-3e00-4e06-82b0-8fade812b33a",
+      "role": "GUEST",
+      "expected": 401,
+      "actual": 401,
+      "result": "PASS",
+      "time": "2026-10-14T06:48:34.241Z",
+      "response": {
+        "success": false,
+        "message": "Yêu cầu đăng nhập để truy cập tài nguyên này",
+        "requestId": "47cf5e7e-2282-43fb-ab6b-4690cfc1057c"
+      }
+    },
+    {
+      "method": "DELETE",
+      "url": "http://127.0.0.1:51471/api/v1/campaigns/categories/5a0c94a0-3e00-4e06-82b0-8fade812b33a",
+      "role": "USER",
+      "expected": 403,
+      "actual": 403,
+      "result": "PASS",
+      "time": "2026-10-14T06:48:34.244Z",
+      "response": {
+        "success": false,
+        "message": "Bạn không có quyền hạn (Permission Denied) để thực hiện hành động này",
+        "requestId": "9b194c20-ff7d-4f43-92cb-919281be6c5d"
+      }
+    },
+    {
+      "method": "DELETE",
+      "url": "http://127.0.0.1:51471/api/v1/campaigns/categories/5a0c94a0-3e00-4e06-82b0-8fade812b33a",
+      "role": "FUNDRAISER",
+      "expected": 403,
+      "actual": 403,
+      "result": "PASS",
+      "time": "2026-10-14T06:48:34.248Z",
+      "response": {
+        "success": false,
+        "message": "Bạn không có quyền hạn (Permission Denied) để thực hiện hành động này",
+        "requestId": "5f21597c-8c21-4095-9e48-bbbd9689d9cf"
+      }
+    },
+    {
+      "method": "POST",
+      "url": "http://127.0.0.1:51471/api/v1/donations/159d474d-878c-4810-8af3-10c9910e6fc6/confirm-demo",
+      "role": "GUEST",
+      "expected": 401,
+      "actual": 401,
+      "result": "PASS",
+      "time": "2026-10-14T06:48:34.250Z",
+      "response": {
+        "success": false,
+        "message": "Yêu cầu đăng nhập để truy cập tài nguyên này",
+        "requestId": "88bc785c-1871-4731-8629-660a0471c232"
+      }
+    },
+    {
+      "method": "POST",
+      "url": "http://127.0.0.1:51471/api/v1/donations/159d474d-878c-4810-8af3-10c9910e6fc6/confirm-demo",
+      "role": "USER",
+      "expected": 403,
+      "actual": 403,
+      "result": "PASS",
+      "time": "2026-10-14T06:48:34.255Z",
+      "response": {
+        "success": false,
+        "message": "Bạn không có quyền hạn (Permission Denied) để thực hiện hành động này",
+        "requestId": "38b24f3f-b552-4a35-83ac-a649552b5c87"
+      }
+    },
+    {
+      "method": "POST",
+      "url": "http://127.0.0.1:51471/api/v1/donations/159d474d-878c-4810-8af3-10c9910e6fc6/confirm-demo",
+      "role": "FUNDRAISER",
+      "expected": 403,
+      "actual": 403,
+      "result": "PASS",
+      "time": "2026-10-14T06:48:34.260Z",
+      "response": {
+        "success": false,
+        "message": "Bạn không có quyền hạn (Permission Denied) để thực hiện hành động này",
+        "requestId": "666b24e3-4172-4a4d-9a5e-fd1818e223b6"
+      }
+    },
+    {
+      "method": "POST",
+      "url": "http://127.0.0.1:51471/api/v1/donations/campaigns/ecbf1a43-61ce-434e-937c-aced3435f8ed/cancel",
+      "role": "GUEST",
+      "expected": 401,
+      "actual": 401,
+      "result": "PASS",
+      "time": "2026-10-14T06:48:34.263Z",
+      "response": {
+        "success": false,
+        "message": "Yêu cầu đăng nhập để truy cập tài nguyên này",
+        "requestId": "412a647b-a740-4013-b2f6-63399f381607"
+      }
+    },
+    {
+      "method": "POST",
+      "url": "http://127.0.0.1:51471/api/v1/donations/campaigns/ecbf1a43-61ce-434e-937c-aced3435f8ed/cancel",
+      "role": "USER",
+      "expected": 403,
+      "actual": 403,
+      "result": "PASS",
+      "time": "2026-10-14T06:48:34.268Z",
+      "response": {
+        "success": false,
+        "message": "Bạn không có quyền hạn (Permission Denied) để thực hiện hành động này",
+        "requestId": "31443122-a9a7-4b25-984c-9ac23cbdf5f1"
+      }
+    },
+    {
+      "method": "POST",
+      "url": "http://127.0.0.1:51471/api/v1/donations/campaigns/ecbf1a43-61ce-434e-937c-aced3435f8ed/cancel",
+      "role": "FUNDRAISER",
+      "expected": 403,
+      "actual": 403,
+      "result": "PASS",
+      "time": "2026-10-14T06:48:34.274Z",
+      "response": {
+        "success": false,
+        "message": "Bạn không có quyền hạn (Permission Denied) để thực hiện hành động này",
+        "requestId": "3420e0fe-2cc7-4d3e-9449-d2ec4ac2a6a6"
+      }
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:51471/api/v1/donations/campaigns/ecbf1a43-61ce-434e-937c-aced3435f8ed/reconciliation",
+      "role": "GUEST",
+      "expected": 401,
+      "actual": 401,
+      "result": "PASS",
+      "time": "2026-10-14T06:48:34.275Z",
+      "response": {
+        "success": false,
+        "message": "Yêu cầu đăng nhập để truy cập tài nguyên này",
+        "requestId": "c994f10e-a78b-42b3-91ff-d990939a780f"
+      }
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:51471/api/v1/donations/campaigns/ecbf1a43-61ce-434e-937c-aced3435f8ed/reconciliation",
+      "role": "USER",
+      "expected": 403,
+      "actual": 403,
+      "result": "PASS",
+      "time": "2026-10-14T06:48:34.278Z",
+      "response": {
+        "success": false,
+        "message": "Bạn không có quyền hạn (Permission Denied) để thực hiện hành động này",
+        "requestId": "e9bb5900-2da8-4009-a8f9-1df21a0c01b8"
+      }
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:51471/api/v1/donations/campaigns/ecbf1a43-61ce-434e-937c-aced3435f8ed/reconciliation",
+      "role": "FUNDRAISER",
+      "expected": 403,
+      "actual": 403,
+      "result": "PASS",
+      "time": "2026-10-14T06:48:34.281Z",
+      "response": {
+        "success": false,
+        "message": "Bạn không có quyền hạn (Permission Denied) để thực hiện hành động này",
+        "requestId": "9f53643c-003c-4842-8017-36edd06ff51e"
+      }
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:51471/api/v1/donations/admin/all",
+      "role": "GUEST",
+      "expected": 401,
+      "actual": 401,
+      "result": "PASS",
+      "time": "2026-10-14T06:48:34.283Z",
+      "response": {
+        "success": false,
+        "message": "Yêu cầu đăng nhập để truy cập tài nguyên này",
+        "requestId": "438db984-6c55-4a86-b283-dd94104fe8f6"
+      }
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:51471/api/v1/donations/admin/all",
+      "role": "USER",
+      "expected": 403,
+      "actual": 403,
+      "result": "PASS",
+      "time": "2026-10-14T06:48:34.287Z",
+      "response": {
+        "success": false,
+        "message": "Bạn không có quyền hạn (Permission Denied) để thực hiện hành động này",
+        "requestId": "4e0765c1-af1b-4cd1-b3d9-38e070e5a341"
+      }
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:51471/api/v1/donations/admin/all",
+      "role": "FUNDRAISER",
+      "expected": 403,
+      "actual": 403,
+      "result": "PASS",
+      "time": "2026-10-14T06:48:34.291Z",
+      "response": {
+        "success": false,
+        "message": "Bạn không có quyền hạn (Permission Denied) để thực hiện hành động này",
+        "requestId": "3afc7472-c426-4dc4-a315-17651ed02c3d"
+      }
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:51471/api/v1/admin/reports",
+      "role": "GUEST",
+      "expected": 401,
+      "actual": 401,
+      "result": "PASS",
+      "time": "2026-10-14T06:48:34.292Z",
+      "response": {
+        "success": false,
+        "message": "Yêu cầu đăng nhập để truy cập tài nguyên này",
+        "requestId": "ff6f11eb-a7df-4a5c-8dd5-ec48e9037686"
+      }
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:51471/api/v1/admin/reports",
+      "role": "USER",
+      "expected": 403,
+      "actual": 403,
+      "result": "PASS",
+      "time": "2026-10-14T06:48:34.295Z",
+      "response": {
+        "success": false,
+        "message": "Bạn không có quyền hạn (Permission Denied) để thực hiện hành động này",
+        "requestId": "0067a530-a45c-4433-87a9-7caa06c643d7"
+      }
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:51471/api/v1/admin/reports",
+      "role": "FUNDRAISER",
+      "expected": 403,
+      "actual": 403,
+      "result": "PASS",
+      "time": "2026-10-14T06:48:34.298Z",
+      "response": {
+        "success": false,
+        "message": "Bạn không có quyền hạn (Permission Denied) để thực hiện hành động này",
+        "requestId": "79b2b5f7-18b8-46d4-83bc-bb190bb7013f"
+      }
+    },
+    {
+      "method": "PATCH",
+      "url": "http://127.0.0.1:51471/api/v1/admin/reports/64c2df83-cf01-46e7-9716-52cb57d8813b/resolve",
+      "role": "GUEST",
+      "expected": 401,
+      "actual": 401,
+      "result": "PASS",
+      "time": "2026-10-14T06:48:34.300Z",
+      "response": {
+        "success": false,
+        "message": "Yêu cầu đăng nhập để truy cập tài nguyên này",
+        "requestId": "4a8b045a-9c17-4134-9048-0f1a4edf2e39"
+      }
+    },
+    {
+      "method": "PATCH",
+      "url": "http://127.0.0.1:51471/api/v1/admin/reports/64c2df83-cf01-46e7-9716-52cb57d8813b/resolve",
+      "role": "USER",
+      "expected": 403,
+      "actual": 403,
+      "result": "PASS",
+      "time": "2026-10-14T06:48:34.303Z",
+      "response": {
+        "success": false,
+        "message": "Bạn không có quyền hạn (Permission Denied) để thực hiện hành động này",
+        "requestId": "b029cf41-cab4-4494-a281-d1ade257cfd6"
+      }
+    },
+    {
+      "method": "PATCH",
+      "url": "http://127.0.0.1:51471/api/v1/admin/reports/64c2df83-cf01-46e7-9716-52cb57d8813b/resolve",
+      "role": "FUNDRAISER",
+      "expected": 403,
+      "actual": 403,
+      "result": "PASS",
+      "time": "2026-10-14T06:48:34.306Z",
+      "response": {
+        "success": false,
+        "message": "Bạn không có quyền hạn (Permission Denied) để thực hiện hành động này",
+        "requestId": "ff8bdea6-64cc-4892-992d-e47e1b093b79"
+      }
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:51471/api/v1/activity-logs",
+      "role": "GUEST",
+      "expected": 401,
+      "actual": 401,
+      "result": "PASS",
+      "time": "2026-10-14T06:48:34.307Z",
+      "response": {
+        "success": false,
+        "message": "Yêu cầu đăng nhập để truy cập tài nguyên này",
+        "requestId": "fc89ce1a-ab22-4c50-a28a-7db7f0632022"
+      }
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:51471/api/v1/activity-logs",
+      "role": "USER",
+      "expected": 403,
+      "actual": 403,
+      "result": "PASS",
+      "time": "2026-10-14T06:48:34.311Z",
+      "response": {
+        "success": false,
+        "message": "Bạn không có quyền hạn (Permission Denied) để thực hiện hành động này",
+        "requestId": "07893ebc-02ff-4cf4-94d4-a4e1c4ed4508"
+      }
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:51471/api/v1/activity-logs",
+      "role": "FUNDRAISER",
+      "expected": 403,
+      "actual": 403,
+      "result": "PASS",
+      "time": "2026-10-14T06:48:34.315Z",
+      "response": {
+        "success": false,
+        "message": "Bạn không có quyền hạn (Permission Denied) để thực hiện hành động này",
+        "requestId": "6f1a6d13-ed33-490e-b6a2-001f5b0a40b3"
+      }
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:51471/api/v1/activity-logs/stats",
+      "role": "GUEST",
+      "expected": 401,
+      "actual": 401,
+      "result": "PASS",
+      "time": "2026-10-14T06:48:34.317Z",
+      "response": {
+        "success": false,
+        "message": "Yêu cầu đăng nhập để truy cập tài nguyên này",
+        "requestId": "d04bd360-1dd6-443d-a4ac-fb8454c2dbfe"
+      }
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:51471/api/v1/activity-logs/stats",
+      "role": "USER",
+      "expected": 403,
+      "actual": 403,
+      "result": "PASS",
+      "time": "2026-10-14T06:48:34.320Z",
+      "response": {
+        "success": false,
+        "message": "Bạn không có quyền hạn (Permission Denied) để thực hiện hành động này",
+        "requestId": "bde6f518-6d0c-413b-a82e-12d5a69e6217"
+      }
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:51471/api/v1/activity-logs/stats",
+      "role": "FUNDRAISER",
+      "expected": 403,
+      "actual": 403,
+      "result": "PASS",
+      "time": "2026-10-14T06:48:34.324Z",
+      "response": {
+        "success": false,
+        "message": "Bạn không có quyền hạn (Permission Denied) để thực hiện hành động này",
+        "requestId": "16f929d3-95db-487e-a725-d053fa580174"
+      }
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:51471/api/v1/activity-logs/user/99f55f31-d1e9-450b-932f-2ab9eceedac4",
+      "role": "GUEST",
+      "expected": 401,
+      "actual": 401,
+      "result": "PASS",
+      "time": "2026-10-14T06:48:34.326Z",
+      "response": {
+        "success": false,
+        "message": "Yêu cầu đăng nhập để truy cập tài nguyên này",
+        "requestId": "50365a8a-9843-4756-b832-e9b7dbcb7ad0"
+      }
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:51471/api/v1/activity-logs/user/99f55f31-d1e9-450b-932f-2ab9eceedac4",
+      "role": "USER",
+      "expected": 403,
+      "actual": 403,
+      "result": "PASS",
+      "time": "2026-10-14T06:48:34.330Z",
+      "response": {
+        "success": false,
+        "message": "Bạn không có quyền hạn (Permission Denied) để thực hiện hành động này",
+        "requestId": "262dccf1-68d5-4e22-8ca4-524e5e41009b"
+      }
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:51471/api/v1/activity-logs/user/99f55f31-d1e9-450b-932f-2ab9eceedac4",
+      "role": "FUNDRAISER",
+      "expected": 403,
+      "actual": 403,
+      "result": "PASS",
+      "time": "2026-10-14T06:48:34.333Z",
+      "response": {
+        "success": false,
+        "message": "Bạn không có quyền hạn (Permission Denied) để thực hiện hành động này",
+        "requestId": "91954c05-cf92-444b-9ef9-4c8981a71e81"
+      }
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:51471/api/v1/activity-logs/4488bb79-b46d-452b-8fea-dd19597989fa",
+      "role": "GUEST",
+      "expected": 401,
+      "actual": 401,
+      "result": "PASS",
+      "time": "2026-10-14T06:48:34.336Z",
+      "response": {
+        "success": false,
+        "message": "Yêu cầu đăng nhập để truy cập tài nguyên này",
+        "requestId": "6457ac95-71ab-42e2-a285-cb68895196bc"
+      }
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:51471/api/v1/activity-logs/4488bb79-b46d-452b-8fea-dd19597989fa",
+      "role": "USER",
+      "expected": 403,
+      "actual": 403,
+      "result": "PASS",
+      "time": "2026-10-14T06:48:34.341Z",
+      "response": {
+        "success": false,
+        "message": "Bạn không có quyền hạn (Permission Denied) để thực hiện hành động này",
+        "requestId": "fbb72908-8bf0-4c92-a182-1394674623b6"
+      }
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:51471/api/v1/activity-logs/4488bb79-b46d-452b-8fea-dd19597989fa",
+      "role": "FUNDRAISER",
+      "expected": 403,
+      "actual": 403,
+      "result": "PASS",
+      "time": "2026-10-14T06:48:34.344Z",
+      "response": {
+        "success": false,
+        "message": "Bạn không có quyền hạn (Permission Denied) để thực hiện hành động này",
+        "requestId": "fc82f193-660a-4696-a4f0-a05acee3b91b"
+      }
+    },
+    {
+      "method": "POST",
+      "url": "http://127.0.0.1:51471/api/v1/activity-logs",
+      "role": "GUEST",
+      "expected": 401,
+      "actual": 401,
+      "result": "PASS",
+      "time": "2026-10-14T06:48:34.348Z",
+      "response": {
+        "success": false,
+        "message": "Yêu cầu đăng nhập để truy cập tài nguyên này",
+        "requestId": "218ed8fb-b1e2-403a-9df0-4a660d591ef3"
+      }
+    },
+    {
+      "method": "POST",
+      "url": "http://127.0.0.1:51471/api/v1/activity-logs",
+      "role": "USER",
+      "expected": 403,
+      "actual": 403,
+      "result": "PASS",
+      "time": "2026-10-14T06:48:34.351Z",
+      "response": {
+        "success": false,
+        "message": "Bạn không có quyền hạn (Permission Denied) để thực hiện hành động này",
+        "requestId": "84b33b09-636a-490a-a860-bd3d9fd88f31"
+      }
+    },
+    {
+      "method": "POST",
+      "url": "http://127.0.0.1:51471/api/v1/activity-logs",
+      "role": "FUNDRAISER",
+      "expected": 403,
+      "actual": 403,
+      "result": "PASS",
+      "time": "2026-10-14T06:48:34.356Z",
+      "response": {
+        "success": false,
+        "message": "Bạn không có quyền hạn (Permission Denied) để thực hiện hành động này",
+        "requestId": "fc937ca7-f50c-4cae-8585-d43f0ed1aa94"
+      }
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:51471/api/v1/admin/analytics/daily?from=2026-01-01&to=2026-12-31",
+      "role": "GUEST",
+      "expected": 401,
+      "actual": 401,
+      "result": "PASS",
+      "time": "2026-10-14T06:48:34.358Z",
+      "response": {
+        "success": false,
+        "message": "Yêu cầu đăng nhập để truy cập tài nguyên này",
+        "requestId": "7f3e9b7a-33a4-41e3-92ce-0325707c43b3"
+      }
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:51471/api/v1/admin/analytics/daily?from=2026-01-01&to=2026-12-31",
+      "role": "USER",
+      "expected": 403,
+      "actual": 403,
+      "result": "PASS",
+      "time": "2026-10-14T06:48:34.362Z",
+      "response": {
+        "success": false,
+        "message": "Bạn không có quyền hạn (Permission Denied) để thực hiện hành động này",
+        "requestId": "88954788-d1f0-4956-9221-329607cd6298"
+      }
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:51471/api/v1/admin/analytics/daily?from=2026-01-01&to=2026-12-31",
+      "role": "FUNDRAISER",
+      "expected": 403,
+      "actual": 403,
+      "result": "PASS",
+      "time": "2026-10-14T06:48:34.367Z",
+      "response": {
+        "success": false,
+        "message": "Bạn không có quyền hạn (Permission Denied) để thực hiện hành động này",
+        "requestId": "31d3ca73-5def-4374-a9b1-5eeec83eeb76"
+      }
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:51471/api/v1/admin/analytics/campaigns?from=2026-01-01&to=2026-12-31",
+      "role": "GUEST",
+      "expected": 401,
+      "actual": 401,
+      "result": "PASS",
+      "time": "2026-10-14T06:48:34.369Z",
+      "response": {
+        "success": false,
+        "message": "Yêu cầu đăng nhập để truy cập tài nguyên này",
+        "requestId": "e0f7ac34-398d-42fe-9353-5a9d92dc6013"
+      }
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:51471/api/v1/admin/analytics/campaigns?from=2026-01-01&to=2026-12-31",
+      "role": "USER",
+      "expected": 403,
+      "actual": 403,
+      "result": "PASS",
+      "time": "2026-10-14T06:48:34.372Z",
+      "response": {
+        "success": false,
+        "message": "Bạn không có quyền hạn (Permission Denied) để thực hiện hành động này",
+        "requestId": "26d02192-caf3-47f3-8f03-be9ec33290bc"
+      }
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:51471/api/v1/admin/analytics/campaigns?from=2026-01-01&to=2026-12-31",
+      "role": "FUNDRAISER",
+      "expected": 403,
+      "actual": 403,
+      "result": "PASS",
+      "time": "2026-10-14T06:48:34.378Z",
+      "response": {
+        "success": false,
+        "message": "Bạn không có quyền hạn (Permission Denied) để thực hiện hành động này",
+        "requestId": "76bce2c8-f940-41df-bd71-4936f9b89ac4"
+      }
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:51471/api/v1/admin/analytics/categories?from=2026-01-01&to=2026-12-31",
+      "role": "GUEST",
+      "expected": 401,
+      "actual": 401,
+      "result": "PASS",
+      "time": "2026-10-14T06:48:34.380Z",
+      "response": {
+        "success": false,
+        "message": "Yêu cầu đăng nhập để truy cập tài nguyên này",
+        "requestId": "ba555d6b-c5c9-42e7-8b98-8fb819fa9f7e"
+      }
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:51471/api/v1/admin/analytics/categories?from=2026-01-01&to=2026-12-31",
+      "role": "USER",
+      "expected": 403,
+      "actual": 403,
+      "result": "PASS",
+      "time": "2026-10-14T06:48:34.384Z",
+      "response": {
+        "success": false,
+        "message": "Bạn không có quyền hạn (Permission Denied) để thực hiện hành động này",
+        "requestId": "e8b1f631-be7d-414d-bd9c-925c386e951a"
+      }
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:51471/api/v1/admin/analytics/categories?from=2026-01-01&to=2026-12-31",
+      "role": "FUNDRAISER",
+      "expected": 403,
+      "actual": 403,
+      "result": "PASS",
+      "time": "2026-10-14T06:48:34.389Z",
+      "response": {
+        "success": false,
+        "message": "Bạn không có quyền hạn (Permission Denied) để thực hiện hành động này",
+        "requestId": "a13b3e80-8265-41c9-b0fa-1ebe39c502cd"
+      }
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:51471/api/v1/campaigns/my/list",
+      "role": "GUEST",
+      "expected": 401,
+      "actual": 401,
+      "result": "PASS",
+      "time": "2026-10-14T06:48:34.390Z",
+      "response": {
+        "success": false,
+        "message": "Yêu cầu đăng nhập để truy cập tài nguyên này",
+        "requestId": "b11cc8db-2d26-43d9-aa77-35e53f1c8e69"
+      }
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:51471/api/v1/campaigns/my/list",
+      "role": "USER",
+      "expected": 403,
+      "actual": 403,
+      "result": "PASS",
+      "time": "2026-10-14T06:48:34.393Z",
+      "response": {
+        "success": false,
+        "message": "Bạn không có quyền hạn (Permission Denied) để thực hiện hành động này",
+        "requestId": "441dc589-a77e-4dda-bfe8-00df44e8e2d7"
+      }
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:51471/api/v1/campaigns/my/list",
+      "role": "ADMIN",
+      "expected": 403,
+      "actual": 403,
+      "result": "PASS",
+      "time": "2026-10-14T06:48:34.395Z",
+      "response": {
+        "success": false,
+        "message": "Bạn không có quyền hạn (Permission Denied) để thực hiện hành động này",
+        "requestId": "e245f3ad-f762-43c7-aecf-a63c1c0a2f6b"
+      }
+    },
+    {
+      "method": "POST",
+      "url": "http://127.0.0.1:51471/api/v1/campaigns",
+      "role": "GUEST",
+      "expected": 401,
+      "actual": 401,
+      "result": "PASS",
+      "time": "2026-10-14T06:48:34.396Z",
+      "response": {
+        "success": false,
+        "message": "Yêu cầu đăng nhập để truy cập tài nguyên này",
+        "requestId": "9504c7a7-d556-4bde-b308-f8f9299edb2f"
+      }
+    },
+    {
+      "method": "POST",
+      "url": "http://127.0.0.1:51471/api/v1/campaigns",
+      "role": "USER",
+      "expected": 403,
+      "actual": 403,
+      "result": "PASS",
+      "time": "2026-10-14T06:48:34.399Z",
+      "response": {
+        "success": false,
+        "message": "Bạn không có quyền hạn (Permission Denied) để thực hiện hành động này",
+        "requestId": "caec5f3f-0827-4ee5-a764-23115e6f68cd"
+      }
+    },
+    {
+      "method": "POST",
+      "url": "http://127.0.0.1:51471/api/v1/campaigns",
+      "role": "ADMIN",
+      "expected": 403,
+      "actual": 403,
+      "result": "PASS",
+      "time": "2026-10-14T06:48:34.402Z",
+      "response": {
+        "success": false,
+        "message": "Bạn không có quyền hạn (Permission Denied) để thực hiện hành động này",
+        "requestId": "90dec582-355e-4963-bb34-ffafa9162cd4"
+      }
+    },
+    {
+      "method": "PUT",
+      "url": "http://127.0.0.1:51471/api/v1/campaigns/ecbf1a43-61ce-434e-937c-aced3435f8ed",
+      "role": "GUEST",
+      "expected": 401,
+      "actual": 401,
+      "result": "PASS",
+      "time": "2026-10-14T06:48:34.404Z",
+      "response": {
+        "success": false,
+        "message": "Yêu cầu đăng nhập để truy cập tài nguyên này",
+        "requestId": "e8d33d6d-c169-4c43-99f0-d8914db3b477"
+      }
+    },
+    {
+      "method": "PUT",
+      "url": "http://127.0.0.1:51471/api/v1/campaigns/ecbf1a43-61ce-434e-937c-aced3435f8ed",
+      "role": "USER",
+      "expected": 403,
+      "actual": 403,
+      "result": "PASS",
+      "time": "2026-10-14T06:48:34.406Z",
+      "response": {
+        "success": false,
+        "message": "Bạn không có quyền hạn (Permission Denied) để thực hiện hành động này",
+        "requestId": "54d4a848-6c9b-4583-98d2-88d6233dbaf8"
+      }
+    },
+    {
+      "method": "PUT",
+      "url": "http://127.0.0.1:51471/api/v1/campaigns/ecbf1a43-61ce-434e-937c-aced3435f8ed",
+      "role": "ADMIN",
+      "expected": 403,
+      "actual": 403,
+      "result": "PASS",
+      "time": "2026-10-14T06:48:34.409Z",
+      "response": {
+        "success": false,
+        "message": "Bạn không có quyền hạn (Permission Denied) để thực hiện hành động này",
+        "requestId": "0bfa9260-628d-45a9-a131-659bf973ad81"
+      }
+    },
+    {
+      "method": "POST",
+      "url": "http://127.0.0.1:51471/api/v1/campaigns/ecbf1a43-61ce-434e-937c-aced3435f8ed/media",
+      "role": "GUEST",
+      "expected": 401,
+      "actual": 401,
+      "result": "PASS",
+      "time": "2026-10-14T06:48:34.411Z",
+      "response": {
+        "success": false,
+        "message": "Yêu cầu đăng nhập để truy cập tài nguyên này",
+        "requestId": "97b93210-ecff-44e8-a5ff-92fc861a3c66"
+      }
+    },
+    {
+      "method": "POST",
+      "url": "http://127.0.0.1:51471/api/v1/campaigns/ecbf1a43-61ce-434e-937c-aced3435f8ed/media",
+      "role": "USER",
+      "expected": 403,
+      "actual": 403,
+      "result": "PASS",
+      "time": "2026-10-14T06:48:34.414Z",
+      "response": {
+        "success": false,
+        "message": "Bạn không có quyền hạn (Permission Denied) để thực hiện hành động này",
+        "requestId": "af43587b-bd81-4d6a-a5b9-992750cce09c"
+      }
+    },
+    {
+      "method": "POST",
+      "url": "http://127.0.0.1:51471/api/v1/campaigns/ecbf1a43-61ce-434e-937c-aced3435f8ed/media",
+      "role": "ADMIN",
+      "expected": 403,
+      "actual": 403,
+      "result": "PASS",
+      "time": "2026-10-14T06:48:34.417Z",
+      "response": {
+        "success": false,
+        "message": "Bạn không có quyền hạn (Permission Denied) để thực hiện hành động này",
+        "requestId": "48514c6d-037a-4804-8c79-7d09dd6cffdd"
+      }
+    },
+    {
+      "method": "POST",
+      "url": "http://127.0.0.1:51471/api/v1/campaigns/ecbf1a43-61ce-434e-937c-aced3435f8ed/updates",
+      "role": "GUEST",
+      "expected": 401,
+      "actual": 401,
+      "result": "PASS",
+      "time": "2026-10-14T06:48:34.419Z",
+      "response": {
+        "success": false,
+        "message": "Yêu cầu đăng nhập để truy cập tài nguyên này",
+        "requestId": "93f5ebca-0080-4a97-9573-195574da6f88"
+      }
+    },
+    {
+      "method": "POST",
+      "url": "http://127.0.0.1:51471/api/v1/campaigns/ecbf1a43-61ce-434e-937c-aced3435f8ed/updates",
+      "role": "USER",
+      "expected": 403,
+      "actual": 403,
+      "result": "PASS",
+      "time": "2026-10-14T06:48:34.421Z",
+      "response": {
+        "success": false,
+        "message": "Bạn không có quyền hạn (Permission Denied) để thực hiện hành động này",
+        "requestId": "29555ab4-4fe6-46ef-831f-4c1aa8ce0cf7"
+      }
+    },
+    {
+      "method": "POST",
+      "url": "http://127.0.0.1:51471/api/v1/campaigns/ecbf1a43-61ce-434e-937c-aced3435f8ed/updates",
+      "role": "ADMIN",
+      "expected": 403,
+      "actual": 403,
+      "result": "PASS",
+      "time": "2026-10-14T06:48:34.424Z",
+      "response": {
+        "success": false,
+        "message": "Bạn không có quyền hạn (Permission Denied) để thực hiện hành động này",
+        "requestId": "950d0f89-7b10-4a1a-a312-589161c9d904"
+      }
+    },
+    {
+      "method": "POST",
+      "url": "http://127.0.0.1:51471/api/v1/campaigns/ecbf1a43-61ce-434e-937c-aced3435f8ed/disbursements",
+      "role": "GUEST",
+      "expected": 401,
+      "actual": 401,
+      "result": "PASS",
+      "time": "2026-10-14T06:48:34.425Z",
+      "response": {
+        "success": false,
+        "message": "Yêu cầu đăng nhập để truy cập tài nguyên này",
+        "requestId": "c87e1fd3-a39c-457c-81cb-57ec61dce89e"
+      }
+    },
+    {
+      "method": "POST",
+      "url": "http://127.0.0.1:51471/api/v1/campaigns/ecbf1a43-61ce-434e-937c-aced3435f8ed/disbursements",
+      "role": "USER",
+      "expected": 403,
+      "actual": 403,
+      "result": "PASS",
+      "time": "2026-10-14T06:48:34.427Z",
+      "response": {
+        "success": false,
+        "message": "Bạn không có quyền hạn (Permission Denied) để thực hiện hành động này",
+        "requestId": "41abe39c-1f72-46d5-94b7-33862faef063"
+      }
+    },
+    {
+      "method": "POST",
+      "url": "http://127.0.0.1:51471/api/v1/campaigns/ecbf1a43-61ce-434e-937c-aced3435f8ed/disbursements",
+      "role": "ADMIN",
+      "expected": 403,
+      "actual": 403,
+      "result": "PASS",
+      "time": "2026-10-14T06:48:34.429Z",
+      "response": {
+        "success": false,
+        "message": "Bạn không có quyền hạn (Permission Denied) để thực hiện hành động này",
+        "requestId": "9d37875d-d3cc-4b1e-8574-449a9bdaa47c"
+      }
+    },
+    {
+      "method": "POST",
+      "url": "http://127.0.0.1:51471/api/v1/verifications/request",
+      "role": "GUEST",
+      "expected": 401,
+      "actual": 401,
+      "result": "PASS",
+      "time": "2026-10-14T06:48:34.431Z",
+      "response": {
+        "success": false,
+        "message": "Yêu cầu đăng nhập để truy cập tài nguyên này",
+        "requestId": "842ab1c4-5092-418a-ae26-c32a7d35460a"
+      }
+    },
+    {
+      "method": "POST",
+      "url": "http://127.0.0.1:51471/api/v1/verifications/request",
+      "role": "FUNDRAISER",
+      "expected": 403,
+      "actual": 403,
+      "result": "PASS",
+      "time": "2026-10-14T06:48:34.433Z",
+      "response": {
+        "success": false,
+        "message": "Bạn không có quyền hạn (Permission Denied) để thực hiện hành động này",
+        "requestId": "5331b30f-afad-4ce9-bc53-d1fa61c83c99"
+      }
+    },
+    {
+      "method": "POST",
+      "url": "http://127.0.0.1:51471/api/v1/verifications/request",
+      "role": "ADMIN",
+      "expected": 403,
+      "actual": 403,
+      "result": "PASS",
+      "time": "2026-10-14T06:48:34.435Z",
+      "response": {
+        "success": false,
+        "message": "Bạn không có quyền hạn (Permission Denied) để thực hiện hành động này",
+        "requestId": "b113269b-e5cc-4c47-869f-f4a81363bbff"
+      }
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:51471/api/v1/donations/campaign/ecbf1a43-61ce-434e-937c-aced3435f8ed/manage-donations",
+      "role": "GUEST",
+      "expected": 401,
+      "actual": 401,
+      "result": "PASS",
+      "time": "2026-10-14T06:48:34.436Z",
+      "response": {
+        "success": false,
+        "message": "Yêu cầu đăng nhập để truy cập tài nguyên này",
+        "requestId": "9404bf48-dfbd-42b0-8259-2636a188fcd0"
+      }
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:51471/api/v1/donations/campaign/ecbf1a43-61ce-434e-937c-aced3435f8ed/manage-donations",
+      "role": "USER",
+      "expected": 403,
+      "actual": 403,
+      "result": "PASS",
+      "time": "2026-10-14T06:48:34.439Z",
+      "response": {
+        "success": false,
+        "message": "Bạn không có quyền hạn (Permission Denied) để thực hiện hành động này",
+        "requestId": "b6394c48-3005-4e05-ac74-856999b36c65"
+      }
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:51471/api/v1/auth/me",
+      "role": "GUEST",
+      "expected": 401,
+      "actual": 401,
+      "result": "PASS",
+      "time": "2026-10-14T06:48:34.441Z",
+      "response": {
+        "success": false,
+        "message": "Yêu cầu đăng nhập để truy cập tài nguyên này",
+        "requestId": "c1b6627b-aca0-469b-bf97-3216f3f2f377"
+      }
+    },
+    {
+      "method": "POST",
+      "url": "http://127.0.0.1:51471/api/v1/auth/logout",
+      "role": "GUEST",
+      "expected": 401,
+      "actual": 401,
+      "result": "PASS",
+      "time": "2026-10-14T06:48:34.442Z",
+      "response": {
+        "success": false,
+        "message": "Yêu cầu đăng nhập để truy cập tài nguyên này",
+        "requestId": "af994ce9-9190-455d-8cfc-cff59cd91e7f"
+      }
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:51471/api/v1/profile/me",
+      "role": "GUEST",
+      "expected": 401,
+      "actual": 401,
+      "result": "PASS",
+      "time": "2026-10-14T06:48:34.443Z",
+      "response": {
+        "success": false,
+        "message": "Yêu cầu đăng nhập để truy cập tài nguyên này",
+        "requestId": "1abaca5c-a989-409c-b60d-912ba1d49354"
+      }
+    },
+    {
+      "method": "PUT",
+      "url": "http://127.0.0.1:51471/api/v1/profile/me",
+      "role": "GUEST",
+      "expected": 401,
+      "actual": 401,
+      "result": "PASS",
+      "time": "2026-10-14T06:48:34.445Z",
+      "response": {
+        "success": false,
+        "message": "Yêu cầu đăng nhập để truy cập tài nguyên này",
+        "requestId": "31964394-9197-440a-bdee-5a9f675fcd2f"
+      }
+    },
+    {
+      "method": "PUT",
+      "url": "http://127.0.0.1:51471/api/v1/profile/change-password",
+      "role": "GUEST",
+      "expected": 401,
+      "actual": 401,
+      "result": "PASS",
+      "time": "2026-10-14T06:48:34.448Z",
+      "response": {
+        "success": false,
+        "message": "Yêu cầu đăng nhập để truy cập tài nguyên này",
+        "requestId": "9c327ca3-57aa-4b8e-acf5-ac0f1ee75b99"
+      }
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:51471/api/v1/verifications/my-status",
+      "role": "GUEST",
+      "expected": 401,
+      "actual": 401,
+      "result": "PASS",
+      "time": "2026-10-14T06:48:34.452Z",
+      "response": {
+        "success": false,
+        "message": "Yêu cầu đăng nhập để truy cập tài nguyên này",
+        "requestId": "a6635e91-1025-46d6-8ea4-366eb4ac577e"
+      }
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:51471/api/v1/notifications",
+      "role": "GUEST",
+      "expected": 401,
+      "actual": 401,
+      "result": "PASS",
+      "time": "2026-10-14T06:48:34.455Z",
+      "response": {
+        "success": false,
+        "message": "Yêu cầu đăng nhập để truy cập tài nguyên này",
+        "requestId": "27d4c6c5-8694-4bb1-b548-b716a2e46c5f"
+      }
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:51471/api/v1/notifications/unread-count",
+      "role": "GUEST",
+      "expected": 401,
+      "actual": 401,
+      "result": "PASS",
+      "time": "2026-10-14T06:48:34.456Z",
+      "response": {
+        "success": false,
+        "message": "Yêu cầu đăng nhập để truy cập tài nguyên này",
+        "requestId": "b837489c-d10c-486c-aca7-7e37f3990c91"
+      }
+    },
+    {
+      "method": "PATCH",
+      "url": "http://127.0.0.1:51471/api/v1/notifications/read-all",
+      "role": "GUEST",
+      "expected": 401,
+      "actual": 401,
+      "result": "PASS",
+      "time": "2026-10-14T06:48:34.458Z",
+      "response": {
+        "success": false,
+        "message": "Yêu cầu đăng nhập để truy cập tài nguyên này",
+        "requestId": "c5f12075-3b80-4ec5-a5c9-f03530eabd4f"
+      }
+    },
+    {
+      "method": "PATCH",
+      "url": "http://127.0.0.1:51471/api/v1/notifications/1b987cb1-3821-4b31-b267-2d61e9a3deae/read",
+      "role": "GUEST",
+      "expected": 401,
+      "actual": 401,
+      "result": "PASS",
+      "time": "2026-10-14T06:48:34.459Z",
+      "response": {
+        "success": false,
+        "message": "Yêu cầu đăng nhập để truy cập tài nguyên này",
+        "requestId": "fa88412b-e7d5-446f-9393-e3975b55f805"
+      }
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:51471/api/v1/donations/my/history",
+      "role": "GUEST",
+      "expected": 401,
+      "actual": 401,
+      "result": "PASS",
+      "time": "2026-10-14T06:48:34.460Z",
+      "response": {
+        "success": false,
+        "message": "Yêu cầu đăng nhập để truy cập tài nguyên này",
+        "requestId": "42019f7c-4dcc-4b11-91b4-aa883098aa65"
+      }
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:51471/api/v1/donations/159d474d-878c-4810-8af3-10c9910e6fc6",
+      "role": "GUEST",
+      "expected": 401,
+      "actual": 401,
+      "result": "PASS",
+      "time": "2026-10-14T06:48:34.462Z",
+      "response": {
+        "success": false,
+        "message": "Yêu cầu đăng nhập để truy cập tài nguyên này",
+        "requestId": "331bcd15-33b5-470a-86c2-7cab7781c6dc"
+      }
+    },
+    {
+      "method": "POST",
+      "url": "http://127.0.0.1:51471/api/v1/donations/159d474d-878c-4810-8af3-10c9910e6fc6/refund",
+      "role": "GUEST",
+      "expected": 401,
+      "actual": 401,
+      "result": "PASS",
+      "time": "2026-10-14T06:48:34.464Z",
+      "response": {
+        "success": false,
+        "message": "Yêu cầu đăng nhập để truy cập tài nguyên này",
+        "requestId": "b3f63040-d324-46a2-9dc0-7ed33a02a504"
+      }
+    },
+    {
+      "method": "POST",
+      "url": "http://127.0.0.1:51471/api/v1/donations/159d474d-878c-4810-8af3-10c9910e6fc6/confirm",
+      "role": "GUEST",
+      "expected": 401,
+      "actual": 401,
+      "result": "PASS",
+      "time": "2026-10-14T06:48:34.466Z",
+      "response": {
+        "success": false,
+        "message": "Yêu cầu đăng nhập để truy cập tài nguyên này",
+        "requestId": "4209ef3f-413f-46e0-aebb-dc735b7e313f"
+      }
+    },
+    {
+      "method": "POST",
+      "url": "http://127.0.0.1:51471/api/v1/uploads",
+      "role": "GUEST",
+      "expected": 401,
+      "actual": 401,
+      "result": "PASS",
+      "time": "2026-10-14T06:48:34.468Z",
+      "response": {
+        "success": false,
+        "message": "Yêu cầu đăng nhập để truy cập tài nguyên này",
+        "requestId": "12ae24c9-6557-47cd-94c5-f8feb4101e57"
+      }
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:51471/api/v1/uploads/779602c5-44d9-4fef-b873-d739228ed4c0",
+      "role": "GUEST",
+      "expected": 401,
+      "actual": 401,
+      "result": "PASS",
+      "time": "2026-10-14T06:48:34.470Z",
+      "response": {
+        "success": false,
+        "message": "Yêu cầu đăng nhập để truy cập tài nguyên này",
+        "requestId": "fcd9bbe0-a7ee-4cbc-b125-a2655f475da9"
+      }
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:51471/api/v1/activity-logs/me",
+      "role": "GUEST",
+      "expected": 401,
+      "actual": 401,
+      "result": "PASS",
+      "time": "2026-10-14T06:48:34.473Z",
+      "response": {
+        "success": false,
+        "message": "Yêu cầu đăng nhập để truy cập tài nguyên này",
+        "requestId": "e72128db-f6ac-49c2-91e6-767dffd4b252"
+      }
+    },
+    {
+      "method": "POST",
+      "url": "http://127.0.0.1:51471/api/v1/reports",
+      "role": "GUEST",
+      "expected": 401,
+      "actual": 401,
+      "result": "PASS",
+      "time": "2026-10-14T06:48:34.477Z",
+      "response": {
+        "success": false,
+        "message": "Yêu cầu đăng nhập để truy cập tài nguyên này",
+        "requestId": "d50b330f-a36b-41ad-b6f4-6df40c5af7af"
+      }
+    },
+    {
+      "method": "POST",
+      "url": "http://127.0.0.1:51471/api/v1/communities",
+      "role": "GUEST",
+      "expected": 401,
+      "actual": 401,
+      "result": "PASS",
+      "time": "2026-10-14T06:48:34.481Z",
+      "response": {
+        "success": false,
+        "message": "Yêu cầu đăng nhập để truy cập tài nguyên này",
+        "requestId": "b07c8287-ba32-4c06-abce-a1b932fe42a8"
+      }
+    },
+    {
+      "method": "POST",
+      "url": "http://127.0.0.1:51471/api/v1/communities/994beaaa-5245-42a6-9bce-2f3340504f20/join",
+      "role": "GUEST",
+      "expected": 401,
+      "actual": 401,
+      "result": "PASS",
+      "time": "2026-10-14T06:48:34.483Z",
+      "response": {
+        "success": false,
+        "message": "Yêu cầu đăng nhập để truy cập tài nguyên này",
+        "requestId": "c0910be8-3366-4778-8ef7-d590904dd544"
+      }
+    },
+    {
+      "method": "POST",
+      "url": "http://127.0.0.1:51471/api/v1/communities/11bb9d63-2a75-47c8-8e06-448b61e33e90/posts",
+      "role": "GUEST",
+      "expected": 401,
+      "actual": 401,
+      "result": "PASS",
+      "time": "2026-10-14T06:48:34.485Z",
+      "response": {
+        "success": false,
+        "message": "Yêu cầu đăng nhập để truy cập tài nguyên này",
+        "requestId": "6861474f-1a90-4f39-a5b6-74829703a037"
+      }
+    },
+    {
+      "method": "POST",
+      "url": "http://127.0.0.1:51471/api/v1/communities/7a99cd7d-8754-4014-8575-889a25923451/posts/35914d15-0659-4e7e-b00c-4aedf0de07cc/like",
+      "role": "GUEST",
+      "expected": 401,
+      "actual": 401,
+      "result": "PASS",
+      "time": "2026-10-14T06:48:34.486Z",
+      "response": {
+        "success": false,
+        "message": "Yêu cầu đăng nhập để truy cập tài nguyên này",
+        "requestId": "0ab0808b-f49e-4f09-9056-3307e91481de"
+      }
+    },
+    {
+      "method": "POST",
+      "url": "http://127.0.0.1:51471/api/v1/communities/62f9a4d5-828f-42d1-8ed4-b73333190fbe/posts/bc4b9ff7-9534-4e13-b02a-60ccd1185037/comments",
+      "role": "GUEST",
+      "expected": 401,
+      "actual": 401,
+      "result": "PASS",
+      "time": "2026-10-14T06:48:34.487Z",
+      "response": {
+        "success": false,
+        "message": "Yêu cầu đăng nhập để truy cập tài nguyên này",
+        "requestId": "071fd1f6-0660-443e-b076-8751fa8337c6"
+      }
+    }
+  ]
+}

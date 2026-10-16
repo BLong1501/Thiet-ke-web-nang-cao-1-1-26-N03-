@@ -1,0 +1,198 @@
+{
+  "generatedAt": "2026-10-14T05:56:02.192Z",
+  "environment": "LOCAL",
+  "scope": "Real application HTTP routes and local MySQL; no claim of online validation",
+  "distribution": {
+    "main": 9,
+    "edge": 6,
+    "security": 7,
+    "report": 3
+  },
+  "total": 25,
+  "pass": 25,
+  "results": [
+    {
+      "id": "TC-01",
+      "group": "main",
+      "name": "Đăng nhập ADMIN",
+      "result": "PASS",
+      "detail": {
+        "status": 200,
+        "role": "ADMIN"
+      }
+    },
+    {
+      "id": "TC-02",
+      "group": "main",
+      "name": "Đăng nhập USER",
+      "result": "PASS",
+      "detail": {
+        "status": 200,
+        "role": "USER"
+      }
+    },
+    {
+      "id": "TC-03",
+      "group": "main",
+      "name": "Đăng nhập FUNDRAISER",
+      "result": "PASS",
+      "detail": {
+        "status": 200,
+        "role": "FUNDRAISER"
+      }
+    },
+    {
+      "id": "TC-04",
+      "group": "main",
+      "name": "Danh mục thật",
+      "result": "PASS",
+      "detail": {
+        "count": 5
+      }
+    },
+    {
+      "id": "TC-05",
+      "group": "main",
+      "name": "Danh sách chiến dịch",
+      "result": "PASS",
+      "detail": {
+        "count": 1
+      }
+    },
+    {
+      "id": "TC-06",
+      "group": "main",
+      "name": "Chi tiết chiến dịch",
+      "result": "PASS"
+    },
+    {
+      "id": "TC-07",
+      "group": "main",
+      "name": "Hồ sơ chính mình",
+      "result": "PASS"
+    },
+    {
+      "id": "TC-08",
+      "group": "main",
+      "name": "Lịch sử đóng góp của tôi",
+      "result": "PASS"
+    },
+    {
+      "id": "TC-09",
+      "group": "main",
+      "name": "Danh sách thông báo",
+      "result": "PASS"
+    },
+    {
+      "id": "TC-10",
+      "group": "edge",
+      "name": "Email đăng nhập sai định dạng",
+      "result": "PASS"
+    },
+    {
+      "id": "TC-11",
+      "group": "edge",
+      "name": "Ngày không tồn tại",
+      "result": "PASS"
+    },
+    {
+      "id": "TC-12",
+      "group": "edge",
+      "name": "Trang âm",
+      "result": "PASS"
+    },
+    {
+      "id": "TC-13",
+      "group": "edge",
+      "name": "Giới hạn trang quá lớn",
+      "result": "PASS"
+    },
+    {
+      "id": "TC-14",
+      "group": "edge",
+      "name": "Thiếu trường KYC",
+      "result": "PASS"
+    },
+    {
+      "id": "TC-15",
+      "group": "edge",
+      "name": "Upload thiếu tệp",
+      "result": "PASS"
+    },
+    {
+      "id": "TC-16",
+      "group": "security",
+      "name": "Thiếu token",
+      "result": "PASS"
+    },
+    {
+      "id": "TC-17",
+      "group": "security",
+      "name": "Chữ ký token giả",
+      "result": "PASS"
+    },
+    {
+      "id": "TC-18",
+      "group": "security",
+      "name": "USER không được đọc thống kê admin",
+      "result": "PASS"
+    },
+    {
+      "id": "TC-19",
+      "group": "security",
+      "name": "CSRF domain giả chứa localhost",
+      "result": "PASS"
+    },
+    {
+      "id": "TC-20",
+      "group": "security",
+      "name": "SQL injection tìm kiếm",
+      "result": "PASS"
+    },
+    {
+      "id": "TC-21",
+      "group": "security",
+      "name": "Script đổi đuôi ảnh",
+      "result": "PASS"
+    },
+    {
+      "id": "TC-22",
+      "group": "security",
+      "name": "Tệp riêng tư yêu cầu đăng nhập",
+      "result": "PASS"
+    },
+    {
+      "id": "TC-23",
+      "group": "report",
+      "name": "Báo cáo daily và xuất CSV",
+      "result": "PASS",
+      "detail": {
+        "groups": 3,
+        "received": 35000000,
+        "manualReceived": "35000000.00"
+      }
+    },
+    {
+      "id": "TC-24",
+      "group": "report",
+      "name": "Báo cáo campaigns và xuất CSV",
+      "result": "PASS",
+      "detail": {
+        "groups": 1,
+        "received": 35000000,
+        "manualReceived": "35000000.00"
+      }
+    },
+    {
+      "id": "TC-25",
+      "group": "report",
+      "name": "Báo cáo categories và xuất CSV",
+      "result": "PASS",
+      "detail": {
+        "groups": 1,
+        "received": 35000000,
+        "manualReceived": "35000000.00"
+      }
+    }
+  ]
+}
