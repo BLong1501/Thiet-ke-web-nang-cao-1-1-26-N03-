@@ -1,5 +1,66 @@
 services:
-  # MySQL Database
+  # ==========================================
+  # 1. FRONTEND (React Vite + Nginx Web Server)
+  # ==========================================
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: crowdfunding_frontend
+    ports:
+      - "5173:80"  # Truy cập cổng 5173 (chuẩn dev URL)
+      - "80:80"    # Truy cập cổng 80 (chuẩn HTTP Web)
+    depends_on:
+      - backend
+    restart: always
+    networks:
+      - crowdfunding_network
+
+  # ==========================================
+  # 2. BACKEND API (Express + Prisma + TypeScript)
+  # ==========================================
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: crowdfunding_backend
+    ports:
+      - "5000:5000"
+    env_file:
+      - ./backend/.env
+    environment:
+      - NODE_ENV=production
+      - PORT=5000
+    depends_on:
+      redis:
+        condition: service_healthy
+    restart: always
+    networks:
+      - crowdfunding_network
+
+  # ==========================================
+  # 3. REDIS (Session & Caching)
+  # ==========================================
+  redis:
+    image: redis:7.0-alpine
+    container_name: crowdfunding_redis
+    command: redis-server --appendonly yes
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: always
+    networks:
+      - crowdfunding_network
+
+  # ==========================================
+  # 4. MYSQL DATABASE (Tùy chọn khi chạy offline)
+  # ==========================================
   mysql:
     image: mysql:8.0
     container_name: crowdfunding_mysql
@@ -28,7 +89,9 @@ services:
     networks:
       - crowdfunding_network
 
-  # phpMyAdmin (Quản lý Database trực quan)
+  # ==========================================
+  # 5. PHPMYADMIN (Quản lý Database trực quan)
+  # ==========================================
   phpmyadmin:
     image: phpmyadmin/phpmyadmin:latest
     container_name: crowdfunding_phpmyadmin
@@ -46,25 +109,9 @@ services:
     networks:
       - crowdfunding_network
 
-  # Redis (Lưu trữ Session & Caching)
-  redis:
-    image: redis:7.0-alpine
-    container_name: crowdfunding_redis
-    command: redis-server --appendonly yes
-    ports:
-      - "6379:6379"
-    volumes:
-      - redis_data:/data
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    restart: always
-    networks:
-      - crowdfunding_network
-
-  # MinIO (Lưu trữ file tương thích AWS S3)
+  # ==========================================
+  # 6. MINIO (Lưu trữ file tương thích S3)
+  # ==========================================
   minio:
     image: minio/minio:latest
     container_name: crowdfunding_minio
@@ -73,7 +120,7 @@ services:
       MINIO_ROOT_PASSWORD: minioadminpassword
     command: server /data --console-address ":9001"
     ports:
-      - "9005:9000"  # Cổng gọi API S3 
+      - "9005:9000"  # Cổng gọi API S3
       - "9006:9001"  # Cổng vào giao diện Web Console
     volumes:
       - minio_data:/data
