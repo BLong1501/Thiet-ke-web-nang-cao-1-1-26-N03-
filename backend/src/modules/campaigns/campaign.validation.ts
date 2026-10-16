@@ -1,6 +1,8 @@
 import { z } from "zod";
 import { CampaignStatus, MediaType } from "@prisma/client";
 
+import { isValidBank } from "../../core/constants/banks.constant";
+
 // Phân loại chủ thể gây quỹ
 export enum OrganizerType {
   INDIVIDUAL = "INDIVIDUAL",
@@ -45,13 +47,15 @@ export const baseCampaignSchema = z.object({
   bankAccountNumber: z
     .string()
     .trim()
-    .min(6, "Số tài khoản ngân hàng không hợp lệ")
-    .max(50, "Số tài khoản ngân hàng tối đa 50 ký tự"),
+    .regex(/^[0-9]{6,19}$/, "Số tài khoản ngân hàng chỉ gồm chữ số (từ 6 đến 19 số)"),
   bankName: z
     .string()
     .trim()
     .min(2, "Tên ngân hàng tối thiểu 2 ký tự")
-    .max(100, "Tên ngân hàng tối đa 100 ký tự"),
+    .max(100, "Tên ngân hàng tối đa 100 ký tự")
+    .refine((val) => isValidBank(val), {
+      message: "Ngân hàng không nằm trong danh sách hệ thống thanh toán Napas 247",
+    }),
   bankAccountName: z
     .string()
     .trim()
@@ -62,6 +66,18 @@ export const baseCampaignSchema = z.object({
     .trim()
     .max(1000, "Thông tin người thụ hưởng tối đa 1000 ký tự")
     .optional(),
+  momoPhone: z
+    .string()
+    .trim()
+    .regex(/^0[0-9]{9}$/, "Số điện thoại MoMo phải gồm 10 chữ số (bắt đầu bằng 0)")
+    .optional()
+    .or(z.literal("")),
+  momoAccountName: z
+    .string()
+    .trim()
+    .max(150, "Tên chủ ví MoMo tối đa 150 ký tự")
+    .optional()
+    .or(z.literal("")),
   status: z
     .enum([CampaignStatus.DRAFT, CampaignStatus.PENDING_APPROVAL], {
       message: "Trạng thái khởi tạo chỉ có thể là DRAFT hoặc PENDING_APPROVAL",
@@ -211,6 +227,12 @@ export const createDisbursementSchema = z.object({
   note: z.string().max(1000).optional(),
 });
 
+// Schema tra cứu tài khoản ngân hàng (Account Lookup)
+export const lookupBankAccountSchema = z.object({
+  bankCode: z.string().trim().min(2, "Mã hoặc tên ngân hàng không được để trống"),
+  accountNumber: z.string().trim().regex(/^[0-9]{6,19}$/, "Số tài khoản ngân hàng không hợp lệ (chỉ gồm 6-19 chữ số)"),
+});
+
 export type CreateCampaignInput = z.infer<typeof createCampaignSchema>;
 export type UpdateCampaignInput = z.infer<typeof updateCampaignSchema>;
 export type CampaignQueryInput = z.infer<typeof campaignQuerySchema>;
@@ -219,4 +241,5 @@ export type AddMediaInput = z.infer<typeof addMediaSchema>;
 export type CreateUpdateInput = z.infer<typeof createUpdateSchema>;
 export type CategoryInput = z.infer<typeof categorySchema>;
 export type CreateDisbursementInput = z.infer<typeof createDisbursementSchema>;
+export type LookupBankAccountInput = z.infer<typeof lookupBankAccountSchema>;
 

@@ -249,6 +249,8 @@ export class CampaignRepository {
       charityCommitmentAcceptedAt: new Date().toISOString(),
       charityCommitmentStatement: "Cam kết tính minh bạch trong việc tạo chiến dịch, đại diện hợp pháp cho cơ quan tổ chức/cá nhân, đảm bảo tài khoản nhận tiền là tài khoản phục vụ việc từ thiện không có chi tiêu cá nhân hay khoản ngoài việc từ thiện theo quy định pháp luật.",
       details: beneficiaryInfo || null,
+      momoPhone: (input as any).momoPhone || null,
+      momoAccountName: (input as any).momoAccountName || null,
     };
 
     return prisma.campaign.create({
@@ -309,6 +311,8 @@ export class CampaignRepository {
         ...(input.taxCode !== undefined && { taxCode: input.taxCode }),
         ...(input.representativeRole !== undefined && { representativeRole: input.representativeRole }),
         ...(input.beneficiaryInfo !== undefined && { details: input.beneficiaryInfo }),
+        ...((input as any).momoPhone !== undefined && { momoPhone: (input as any).momoPhone }),
+        ...((input as any).momoAccountName !== undefined && { momoAccountName: (input as any).momoAccountName }),
       });
     }
 

@@ -13,6 +13,8 @@ import {
   type CacheStatus,
 } from "../../core/cache/campaign-cache";
 import { assertAnyObjectAccess, assertObjectAccess, type Actor } from "../../core/auth/object-access";
+import { findBank } from "../../core/constants/banks.constant";
+import { mailService } from "../../core/services/mail.service";
 
 export class DonationService {
   constructor(private repo: DonationRepository = donationRepository) {}
@@ -129,12 +131,25 @@ export class DonationService {
     const bankAccountNumber = campaign.bankAccountNumber || "123456789";
     const bankAccountName = campaign.bankAccountName || "QUY GAY QUY CONG DONG";
 
+    // Tìm mã BIN hoặc Code ngắn gọn của ngân hàng chuẩn Napas 247
+    const foundBank = findBank(bankName);
+    const bankIdentifier = foundBank?.bin || foundBank?.code || "970436";
+
     // 1. VietQR ngân hàng chuẩn Napas 247
-    const vietQrUrl = `https://img.vietqr.io/image/${encodeURIComponent(bankName)}-${encodeURIComponent(bankAccountNumber)}-compact2.png?amount=${numericAmount}&addInfo=${encodeURIComponent(transactionCode)}&accountName=${encodeURIComponent(bankAccountName)}`;
+    const vietQrUrl = `https://img.vietqr.io/image/${encodeURIComponent(bankIdentifier)}-${encodeURIComponent(bankAccountNumber)}-compact2.png?amount=${numericAmount}&addInfo=${encodeURIComponent(transactionCode)}&accountName=${encodeURIComponent(bankAccountName)}`;
 
     // 2. Ví MoMo
-    const momoPhone = "0987654321"; // Số ví MoMo nhận quyên góp của hệ thống / quỹ
-    const momoQrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=350x350&data=2|99|${momoPhone}|${encodeURIComponent(bankAccountName)}||0|0|${numericAmount}|${encodeURIComponent(transactionCode)}|transfer_p2p`;
+    let legalMeta: any = null;
+    if (campaign.beneficiaryInfo) {
+      try {
+        legalMeta = JSON.parse(campaign.beneficiaryInfo);
+      } catch {
+        legalMeta = null;
+      }
+    }
+    const momoPhone = legalMeta?.momoPhone || campaign.fundraiser?.phoneNumber || "0987654321";
+    const momoAccountName = legalMeta?.momoAccountName || bankAccountName;
+    const momoQrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=350x350&data=2|99|${momoPhone}|${encodeURIComponent(momoAccountName)}||0|0|${numericAmount}|${encodeURIComponent(transactionCode)}|transfer_p2p`;
     const momoDeepLink = `momo://?action=payWithApp&isScanQR=true`;
 
     return {
@@ -154,7 +169,7 @@ export class DonationService {
       momo: {
         methodName: "Ví điện tử MoMo",
         phoneNumber: momoPhone,
-        accountName: bankAccountName,
+        accountName: momoAccountName,
         amount: numericAmount,
         content: transactionCode,
         qrCodeUrl: momoQrUrl,
@@ -198,6 +213,9 @@ export class DonationService {
       input.paymentGatewayResponse || { simulated: true, note: input.note || "Thanh toán mô phỏng thành công" }
     );
     await invalidatePublicCampaignCache();
+
+    // Gửi email biên nhận báo cáo giao dịch tới người đóng góp
+    this.sendReceiptEmailSafely(result.donation);
 
     return {
       message: "Xác nhận thanh toán quyên góp thành công! Đã gửi thông báo và cập nhật tiến độ chiến dịch.",
@@ -683,6 +701,9 @@ export class DonationService {
 
     await invalidatePublicCampaignCache();
 
+    // Gửi email biên nhận báo cáo giao dịch tới người đóng góp
+    this.sendReceiptEmailSafely(result.donation);
+
     return {
       success: true,
       message: "Đã xác nhận thanh toán thành công qua Webhook ngân hàng",
@@ -711,11 +732,38 @@ export class DonationService {
       note: "Mô phỏng thanh toán thành công qua giao diện VietQR",
     });
     await invalidatePublicCampaignCache();
+
+    // Gửi email biên nhận báo cáo giao dịch tới người đóng góp
+    this.sendReceiptEmailSafely(result.donation);
+
     return {
       message: "Xác nhận thanh toán mô phỏng thành công!",
       donation: result.donation,
       campaignProgress: result.campaignProgress,
     };
+  }
+
+  /**
+   * Tự động gửi email biên nhận giao dịch cho người ủng hộ (đã đăng nhập hoặc khách vãng lai có nhập email)
+   */
+  private sendReceiptEmailSafely(donation: any) {
+    const recipientEmail = donation.donor?.email || donation.donorEmail;
+    if (!recipientEmail) return;
+
+    mailService
+      .sendDonationReceiptEmail({
+        to: recipientEmail,
+        donorName: donation.donor?.fullName || donation.donorName || "Nhà hảo tâm",
+        campaignTitle: donation.campaign?.title || "Chiến dịch gây quỹ cộng đồng",
+        amount: Number(donation.amount),
+        transactionCode: donation.transactionCode,
+        paidAt: donation.paidAt || new Date(),
+        message: donation.message || undefined,
+        donationId: donation.id,
+      })
+      .catch((err) => {
+        console.error(`❌ Gửi email biên nhận tới ${recipientEmail} thất bại:`, err);
+      });
   }
 }
 

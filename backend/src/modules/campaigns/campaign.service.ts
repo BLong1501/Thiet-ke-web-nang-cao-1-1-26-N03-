@@ -8,7 +8,9 @@ import {
   CreateUpdateInput,
   CategoryInput,
   CreateDisbursementInput,
+  LookupBankAccountInput,
 } from "./campaign.validation";
+import { findBank, NAPAS_BANKS } from "../../core/constants/banks.constant";
 
 import { generateUniqueSlug, slugify } from "../../core/utils/slug.util";
 import { AppError } from "../../core/errors/app.error";
@@ -628,6 +630,68 @@ export class CampaignService {
     await this.repo.deleteCategory(id);
     await invalidatePublicCampaignCache();
     return { message: "Xóa danh mục thành công" };
+  }
+
+  /**
+   * Lấy danh sách trắng các ngân hàng Napas 247 được hỗ trợ
+   */
+  getSupportedBanks() {
+    return NAPAS_BANKS;
+  }
+
+  /**
+   * Tra cứu tài khoản ngân hàng liên ngân hàng (VietQR / Napas 247)
+   */
+  async lookupBankAccount(input: LookupBankAccountInput) {
+    const bank = findBank(input.bankCode);
+    if (!bank) {
+      throw new AppError("Ngân hàng không nằm trong danh sách hệ thống thanh toán Napas 247", 400);
+    }
+
+    const clientId = process.env.VIETQR_CLIENT_ID;
+    const apiKey = process.env.VIETQR_API_KEY;
+
+    if (clientId && apiKey) {
+      try {
+        const response = await fetch("https://api.vietqr.io/v2/lookup", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "x-client-id": clientId,
+            "x-api-key": apiKey,
+          },
+          body: JSON.stringify({
+            bin: bank.bin,
+            accountNumber: input.accountNumber,
+          }),
+        });
+        const data: any = await response.json();
+        if (data.code === "00" && data.data?.accountName) {
+          return {
+            bank,
+            accountNumber: input.accountNumber,
+            accountName: data.data.accountName,
+            verified: true,
+            source: "VIETQR_NAPAS",
+          };
+        } else {
+          throw new AppError(data.desc || "Không tìm thấy thông tin tài khoản tại ngân hàng này", 400);
+        }
+      } catch (err: any) {
+        if (err instanceof AppError) throw err;
+        throw new AppError("Không thể kết nối tới cổng tra cứu liên ngân hàng Napas 247: " + err.message, 502);
+      }
+    }
+
+    // Chế độ mô phỏng / Development (khi chưa cấu hình VIETQR_API_KEY đối tác)
+    return {
+      bank,
+      accountNumber: input.accountNumber,
+      accountName: null,
+      verified: false,
+      source: "LOCAL_VALIDATED",
+      message: `Đã xác thực định dạng số tài khoản và ngân hàng ${bank.shortName} (${bank.name}) thuộc mạng lưới Napas 247. Vui lòng nhập tên chủ tài khoản in hoa không dấu để hệ thống đối chiếu với CCCD.`,
+    };
   }
 }
 

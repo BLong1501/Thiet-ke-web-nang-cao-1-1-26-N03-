@@ -354,6 +354,10 @@ progress,
   }
 }
 
+.spin {
+  animation: spin 1s linear infinite;
+}
+
 @keyframes shimmer {
   from {
     background-position: 100% 0;

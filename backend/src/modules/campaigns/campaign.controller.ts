@@ -219,6 +219,30 @@ export class CampaignController {
       next(error);
     }
   }
+
+  /**
+   * [GET /api/v1/campaigns/supported-banks] Danh sách ngân hàng hợp lệ Napas 247
+   */
+  async getSupportedBanks(_req: Request, res: Response, next: NextFunction) {
+    try {
+      const banks = campaignService.getSupportedBanks();
+      return sendSuccess(res, 200, "Lấy danh sách ngân hàng hợp lệ thành công", banks);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * [POST /api/v1/campaigns/lookup-bank-account] Tra cứu tài khoản ngân hàng liên ngân hàng
+   */
+  async lookupBankAccount(req: Request, res: Response, next: NextFunction) {
+    try {
+      const result = await campaignService.lookupBankAccount(req.body);
+      return sendSuccess(res, 200, "Tra cứu thông tin tài khoản thành công", result);
+    } catch (error) {
+      next(error);
+    }
+  }
 }
 
 export const campaignController = new CampaignController();

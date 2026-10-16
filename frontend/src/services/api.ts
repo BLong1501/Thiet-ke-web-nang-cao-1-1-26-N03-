@@ -166,6 +166,9 @@ export const campaignApi = {
     },
   ) => api.post(`/campaigns/${id}/disbursements`, data),
   getCategories: () => api.get("/campaigns/categories"),
+  getSupportedBanks: () => api.get("/campaigns/supported-banks"),
+  lookupBankAccount: (data: { bankCode: string; accountNumber: string }) =>
+    api.post("/campaigns/lookup-bank-account", data),
 };
 
 // --- Donation APIs ---

@@ -11,6 +11,7 @@ import {
   createUpdateSchema,
   categorySchema,
   createDisbursementSchema,
+  lookupBankAccountSchema,
 } from "./campaign.validation";
 import { UserRole } from "@prisma/client";
 
@@ -20,6 +21,17 @@ const router = Router();
 // ==========================================
 // 1. PUBLIC ROUTES (Mọi người đều xem được)
 // ==========================================
+
+// Danh sách ngân hàng hợp lệ thuộc Napas 247 (Public)
+router.get("/supported-banks", campaignController.getSupportedBanks);
+
+// Tra cứu thông tin tài khoản ngân hàng liên ngân hàng (Account Lookup)
+router.post(
+  "/lookup-bank-account",
+  authenticate,
+  validate(lookupBankAccountSchema),
+  campaignController.lookupBankAccount
+);
 
 // Danh mục chiến dịch (Public)
 router.get("/categories", campaignController.getCategories);

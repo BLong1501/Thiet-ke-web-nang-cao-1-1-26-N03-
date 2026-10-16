@@ -10,6 +10,25 @@ import {
 import { useAuthStore } from "../../store/authStore";
 import { Field, Modal, Notice, Status } from "./WorkspaceUI";
 import toast from "react-hot-toast";
+import {
+  RiBankCardLine,
+  RiWallet3Line,
+  RiCheckDoubleLine,
+  RiLightbulbLine,
+} from "react-icons/ri";
+import {
+  FiCopy,
+  FiCheck,
+  FiZap,
+  FiExternalLink,
+  FiLoader,
+  FiSmartphone,
+} from "react-icons/fi";
+import { HiBolt } from "react-icons/hi2";
+import {
+  buildVietQrUrl,
+  buildFallbackQrUrl,
+} from "../../utils/bankHelper";
 
 export default function DonationModal({
   campaign,
@@ -26,7 +45,11 @@ export default function DonationModal({
   const [error, setError] = useState("");
   const [donation, setDonation] = useState<RecordData | null>(null);
   const [instructions, setInstructions] = useState<RecordData | null>(null);
+  const [activeTab, setActiveTab] = useState<"VIETQR" | "MOMO">("VIETQR");
   const [simulating, setSimulating] = useState(false);
+  const [copiedKey, setCopiedKey] = useState<string | null>(null);
+  const [qrLoaded, setQrLoaded] = useState(false);
+  const [qrHasError, setQrHasError] = useState(false);
   const request = useRef<{ signature: string; key: string } | null>(null);
 
   async function submit(e: FormEvent<HTMLFormElement>) {
@@ -34,6 +57,8 @@ export default function DonationModal({
     if (busy) return;
     setBusy(true);
     setError("");
+    setQrLoaded(false);
+    setQrHasError(false);
     const f = new FormData(e.currentTarget);
     const body = {
       campaignId: campaign.id,
@@ -85,10 +110,14 @@ export default function DonationModal({
     return () => clearInterval(interval);
   }, [donation?.id, donation?.paymentStatus, onSuccess]);
 
-  function copyText(text: string, label: string) {
+  function copyText(text: string, label: string, key: string) {
     if (!text) return;
     navigator.clipboard.writeText(text);
+    setCopiedKey(key);
     toast.success(`Đã sao chép ${label}!`);
+    setTimeout(() => {
+      setCopiedKey((cur) => (cur === key ? null : cur));
+    }, 2000);
   }
 
   async function handleSimulate() {
@@ -114,9 +143,40 @@ export default function DonationModal({
   const transferCode = donation?.transactionCode || "";
   const transferAmount = Number(donation?.amount || amount);
 
+  // Sinh URL VietQR chuẩn Napas 247
   const vietQrUrl =
     instructions?.bankTransfer?.qrCodeUrl ||
-    `https://img.vietqr.io/image/${encodeURIComponent(bank)}-${encodeURIComponent(accNumber)}-compact2.png?amount=${transferAmount}&addInfo=${encodeURIComponent(transferCode)}&accountName=${encodeURIComponent(accName)}`;
+    buildVietQrUrl({
+      bankName: bank,
+      accountNumber: accNumber,
+      accountName: accName,
+      amount: transferAmount,
+      transactionCode: transferCode,
+    });
+
+  const fallbackQrUrl = buildFallbackQrUrl({
+    bankName: bank,
+    accountNumber: accNumber,
+    accountName: accName,
+    amount: transferAmount,
+    transactionCode: transferCode,
+  });
+
+  // Dữ liệu Ví điện tử MoMo
+  let legalMeta: any = null;
+  if (campaign.beneficiaryInfo) {
+    try {
+      legalMeta = JSON.parse(campaign.beneficiaryInfo);
+    } catch {
+      legalMeta = null;
+    }
+  }
+  const momoPhone = instructions?.momo?.phoneNumber || legalMeta?.momoPhone || (campaign as any).fundraiser?.phoneNumber || "0987654321";
+  const momoName = instructions?.momo?.accountName || legalMeta?.momoAccountName || accName;
+  const momoQrUrl =
+    instructions?.momo?.qrCodeUrl ||
+    `https://api.qrserver.com/v1/create-qr-code/?size=350x350&data=2|99|${momoPhone}|${encodeURIComponent(momoName)}||0|0|${transferAmount}|${encodeURIComponent(transferCode)}|transfer_p2p`;
+  const momoDeepLink = instructions?.momo?.deepLink || "momo://?action=payWithApp&isScanQR=true";
 
   return (
     <Modal
@@ -177,8 +237,16 @@ export default function DonationModal({
               ghi nhận mã QR và cập nhật số tiền ngay khi chuyển khoản thành công.
             </Notice>
           )}
-          <button className="button" disabled={busy}>
-            {busy ? "Đang tạo giao dịch…" : "Tiếp tục quét mã VietQR"}
+          <button className="button" disabled={busy} style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", gap: "8px" }}>
+            {busy ? (
+              <>
+                <FiLoader className="spin" size={16} /> Đang tạo giao dịch…
+              </>
+            ) : (
+              <>
+                <RiBankCardLine size={18} /> Tiếp tục quét mã VietQR
+              </>
+            )}
           </button>
         </form>
       ) : (
@@ -187,17 +255,30 @@ export default function DonationModal({
             <div
               style={{
                 textAlign: "center",
-                padding: "1.5rem",
+                padding: "2rem 1.5rem",
                 background: "#ecfdf5",
-                borderRadius: "12px",
+                borderRadius: "16px",
                 border: "1px solid #a7f3d0",
                 display: "flex",
                 flexDirection: "column",
                 alignItems: "center",
-                gap: "0.5rem",
+                gap: "0.75rem",
               }}
             >
-              <span style={{ fontSize: "3rem" }}>🎉</span>
+              <div
+                style={{
+                  width: "64px",
+                  height: "64px",
+                  borderRadius: "50%",
+                  background: "#d1fae5",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  color: "#059669",
+                }}
+              >
+                <RiCheckDoubleLine size={38} />
+              </div>
               <h3 style={{ color: "#065f46", margin: 0, fontSize: "1.35rem" }}>
                 Thanh toán thành công!
               </h3>
@@ -211,7 +292,7 @@ export default function DonationModal({
               <button
                 type="button"
                 className="button"
-                style={{ marginTop: "0.75rem" }}
+                style={{ marginTop: "0.5rem" }}
                 onClick={onClose}
               >
                 Hoàn tất & Đóng
@@ -232,186 +313,529 @@ export default function DonationModal({
                 </h3>
               </div>
 
-              {/* KHUNG MÃ VIETQR CHUẨN NAPAS 247 */}
+              {/* TAB CHUYỂN ĐỔI PHƯƠNG THỨC THANH TOÁN */}
               <div
                 style={{
-                  background: "#f8fafc",
-                  border: "2px dashed #cbd5e1",
-                  borderRadius: "16px",
-                  padding: "1.25rem",
                   display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                  gap: "0.75rem",
-                  textAlign: "center",
+                  borderRadius: "10px",
+                  background: "#f1f5f9",
+                  padding: "4px",
+                  gap: "4px",
                 }}
               >
-                <div
-                  style={{
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: "6px",
-                    background: "#eff6ff",
-                    color: "#1d4ed8",
-                    padding: "4px 12px",
-                    borderRadius: "999px",
-                    fontSize: "0.8rem",
-                    fontWeight: 600,
-                  }}
-                >
-                  ⚡ VietQR Napas 247 - Quét thanh toán tự động
-                </div>
-
-                <div
-                  style={{
-                    background: "#ffffff",
-                    padding: "8px",
-                    borderRadius: "12px",
-                    boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)",
-                    maxWidth: "260px",
-                    width: "100%",
-                  }}
-                >
-                  <img
-                    src={vietQrUrl}
-                    alt="VietQR Napas 247"
-                    style={{
-                      width: "100%",
-                      height: "auto",
-                      display: "block",
-                      borderRadius: "8px",
-                    }}
-                  />
-                </div>
-
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "8px",
-                    fontSize: "0.85rem",
-                    color: "#2563eb",
-                    fontWeight: 500,
-                  }}
-                >
-                  <span
-                    style={{
-                      display: "inline-block",
-                      width: "10px",
-                      height: "10px",
-                      borderRadius: "50%",
-                      background: "#22c55e",
-                      boxShadow: "0 0 0 3px rgba(34, 197, 94, 0.2)",
-                    }}
-                  />
-                  Hệ thống đang tự động nhận diện chuyển khoản (Polling 2.5s)...
-                </div>
-              </div>
-
-              {/* BẢNG CHI TIẾT THÔNG TIN CHUYỂN KHOẢN KÈM NÚT COPY */}
-              <div
-                style={{
-                  background: "#ffffff",
-                  border: "1px solid #e2e8f0",
-                  borderRadius: "12px",
-                  padding: "1rem",
-                  fontSize: "0.9rem",
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: "0.6rem",
-                }}
-              >
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <span style={{ color: "#64748b" }}>Ngân hàng thụ hưởng:</span>
-                  <strong style={{ color: "#0f172a" }}>{bank}</strong>
-                </div>
-
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <span style={{ color: "#64748b" }}>Số tài khoản:</span>
-                  <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                    <strong style={{ fontFamily: "monospace", fontSize: "1rem" }}>{accNumber}</strong>
-                    <button
-                      type="button"
-                      className="button secondary"
-                      style={{ padding: "2px 8px", fontSize: "0.75rem" }}
-                      onClick={() => copyText(accNumber, "Số tài khoản")}
-                    >
-                      Copy
-                    </button>
-                  </div>
-                </div>
-
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <span style={{ color: "#64748b" }}>Tên chủ tài khoản:</span>
-                  <strong style={{ color: "#0f172a" }}>{accName}</strong>
-                </div>
-
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <span style={{ color: "#64748b" }}>Số tiền:</span>
-                  <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                    <strong style={{ color: "#16a34a", fontSize: "1rem" }}>{formatCurrency(transferAmount)}</strong>
-                    <button
-                      type="button"
-                      className="button secondary"
-                      style={{ padding: "2px 8px", fontSize: "0.75rem" }}
-                      onClick={() => copyText(String(transferAmount), "Số tiền")}
-                    >
-                      Copy
-                    </button>
-                  </div>
-                </div>
-
-                <div
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    background: "#fef3c7",
-                    padding: "6px 8px",
-                    borderRadius: "6px",
-                    border: "1px solid #fde68a",
-                  }}
-                >
-                  <span style={{ color: "#92400e", fontWeight: 600 }}>Nội dung chuyển:</span>
-                  <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                    <strong style={{ color: "#b45309", fontFamily: "monospace", fontSize: "1rem" }}>
-                      {transferCode}
-                    </strong>
-                    <button
-                      type="button"
-                      className="button"
-                      style={{ padding: "2px 8px", fontSize: "0.75rem", background: "#d97706" }}
-                      onClick={() => copyText(transferCode, "Nội dung chuyển khoản")}
-                    >
-                      Copy
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              <p style={{ fontSize: "0.8rem", color: "#64748b", margin: 0, textAlign: "center" }}>
-                💡 <em>Khi quét mã VietQR, app ngân hàng sẽ tự động điền toàn bộ thông tin trên.</em>
-              </p>
-
-              {/* NÚT MÔ PHỎNG KIỂM THỬ NHANH DÀNH CHO BẢO VỆ ĐỒ ÁN */}
-              <div style={{ display: "flex", gap: "0.5rem", marginTop: "0.5rem" }}>
                 <button
                   type="button"
-                  className="button secondary"
-                  style={{ flex: 1, fontSize: "0.85rem" }}
+                  style={{
+                    flex: 1,
+                    padding: "8px 12px",
+                    borderRadius: "8px",
+                    border: "none",
+                    background: activeTab === "VIETQR" ? "#2563eb" : "transparent",
+                    color: activeTab === "VIETQR" ? "#ffffff" : "#475569",
+                    fontWeight: 600,
+                    fontSize: "0.85rem",
+                    cursor: "pointer",
+                    transition: "all 0.2s",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: "8px",
+                  }}
+                  onClick={() => {
+                    setActiveTab("VIETQR");
+                    setQrLoaded(false);
+                    setQrHasError(false);
+                  }}
+                >
+                  <RiBankCardLine size={18} /> VietQR Napas 247
+                </button>
+                <button
+                  type="button"
+                  style={{
+                    flex: 1,
+                    padding: "8px 12px",
+                    borderRadius: "8px",
+                    border: "none",
+                    background: activeTab === "MOMO" ? "#d82d8b" : "transparent",
+                    color: activeTab === "MOMO" ? "#ffffff" : "#475569",
+                    fontWeight: 600,
+                    fontSize: "0.85rem",
+                    cursor: "pointer",
+                    transition: "all 0.2s",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: "8px",
+                  }}
+                  onClick={() => {
+                    setActiveTab("MOMO");
+                    setQrLoaded(false);
+                    setQrHasError(false);
+                  }}
+                >
+                  <RiWallet3Line size={18} /> Ví điện tử MoMo
+                </button>
+              </div>
+
+              {/* NỘI DUNG TAB 1: VIETQR NAPAS 247 */}
+              {activeTab === "VIETQR" && (
+                <>
+                  <div
+                    style={{
+                      background: "#f8fafc",
+                      border: "2px dashed #cbd5e1",
+                      borderRadius: "16px",
+                      padding: "1.25rem",
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: "center",
+                      gap: "0.75rem",
+                      textAlign: "center",
+                    }}
+                  >
+                    <div
+                      style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: "6px",
+                        background: "#eff6ff",
+                        color: "#1d4ed8",
+                        padding: "5px 14px",
+                        borderRadius: "999px",
+                        fontSize: "0.82rem",
+                        fontWeight: 600,
+                      }}
+                    >
+                      <HiBolt size={16} color="#2563eb" /> VietQR Napas 247 - Mở app ngân hàng quét mã
+                    </div>
+
+                    <div
+                      style={{
+                        background: "#ffffff",
+                        padding: "10px",
+                        borderRadius: "14px",
+                        boxShadow: "0 4px 12px rgba(0, 0, 0, 0.08)",
+                        maxWidth: "260px",
+                        width: "100%",
+                        minHeight: "260px",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        position: "relative",
+                      }}
+                    >
+                      {!qrLoaded && (
+                        <div
+                          style={{
+                            display: "flex",
+                            flexDirection: "column",
+                            alignItems: "center",
+                            gap: "8px",
+                            color: "#64748b",
+                            fontSize: "0.8rem",
+                          }}
+                        >
+                          <FiLoader className="spin" size={24} color="#2563eb" />
+                          <span>Đang tải mã VietQR...</span>
+                        </div>
+                      )}
+                      <img
+                        src={qrHasError ? fallbackQrUrl : vietQrUrl}
+                        alt="VietQR Napas 247"
+                        style={{
+                          width: "100%",
+                          height: "auto",
+                          display: qrLoaded ? "block" : "none",
+                          borderRadius: "8px",
+                        }}
+                        onLoad={() => setQrLoaded(true)}
+                        onError={() => {
+                          if (!qrHasError) {
+                            setQrHasError(true);
+                          } else {
+                            setQrLoaded(true);
+                          }
+                        }}
+                      />
+                    </div>
+                  </div>
+
+                  {/* BẢNG CHI TIẾT THÔNG TIN CHUYỂN KHOẢN KÈM NÚT COPY */}
+                  <div
+                    style={{
+                      background: "#ffffff",
+                      border: "1px solid #e2e8f0",
+                      borderRadius: "12px",
+                      padding: "1rem",
+                      fontSize: "0.9rem",
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: "0.6rem",
+                    }}
+                  >
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                      <span style={{ color: "#64748b" }}>Ngân hàng thụ hưởng:</span>
+                      <strong style={{ color: "#0f172a" }}>{bank}</strong>
+                    </div>
+
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                      <span style={{ color: "#64748b" }}>Số tài khoản:</span>
+                      <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                        <strong style={{ fontFamily: "monospace", fontSize: "1rem" }}>{accNumber}</strong>
+                        <button
+                          type="button"
+                          className="button secondary"
+                          style={{ padding: "4px 8px", fontSize: "0.75rem", display: "inline-flex", alignItems: "center", gap: "4px" }}
+                          onClick={() => copyText(accNumber, "Số tài khoản", "accNumber")}
+                        >
+                          {copiedKey === "accNumber" ? <FiCheck size={14} color="#16a34a" /> : <FiCopy size={13} />}
+                          <span>{copiedKey === "accNumber" ? "Đã chép" : "Copy"}</span>
+                        </button>
+                      </div>
+                    </div>
+
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                      <span style={{ color: "#64748b" }}>Tên chủ tài khoản:</span>
+                      <strong style={{ color: "#0f172a" }}>{accName}</strong>
+                    </div>
+
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                      <span style={{ color: "#64748b" }}>Số tiền:</span>
+                      <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                        <strong style={{ color: "#16a34a", fontSize: "1rem" }}>{formatCurrency(transferAmount)}</strong>
+                        <button
+                          type="button"
+                          className="button secondary"
+                          style={{ padding: "4px 8px", fontSize: "0.75rem", display: "inline-flex", alignItems: "center", gap: "4px" }}
+                          onClick={() => copyText(String(transferAmount), "Số tiền", "amount")}
+                        >
+                          {copiedKey === "amount" ? <FiCheck size={14} color="#16a34a" /> : <FiCopy size={13} />}
+                          <span>{copiedKey === "amount" ? "Đã chép" : "Copy"}</span>
+                        </button>
+                      </div>
+                    </div>
+
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        background: "#fef3c7",
+                        padding: "8px 10px",
+                        borderRadius: "8px",
+                        border: "1px solid #fde68a",
+                      }}
+                    >
+                      <span style={{ color: "#92400e", fontWeight: 600 }}>Nội dung chuyển:</span>
+                      <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                        <strong style={{ color: "#b45309", fontFamily: "monospace", fontSize: "0.95rem" }}>
+                          {transferCode}
+                        </strong>
+                        <button
+                          type="button"
+                          className="button"
+                          style={{
+                            padding: "4px 8px",
+                            fontSize: "0.75rem",
+                            background: "#d97706",
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: "4px",
+                          }}
+                          onClick={() => copyText(transferCode, "Nội dung chuyển khoản", "transferCode")}
+                        >
+                          {copiedKey === "transferCode" ? <FiCheck size={14} color="#ffffff" /> : <FiCopy size={13} />}
+                          <span>{copiedKey === "transferCode" ? "Đã chép" : "Copy"}</span>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: "6px",
+                      fontSize: "0.8rem",
+                      color: "#64748b",
+                    }}
+                  >
+                    <RiLightbulbLine size={16} color="#eab308" />
+                    <span>Khi quét mã VietQR, app ngân hàng (VCB, MB, BIDV, Techcombank...) sẽ tự điền toàn bộ thông tin.</span>
+                  </div>
+                </>
+              )}
+
+              {/* NỘI DUNG TAB 2: VÍ ĐIỆN TỬ MOMO */}
+              {activeTab === "MOMO" && (
+                <>
+                  <div
+                    style={{
+                      background: "#fdf2f8",
+                      border: "2px dashed #f472b6",
+                      borderRadius: "16px",
+                      padding: "1.25rem",
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: "center",
+                      gap: "0.75rem",
+                      textAlign: "center",
+                    }}
+                  >
+                    <div
+                      style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: "6px",
+                        background: "#fce7f3",
+                        color: "#be185d",
+                        padding: "5px 14px",
+                        borderRadius: "999px",
+                        fontSize: "0.82rem",
+                        fontWeight: 600,
+                      }}
+                    >
+                      <RiWallet3Line size={16} color="#be185d" /> Ví MoMo - Quét mã hoặc bấm Mở App MoMo
+                    </div>
+
+                    <div
+                      style={{
+                        background: "#ffffff",
+                        padding: "10px",
+                        borderRadius: "14px",
+                        boxShadow: "0 4px 12px rgba(216, 45, 139, 0.15)",
+                        maxWidth: "260px",
+                        width: "100%",
+                        minHeight: "260px",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                      }}
+                    >
+                      {!qrLoaded && (
+                        <div
+                          style={{
+                            display: "flex",
+                            flexDirection: "column",
+                            alignItems: "center",
+                            gap: "8px",
+                            color: "#64748b",
+                            fontSize: "0.8rem",
+                          }}
+                        >
+                          <FiLoader className="spin" size={24} color="#d82d8b" />
+                          <span>Đang tải mã MoMo...</span>
+                        </div>
+                      )}
+                      <img
+                        src={momoQrUrl}
+                        alt="QR Ví MoMo"
+                        style={{
+                          width: "100%",
+                          height: "auto",
+                          display: qrLoaded ? "block" : "none",
+                          borderRadius: "8px",
+                        }}
+                        onLoad={() => setQrLoaded(true)}
+                      />
+                    </div>
+
+                    {/* NÚT DEEP LINK CHO DI ĐỘNG */}
+                    <a
+                      href={momoDeepLink}
+                      style={{
+                        background: "#d82d8b",
+                        color: "#ffffff",
+                        padding: "8px 16px",
+                        borderRadius: "8px",
+                        textDecoration: "none",
+                        fontWeight: 600,
+                        fontSize: "0.85rem",
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: "6px",
+                        boxShadow: "0 2px 4px rgba(216, 45, 139, 0.3)",
+                      }}
+                    >
+                      <FiSmartphone size={16} /> Mở ứng dụng MoMo (Trên điện thoại)
+                    </a>
+                  </div>
+
+                  {/* BẢNG CHI TIẾT VÍ MOMO */}
+                  <div
+                    style={{
+                      background: "#ffffff",
+                      border: "1px solid #fbcfe8",
+                      borderRadius: "12px",
+                      padding: "1rem",
+                      fontSize: "0.9rem",
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: "0.6rem",
+                    }}
+                  >
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                      <span style={{ color: "#64748b" }}>Số điện thoại MoMo:</span>
+                      <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                        <strong style={{ fontFamily: "monospace", fontSize: "1rem", color: "#d82d8b" }}>
+                          {momoPhone}
+                        </strong>
+                        <button
+                          type="button"
+                          className="button secondary"
+                          style={{ padding: "4px 8px", fontSize: "0.75rem", display: "inline-flex", alignItems: "center", gap: "4px" }}
+                          onClick={() => copyText(momoPhone, "Số điện thoại MoMo", "momoPhone")}
+                        >
+                          {copiedKey === "momoPhone" ? <FiCheck size={14} color="#16a34a" /> : <FiCopy size={13} />}
+                          <span>{copiedKey === "momoPhone" ? "Đã chép" : "Copy"}</span>
+                        </button>
+                      </div>
+                    </div>
+
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                      <span style={{ color: "#64748b" }}>Tên người nhận ví MoMo:</span>
+                      <strong style={{ color: "#0f172a" }}>{momoName}</strong>
+                    </div>
+
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                      <span style={{ color: "#64748b" }}>Số tiền:</span>
+                      <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                        <strong style={{ color: "#16a34a", fontSize: "1rem" }}>{formatCurrency(transferAmount)}</strong>
+                        <button
+                          type="button"
+                          className="button secondary"
+                          style={{ padding: "4px 8px", fontSize: "0.75rem", display: "inline-flex", alignItems: "center", gap: "4px" }}
+                          onClick={() => copyText(String(transferAmount), "Số tiền", "momoAmount")}
+                        >
+                          {copiedKey === "momoAmount" ? <FiCheck size={14} color="#16a34a" /> : <FiCopy size={13} />}
+                          <span>{copiedKey === "momoAmount" ? "Đã chép" : "Copy"}</span>
+                        </button>
+                      </div>
+                    </div>
+
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        background: "#fdf2f8",
+                        padding: "8px 10px",
+                        borderRadius: "8px",
+                        border: "1px solid #fbcfe8",
+                      }}
+                    >
+                      <span style={{ color: "#9d174d", fontWeight: 600 }}>Lời nhắn MoMo:</span>
+                      <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                        <strong style={{ color: "#be185d", fontFamily: "monospace", fontSize: "0.95rem" }}>
+                          {transferCode}
+                        </strong>
+                        <button
+                          type="button"
+                          className="button"
+                          style={{
+                            padding: "4px 8px",
+                            fontSize: "0.75rem",
+                            background: "#d82d8b",
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: "4px",
+                          }}
+                          onClick={() => copyText(transferCode, "Lời nhắn MoMo", "momoCode")}
+                        >
+                          {copiedKey === "momoCode" ? <FiCheck size={14} color="#ffffff" /> : <FiCopy size={13} />}
+                          <span>{copiedKey === "momoCode" ? "Đã chép" : "Copy"}</span>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: "6px",
+                      fontSize: "0.8rem",
+                      color: "#64748b",
+                    }}
+                  >
+                    <RiLightbulbLine size={16} color="#eab308" />
+                    <span>Mở MoMo quét mã QR sẽ tự động điền người nhận, số tiền và lời nhắn chuyển khoản.</span>
+                  </div>
+                </>
+              )}
+
+              {/* NÚT XÁC NHẬN HOÀN TẤT GIAO DỊCH */}
+              <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem", marginTop: "0.5rem" }}>
+                <button
+                  type="button"
+                  className="button"
+                  style={{
+                    width: "100%",
+                    padding: "10px 16px",
+                    fontSize: "0.95rem",
+                    fontWeight: 600,
+                    background: "#16a34a",
+                    borderColor: "#15803d",
+                    color: "#ffffff",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: "8px",
+                    boxShadow: "0 2px 4px rgba(22, 163, 74, 0.25)",
+                    cursor: "pointer",
+                  }}
                   disabled={simulating}
                   onClick={handleSimulate}
                 >
-                  {simulating ? "Đang xác nhận..." : "⚡ Test: Mô phỏng đã nhận tiền"}
+                  {simulating ? (
+                    <>
+                      <FiLoader className="spin" size={16} /> Đang xác nhận giao dịch...
+                    </>
+                  ) : (
+                    <>
+                      <FiZap size={16} /> Tôi đã chuyển tiền thành công - Hoàn tất giao dịch
+                    </>
+                  )}
                 </button>
-                <Link
-                  className="button secondary"
-                  to={`/donations/${donation.id}`}
-                  onClick={onClose}
-                  style={{ fontSize: "0.85rem" }}
-                >
-                  Chi tiết đơn
-                </Link>
+
+                <div style={{ display: "flex", justifyContent: "flex-end" }}>
+                  <Link
+                    to={`/donations/${donation.id}`}
+                    onClick={onClose}
+                    style={{
+                      fontSize: "0.82rem",
+                      color: "#64748b",
+                      textDecoration: "underline",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: "4px",
+                    }}
+                  >
+                    <FiExternalLink size={13} /> Xem trang biên nhận đơn
+                  </Link>
+                </div>
+              </div>
+
+              {/* TỰ ĐỘNG NHẬN DIỆN TRẠNG THÁI (POLLING 2.5s) */}
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: "8px",
+                  fontSize: "0.82rem",
+                  color: "#15803d",
+                  fontWeight: 500,
+                  padding: "6px 12px",
+                  background: "#f0fdf4",
+                  borderRadius: "8px",
+                  border: "1px solid #bbf7d0",
+                }}
+              >
+                <FiLoader className="spin" size={14} color="#22c55e" />
+                <span>Hệ thống đang tự động lắng nghe chuyển tiền (Polling 2.5s)...</span>
               </div>
             </>
           )}

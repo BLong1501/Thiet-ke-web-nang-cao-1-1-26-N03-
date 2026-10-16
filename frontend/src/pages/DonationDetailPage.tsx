@@ -12,12 +12,24 @@ import {
   Status,
 } from "../components/ui/WorkspaceUI";
 import toast from "react-hot-toast";
+import {
+  RiBankCardLine,
+  RiWallet3Line,
+} from "react-icons/ri";
+import {
+  FiZap,
+  FiLoader,
+  FiSmartphone,
+} from "react-icons/fi";
+import { HiBolt } from "react-icons/hi2";
+import { buildVietQrUrl } from "../utils/bankHelper";
 export default function DonationDetailPage() {
   const { id } = useParams();
   const user = useAuthStore((s) => s.user);
   const result = useRemote(() => donationApi.getById(id!).then(payload), [id]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [activeTab, setActiveTab] = useState<"VIETQR" | "MOMO">("VIETQR");
 
   const d = result.data;
 
@@ -119,92 +131,256 @@ export default function DonationDetailPage() {
             <dt>Lời nhắn</dt>
             <dd>{d.message || "—"}</dd>
           </dl>
-          {d.paymentStatus === "PENDING" && (
-            <div style={{ marginTop: "1rem", display: "flex", flexDirection: "column", gap: "0.75rem" }}>
-              <div
-                style={{
-                  background: "#f8fafc",
-                  border: "2px dashed #cbd5e1",
-                  borderRadius: "16px",
-                  padding: "1.25rem",
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                  gap: "0.75rem",
-                  textAlign: "center",
-                }}
-              >
+          {d.paymentStatus === "PENDING" && (() => {
+            let legalMeta: any = null;
+            if (d.campaign?.beneficiaryInfo) {
+              try {
+                legalMeta = JSON.parse(d.campaign.beneficiaryInfo);
+              } catch {
+                legalMeta = null;
+              }
+            }
+            const momoPhone = legalMeta?.momoPhone || "0987654321";
+            const momoName = legalMeta?.momoAccountName || d.campaign?.bankAccountName || "CHỦ CHIẾN DỊCH";
+            const momoQrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=350x350&data=2|99|${momoPhone}|${encodeURIComponent(momoName)}||0|0|${d.amount}|${encodeURIComponent(d.transactionCode)}|transfer_p2p`;
+            const momoDeepLink = "momo://?action=payWithApp&isScanQR=true";
+
+            const vietQrUrl = buildVietQrUrl({
+              bankName: d.campaign?.bankName || "Vietcombank",
+              accountNumber: d.campaign?.bankAccountNumber || "123456789",
+              accountName: d.campaign?.bankAccountName || "CHỦ CHIẾN DỊCH",
+              amount: Number(d.amount),
+              transactionCode: d.transactionCode,
+            });
+
+            return (
+              <div style={{ marginTop: "1rem", display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+                {/* TAB SWITCHER */}
                 <div
                   style={{
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: "6px",
-                    background: "#eff6ff",
-                    color: "#1d4ed8",
-                    padding: "4px 12px",
-                    borderRadius: "999px",
-                    fontSize: "0.8rem",
-                    fontWeight: 600,
+                    display: "flex",
+                    borderRadius: "10px",
+                    background: "#f1f5f9",
+                    padding: "4px",
+                    gap: "4px",
                   }}
                 >
-                  ⚡ VietQR Napas 247 - Quét thanh toán tự động
-                </div>
-
-                <div
-                  style={{
-                    background: "#ffffff",
-                    padding: "8px",
-                    borderRadius: "12px",
-                    boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)",
-                    maxWidth: "240px",
-                    width: "100%",
-                  }}
-                >
-                  <img
-                    src={`https://img.vietqr.io/image/${encodeURIComponent(d.campaign?.bankName || "Vietcombank")}-${encodeURIComponent(d.campaign?.bankAccountNumber || "123456789")}-compact2.png?amount=${d.amount}&addInfo=${encodeURIComponent(d.transactionCode)}&accountName=${encodeURIComponent(d.campaign?.bankAccountName || "CHỦ CHIẾN DỊCH")}`}
-                    alt="VietQR Napas 247"
-                    style={{ width: "100%", height: "auto", display: "block", borderRadius: "8px" }}
-                  />
-                </div>
-
-                <div style={{ fontSize: "0.85rem", color: "#2563eb", fontWeight: 500 }}>
-                  <span
+                  <button
+                    type="button"
                     style={{
-                      display: "inline-block",
-                      width: "8px",
-                      height: "8px",
-                      borderRadius: "50%",
-                      background: "#22c55e",
-                      marginRight: "6px",
+                      flex: 1,
+                      padding: "8px 12px",
+                      borderRadius: "8px",
+                      border: "none",
+                      background: activeTab === "VIETQR" ? "#2563eb" : "transparent",
+                      color: activeTab === "VIETQR" ? "#ffffff" : "#475569",
+                      fontWeight: 600,
+                      fontSize: "0.85rem",
+                      cursor: "pointer",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: "8px",
                     }}
-                  />
-                  Hệ thống đang tự động nhận diện giao dịch chuyển khoản (Polling 3s)...
+                    onClick={() => setActiveTab("VIETQR")}
+                  >
+                    <RiBankCardLine size={18} /> VietQR Napas 247
+                  </button>
+                  <button
+                    type="button"
+                    style={{
+                      flex: 1,
+                      padding: "8px 12px",
+                      borderRadius: "8px",
+                      border: "none",
+                      background: activeTab === "MOMO" ? "#d82d8b" : "transparent",
+                      color: activeTab === "MOMO" ? "#ffffff" : "#475569",
+                      fontWeight: 600,
+                      fontSize: "0.85rem",
+                      cursor: "pointer",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: "8px",
+                    }}
+                    onClick={() => setActiveTab("MOMO")}
+                  >
+                    <RiWallet3Line size={18} /> Ví điện tử MoMo
+                  </button>
                 </div>
+
+                {/* TAB 1: VIETQR */}
+                {activeTab === "VIETQR" && (
+                  <div
+                    style={{
+                      background: "#f8fafc",
+                      border: "2px dashed #cbd5e1",
+                      borderRadius: "16px",
+                      padding: "1.25rem",
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: "center",
+                      gap: "0.75rem",
+                      textAlign: "center",
+                    }}
+                  >
+                    <div
+                      style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: "6px",
+                        background: "#eff6ff",
+                        color: "#1d4ed8",
+                        padding: "5px 14px",
+                        borderRadius: "999px",
+                        fontSize: "0.82rem",
+                        fontWeight: 600,
+                      }}
+                    >
+                      <HiBolt size={16} color="#2563eb" /> VietQR Napas 247 - Quét thanh toán tự động
+                    </div>
+
+                    <div
+                      style={{
+                        background: "#ffffff",
+                        padding: "10px",
+                        borderRadius: "14px",
+                        boxShadow: "0 4px 12px rgba(0, 0, 0, 0.08)",
+                        maxWidth: "260px",
+                        width: "100%",
+                        minHeight: "260px",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                      }}
+                    >
+                      <img
+                        src={vietQrUrl}
+                        alt="VietQR Napas 247"
+                        style={{ width: "100%", height: "auto", display: "block", borderRadius: "8px" }}
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {/* TAB 2: MOMO */}
+                {activeTab === "MOMO" && (
+                  <div
+                    style={{
+                      background: "#fdf2f8",
+                      border: "2px dashed #f472b6",
+                      borderRadius: "16px",
+                      padding: "1.25rem",
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: "center",
+                      gap: "0.75rem",
+                      textAlign: "center",
+                    }}
+                  >
+                    <div
+                      style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: "6px",
+                        background: "#fce7f3",
+                        color: "#be185d",
+                        padding: "5px 14px",
+                        borderRadius: "999px",
+                        fontSize: "0.82rem",
+                        fontWeight: 600,
+                      }}
+                    >
+                      <RiWallet3Line size={16} color="#be185d" /> Ví MoMo - Quét mã hoặc bấm Mở App MoMo
+                    </div>
+
+                    <div
+                      style={{
+                        background: "#ffffff",
+                        padding: "10px",
+                        borderRadius: "14px",
+                        boxShadow: "0 4px 12px rgba(216, 45, 139, 0.15)",
+                        maxWidth: "260px",
+                        width: "100%",
+                        minHeight: "260px",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                      }}
+                    >
+                      <img
+                        src={momoQrUrl}
+                        alt="QR Ví MoMo"
+                        style={{ width: "100%", height: "auto", display: "block", borderRadius: "8px" }}
+                      />
+                    </div>
+
+                    <a
+                      href={momoDeepLink}
+                      style={{
+                        background: "#d82d8b",
+                        color: "#ffffff",
+                        padding: "8px 16px",
+                        borderRadius: "8px",
+                        textDecoration: "none",
+                        fontWeight: 600,
+                        fontSize: "0.85rem",
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: "6px",
+                        boxShadow: "0 2px 4px rgba(216, 45, 139, 0.3)",
+                      }}
+                    >
+                      <FiSmartphone size={16} /> Mở ứng dụng MoMo (Trên điện thoại)
+                    </a>
+                  </div>
+                )}
+
+                <div
+                  style={{
+                    fontSize: "0.85rem",
+                    color: "#15803d",
+                    fontWeight: 500,
+                    textAlign: "center",
+                    padding: "8px 12px",
+                    background: "#f0fdf4",
+                    borderRadius: "8px",
+                    border: "1px solid #bbf7d0",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: "8px",
+                  }}
+                >
+                  <FiLoader className="spin" size={15} color="#22c55e" />
+                  <span>Hệ thống đang tự động nhận diện giao dịch (Polling 3s)...</span>
+                </div>
+
+                <Notice>
+                  {activeTab === "VIETQR"
+                    ? "Quét mã VietQR trên bằng app ngân hàng của bạn. Sau khi chuyển tiền thành công, hệ thống sẽ tự động cập nhật trạng thái."
+                    : `Mở app MoMo quét mã QR trên hoặc chuyển đến SĐT ${momoPhone} với lời nhắn ${d.transactionCode}.`}
+                </Notice>
+                <button
+                  type="button"
+                  className="button secondary"
+                  style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", gap: "6px" }}
+                  disabled={busy}
+                  onClick={async () => {
+                    try {
+                      await donationApi.simulateSuccess(d.id);
+                      toast.success("Mô phỏng thanh toán thành công!");
+                      result.reload();
+                    } catch (err) {
+                      toast.error(errorMessage(err) || "Không thể mô phỏng");
+                    }
+                  }}
+                >
+                  <FiZap size={15} color="#eab308" /> Test: Mô phỏng đã nhận tiền
+                </button>
               </div>
-
-              <Notice>
-                Quét mã VietQR trên bằng app ngân hàng của bạn. Sau khi chuyển tiền thành công,
-                hệ thống sẽ tự động cập nhật trạng thái đơn đóng góp này.
-              </Notice>
-
-              <button
-                type="button"
-                className="button secondary"
-                disabled={busy}
-                onClick={async () => {
-                  try {
-                    await donationApi.simulateSuccess(d.id);
-                    toast.success("Mô phỏng thanh toán thành công!");
-                    result.reload();
-                  } catch (err) {
-                    toast.error(errorMessage(err) || "Không thể mô phỏng");
-                  }
-                }}
-              >
-                ⚡ Test: Mô phỏng đã nhận tiền
-              </button>
-            </div>
-          )}
+            );
+          })()}
           {d.paymentStatus === "SUCCESS" && (
             <button
               className="button secondary no-print"
