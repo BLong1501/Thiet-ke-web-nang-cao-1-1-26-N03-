@@ -402,12 +402,13 @@ test("campaign creation validates and posts the backend contract", async ({
     .getByLabel("Câu chuyện và kế hoạch sử dụng quỹ")
     .fill(campaign.story);
   await page
-    .getByLabel("URL ảnh bìa công khai")
+    .getByRole("textbox", { name: "Ảnh bìa chiến dịch", exact: true })
     .fill("https://example.test/cover.jpg");
   await page.getByLabel("Mục tiêu (VND)").fill("1000000");
   await page.getByLabel("Ngày kết thúc").fill("2030-12-01T12:00");
   await page.getByLabel("Tên ngân hàng").fill("Test Bank");
   await page.getByLabel("Số tài khoản", { exact: true }).fill("0000000000");
+  await page.getByLabel("Tên chủ tài khoản", { exact: true }).fill(user.fullName);
   await page.getByRole("checkbox").check();
   await page.getByRole("button", { name: "Gửi xét duyệt" }).click();
   await expect(page).toHaveURL(/campaigns\/campaign-1$/);
@@ -583,7 +584,7 @@ test("admin log navigation opens the system page, not the personal page", async 
   const mainNav = page.getByRole("navigation", { name: "Điều hướng chính" });
   await mainNav.getByRole("button", { name: /^Tài khoản/ }).click();
   await expect(
-    mainNav.getByRole("link", { name: "Nhật ký hệ thống" }),
+    mainNav.locator('.dropdown-panel').getByRole("link", { name: "Nhật ký hệ thống" }),
   ).toHaveAttribute("href", "/admin/activity-logs");
 });
 
