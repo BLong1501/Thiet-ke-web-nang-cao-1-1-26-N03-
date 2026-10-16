@@ -4,6 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "postinstall": "prisma generate",
     "session06:prepare": "node scripts/session06-schema.cjs",
     "test:session06:local": "node scripts/session06-local-check.cjs",
     "test:session06": "tsx scripts/session06-check.ts",
@@ -65,5 +66,13 @@
     "swagger-ui-dist": "^5.33.0",
     "ts-node": "^10.9.2",
     "tsx": "^4.23.14"
+  },
+  "allowScripts": {
+    "@prisma/engines": true,
+    "prisma": true,
+    "bcrypt": true,
+    "esbuild": true,
+    "nodemon": true,
+    "@scarf/scarf": true
   }
 }
