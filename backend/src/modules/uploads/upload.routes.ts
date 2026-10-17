@@ -3,13 +3,22 @@ import multer from 'multer';
 import sharp from 'sharp';
 import { randomUUID } from 'node:crypto';
 import path from 'node:path';
+import os from 'node:os';
 import { mkdir, writeFile, readFile, rm } from 'node:fs/promises';
 import { authenticate } from '../../core/middleware/auth.middleware';
 import { sendError, sendSuccess } from '../../core/utils/response.util';
 
 export const MAX_UPLOAD_BYTES = 5 * 1024 * 1024;
-// This directory is deliberately NOT exposed using express.static.
-const defaultRoot = path.resolve(__dirname, '../../../private-uploads');
+
+function getStorageRoot(subDir: string, explicitRoot?: string): string {
+  if (explicitRoot) return explicitRoot;
+  if (process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME || process.env.LAMBDA_TASK_ROOT) {
+    return path.join(os.tmpdir(), subDir);
+  }
+  return path.resolve(__dirname, `../../../${subDir}`);
+}
+
+const defaultRoot = getStorageRoot('private-uploads');
 
 export function createUploadRouter(root = process.env.PRIVATE_UPLOAD_DIR || defaultRoot) {
   const router = Router();
@@ -18,7 +27,7 @@ export function createUploadRouter(root = process.env.PRIVATE_UPLOAD_DIR || defa
     limits: { fileSize: MAX_UPLOAD_BYTES, files: 1, fields: 0, parts: 2 },
   }).single('file');
 
-  const publicRoot = path.resolve(__dirname, '../../../public-uploads');
+  const publicRoot = getStorageRoot('public-uploads');
 
   // 1. Xem ảnh công khai (Không yêu cầu xác thực để người dùng xem chiến dịch)
   router.get('/public/:fileName', async (req, res, next) => {
@@ -28,8 +37,19 @@ export function createUploadRouter(root = process.env.PRIVATE_UPLOAD_DIR || defa
       return;
     }
     try {
-      const imagePath = path.join(publicRoot, fileName);
-      const image = await readFile(imagePath);
+      let imagePath = path.join(publicRoot, fileName);
+      let image: Buffer;
+      try {
+        image = await readFile(imagePath);
+      } catch (err: any) {
+        if (err.code === 'ENOENT') {
+          // Fallback sang tmpdir nếu lưu trên serverless
+          imagePath = path.join(os.tmpdir(), 'public-uploads', fileName);
+          image = await readFile(imagePath);
+        } else {
+          throw err;
+        }
+      }
       res.set({
         'Content-Type': 'image/png',
         'Cache-Control': 'public, max-age=86400',
@@ -82,12 +102,13 @@ export function createUploadRouter(root = process.env.PRIVATE_UPLOAD_DIR || defa
     }
     let output: Buffer;
     try {
-      output = await sharp(file.buffer, { limitInputPixels: 16000000, failOn: 'warning' })
+      output = await sharp(file.buffer, { limitInputPixels: 30000000, failOn: 'none' })
         .rotate()
-        .png()
+        .resize({ width: 2048, height: 2048, fit: 'inside', withoutEnlargement: true })
+        .png({ compressionLevel: 8 })
         .toBuffer();
     } catch {
-      sendError(res, 415, 'Không đọc được ảnh: tệp giả, bị hỏng hoặc vượt giới hạn 16 triệu điểm ảnh');
+      sendError(res, 415, 'Không đọc được ảnh: tệp giả, bị hỏng hoặc vượt giới hạn điểm ảnh');
       return;
     }
     if (output.length > MAX_UPLOAD_BYTES) {
@@ -96,9 +117,22 @@ export function createUploadRouter(root = process.env.PRIVATE_UPLOAD_DIR || defa
     }
 
     const id = randomUUID();
+    let targetRoot = publicRoot;
+    let targetPath = path.join(targetRoot, `${id}.png`);
     try {
-      await mkdir(publicRoot, { recursive: true, mode: 0o755 });
-      await writeFile(path.join(publicRoot, `${id}.png`), output, { flag: 'wx', mode: 0o644 });
+      try {
+        await mkdir(targetRoot, { recursive: true, mode: 0o755 });
+        await writeFile(targetPath, output, { flag: 'wx', mode: 0o644 });
+      } catch (fsErr: any) {
+        if (fsErr.code === 'EROFS' || fsErr.code === 'EACCES') {
+          targetRoot = path.join(os.tmpdir(), 'public-uploads');
+          targetPath = path.join(targetRoot, `${id}.png`);
+          await mkdir(targetRoot, { recursive: true, mode: 0o755 });
+          await writeFile(targetPath, output, { flag: 'wx', mode: 0o644 });
+        } else {
+          throw fsErr;
+        }
+      }
       const hostUrl = (process.env.APP_URL || `${req.protocol}://${req.get('host')}`).replace(/\/+$/, '');
       const url = `${hostUrl}/api/v1/uploads/public/${id}.png`;
       sendSuccess(res, 201, 'Tải ảnh công khai thành công', {
@@ -111,6 +145,7 @@ export function createUploadRouter(root = process.env.PRIVATE_UPLOAD_DIR || defa
     }
   });
 
+  // 3. Tải ảnh riêng tư (eKYC CCCD / Biên lai giải ngân)
   router.post('/', (req, res, next) => {
     parse(req, res, (error: unknown) => {
       if (error instanceof multer.MulterError) {
@@ -133,27 +168,45 @@ export function createUploadRouter(root = process.env.PRIVATE_UPLOAD_DIR || defa
     }
     let output: Buffer;
     try {
-      // Fully decode then re-encode: magic bytes alone do not prove a valid image.
-      // Re-encoding removes appended content and metadata. Pixel limit bounds decompression.
-      output = await sharp(file.buffer, { limitInputPixels: 16000000, failOn: 'warning' })
-        .rotate().png().toBuffer();
+      output = await sharp(file.buffer, { limitInputPixels: 30000000, failOn: 'none' })
+        .rotate()
+        .resize({ width: 2048, height: 2048, fit: 'inside', withoutEnlargement: true })
+        .png({ compressionLevel: 8 })
+        .toBuffer();
     } catch {
-      sendError(res, 415, 'Không đọc được ảnh: tệp giả, bị hỏng hoặc vượt giới hạn 16 triệu điểm ảnh'); return;
+      sendError(res, 415, 'Không đọc được ảnh: tệp giả, bị hỏng hoặc vượt giới hạn điểm ảnh'); return;
     }
     if (output.length > MAX_UPLOAD_BYTES) { sendError(res, 413, 'Ảnh sau xử lý vượt quá giới hạn 5 MB'); return; }
+
     const id = randomUUID();
-    const directory = path.join(root, id);
+    let targetRoot = root;
+    let directory = path.join(targetRoot, id);
     try {
-      await mkdir(root, { recursive: true, mode: 0o700 });
-      await mkdir(directory, { mode: 0o700 });
-      await writeFile(path.join(directory, 'image.png'), output, { flag: 'wx', mode: 0o600 });
-      await writeFile(path.join(directory, 'owner.json'), JSON.stringify({ ownerId: req.user!.userId }), { flag: 'wx', mode: 0o600 });
+      try {
+        await mkdir(targetRoot, { recursive: true, mode: 0o755 });
+        await mkdir(directory, { mode: 0o755 });
+        await writeFile(path.join(directory, 'image.png'), output, { flag: 'wx', mode: 0o644 });
+        await writeFile(path.join(directory, 'owner.json'), JSON.stringify({ ownerId: req.user?.userId || (req.user as any)?.id }), { flag: 'wx', mode: 0o644 });
+      } catch (fsErr: any) {
+        if (fsErr.code === 'EROFS' || fsErr.code === 'EACCES') {
+          targetRoot = path.join(os.tmpdir(), 'private-uploads');
+          directory = path.join(targetRoot, id);
+          await mkdir(targetRoot, { recursive: true, mode: 0o755 });
+          await mkdir(directory, { mode: 0o755 });
+          await writeFile(path.join(directory, 'image.png'), output, { flag: 'wx', mode: 0o644 });
+          await writeFile(path.join(directory, 'owner.json'), JSON.stringify({ ownerId: req.user?.userId || (req.user as any)?.id }), { flag: 'wx', mode: 0o644 });
+        } else {
+          throw fsErr;
+        }
+      }
+
       sendSuccess(res, 201, 'Tải ảnh riêng tư thành công', {
         id, fileName: `${id}.png`, mimeType: 'image/png', size: output.length,
         downloadUrl: `/api/v1/uploads/${id}`, visibility: 'PRIVATE',
       });
     } catch (error) {
       await rm(directory, { recursive: true, force: true }).catch(() => {});
+      console.error('[UPLOAD_ERROR_DETAIL]:', error);
       next(error);
     }
   });
@@ -164,9 +217,21 @@ export function createUploadRouter(root = process.env.PRIVATE_UPLOAD_DIR || defa
       sendError(res, 404, 'Không tìm thấy tệp'); return;
     }
     try {
-      const directory = path.join(root, id);
-      const owner = JSON.parse(await readFile(path.join(directory, 'owner.json'), 'utf8'));
-      if (owner.ownerId !== req.user!.userId && req.user!.role !== 'ADMIN') {
+      let directory = path.join(root, id);
+      let ownerRaw: string;
+      try {
+        ownerRaw = await readFile(path.join(directory, 'owner.json'), 'utf8');
+      } catch (err: any) {
+        if (err.code === 'ENOENT') {
+          directory = path.join(os.tmpdir(), 'private-uploads', id);
+          ownerRaw = await readFile(path.join(directory, 'owner.json'), 'utf8');
+        } else {
+          throw err;
+        }
+      }
+      const owner = JSON.parse(ownerRaw);
+      const currentUserId = req.user?.userId || (req.user as any)?.id;
+      if (owner.ownerId !== currentUserId && req.user!.role !== 'ADMIN') {
         sendError(res, 403, 'Bạn không có quyền đọc tệp này'); return;
       }
       const image = await readFile(path.join(directory, 'image.png'));
@@ -181,3 +246,4 @@ export function createUploadRouter(root = process.env.PRIVATE_UPLOAD_DIR || defa
 }
 
 export const uploadRouter = createUploadRouter();
+
