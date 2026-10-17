@@ -163,6 +163,9 @@ export const campaignApi = {
       disbursementDate: string;
       proofDocuments: string[];
       note?: string;
+      bankName?: string;
+      bankAccountNumber?: string;
+      bankAccountName?: string;
     },
   ) => api.post(`/campaigns/${id}/disbursements`, data),
   getCategories: () => api.get("/campaigns/categories"),

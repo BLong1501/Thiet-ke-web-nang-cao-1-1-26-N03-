@@ -390,6 +390,11 @@ export class CampaignRepository {
    * Fundraiser thêm minh chứng giải ngân minh bạch
    */
   async addDisbursement(campaignId: string, createdBy: string, input: CreateDisbursementInput) {
+    let finalNote = input.note || "";
+    if (input.bankAccountNumber) {
+      const bankHeader = `[TÀI KHOẢN NHẬN: ${input.bankName || "N/A"} - STK: ${input.bankAccountNumber} - TÊN: ${input.bankAccountName || "N/A"}]`;
+      finalNote = finalNote ? `${bankHeader}\n${finalNote}` : bankHeader;
+    }
     return prisma.disbursement.create({
       data: {
         campaignId,
@@ -398,7 +403,7 @@ export class CampaignRepository {
         amount: input.amount,
         disbursementDate: new Date(input.disbursementDate),
         proofDocuments: input.proofDocuments as Prisma.InputJsonValue,
-        note: input.note || null,
+        note: finalNote || null,
       },
     });
   }
@@ -425,6 +430,11 @@ export class CampaignRepository {
               bankName: true,
               bankAccountNumber: true,
               bankAccountName: true,
+              beneficiaryInfo: true,
+              startDate: true,
+              endDate: true,
+              createdAt: true,
+              status: true,
             },
           },
           creator: {

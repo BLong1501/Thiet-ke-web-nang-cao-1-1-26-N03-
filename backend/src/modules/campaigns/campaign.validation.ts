@@ -224,7 +224,10 @@ export const createDisbursementSchema = z.object({
   amount: z.number().min(10000, "Số tiền giải ngân tối thiểu 10.000 VNĐ"),
   disbursementDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Ngày giải ngân phải có định dạng YYYY-MM-DD"),
   proofDocuments: z.array(z.string().url("Đường dẫn chứng từ không hợp lệ")).min(1, "Cần tối thiểu 1 chứng từ minh chứng"),
-  note: z.string().max(1000).optional(),
+  note: z.string().max(2000).optional(),
+  bankName: z.string().trim().optional(),
+  bankAccountNumber: z.string().trim().optional(),
+  bankAccountName: z.string().trim().optional(),
 });
 
 // Schema tra cứu tài khoản ngân hàng (Account Lookup)
