@@ -114,6 +114,14 @@ router.get(
   campaignController.getPendingCampaigns
 );
 
+// Admin lấy danh sách toàn bộ các khoản giải ngân và chứng từ minh bạch
+router.get(
+  "/admin/disbursements",
+  authenticate,
+  authorize(UserRole.ADMIN),
+  campaignController.getAdminDisbursements
+);
+
 // Phê duyệt hoặc từ chối chiến dịch
 router.patch(
   "/:id/review",

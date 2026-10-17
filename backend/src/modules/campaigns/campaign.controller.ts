@@ -163,6 +163,20 @@ export class CampaignController {
     }
   }
 
+  /**
+   * [GET /api/v1/campaigns/admin/disbursements] Admin lấy danh sách toàn bộ chứng từ giải ngân
+   */
+  async getAdminDisbursements(req: Request, res: Response, next: NextFunction) {
+    try {
+      const page = Math.max(1, Number(req.query.page) || 1);
+      const limit = Math.max(1, Math.min(50, Number(req.query.limit) || 10));
+      const data = await campaignService.getAdminDisbursements(page, limit);
+      return sendSuccess(res, 200, "Lấy danh sách giải ngân thành công", data);
+    } catch (error) {
+      next(error);
+    }
+  }
+
 
   // ==========================================
   // CATEGORIES CONTROLLER METHODS

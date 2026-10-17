@@ -39,6 +39,9 @@ const AdminCategoriesPage = lazy(() => import("./pages/AdminCategoriesPage"));
 const AdminActivityLogsPage = lazy(
   () => import("./pages/AdminActivityLogsPage"),
 );
+const AdminDisbursementsPage = lazy(
+  () => import("./pages/AdminDisbursementsPage"),
+);
 const UserActivityLogsPage = lazy(() => import("./pages/UserActivityLogsPage"));
 function ScrollToTop() {
   const { pathname } = useLocation();
@@ -190,6 +193,14 @@ export default function App() {
                       element={
                         <ProtectedRoute requiredRole="ADMIN">
                           <AdminDonationsPage />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/admin/disbursements"
+                      element={
+                        <ProtectedRoute requiredRole="ADMIN">
+                          <AdminDisbursementsPage />
                         </ProtectedRoute>
                       }
                     />

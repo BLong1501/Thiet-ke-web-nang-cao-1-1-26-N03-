@@ -403,6 +403,52 @@ export class CampaignRepository {
     });
   }
 
+  /**
+   * Admin tra cứu toàn bộ danh sách giải ngân và chứng từ minh bạch
+   */
+  async findDisbursements(page: number = 1, limit: number = 10) {
+    const skip = (page - 1) * limit;
+    const [total, items, aggregate] = await Promise.all([
+      prisma.disbursement.count(),
+      prisma.disbursement.findMany({
+        skip,
+        take: limit,
+        orderBy: { createdAt: "desc" },
+        include: {
+          campaign: {
+            select: {
+              id: true,
+              title: true,
+              slug: true,
+              targetAmount: true,
+              currentAmount: true,
+              bankName: true,
+              bankAccountNumber: true,
+              bankAccountName: true,
+            },
+          },
+          creator: {
+            select: {
+              id: true,
+              fullName: true,
+              email: true,
+              phoneNumber: true,
+            },
+          },
+        },
+      }),
+      prisma.disbursement.aggregate({
+        _sum: { amount: true },
+      }),
+    ]);
+    return {
+      total,
+      items,
+      pages: Math.ceil(total / limit) || 1,
+      totalDisbursed: aggregate._sum.amount || 0,
+    };
+  }
+
 
   // ==========================================
   // CATEGORIES REPOSITORY METHODS

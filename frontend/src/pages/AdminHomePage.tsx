@@ -32,10 +32,11 @@ export default function AdminHomePage() {
             ["Hồ sơ KYC chờ duyệt", "/admin/verifications"],
             ["Người dùng", "/admin/users"],
             ["Giao dịch", "/admin/donations"],
+            ["Giải ngân & Chứng từ", "/admin/disbursements"],
           ].map(([label, to], i) => (
             <Link className="panel" key={to} to={to}>
               <small>{label}</small>
-              <strong className="stat-number">{result.data![i]}</strong>
+              <strong className="stat-number">{result.data![i] ?? "—"}</strong>
               <span>Xem chi tiết →</span>
             </Link>
           ))}

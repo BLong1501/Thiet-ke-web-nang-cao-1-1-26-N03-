@@ -573,6 +573,13 @@ export class CampaignService {
     return disbursement;
   }
 
+  /**
+   * Admin lấy danh sách toàn bộ các khoản giải ngân và chứng từ
+   */
+  async getAdminDisbursements(page: number = 1, limit: number = 10) {
+    return this.repo.findDisbursements(page, limit);
+  }
+
 
   // ==========================================
   // CATEGORIES SERVICES
