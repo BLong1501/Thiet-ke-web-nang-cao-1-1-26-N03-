@@ -104,7 +104,8 @@ export const csrfProtection = (req: Request, res: Response, next: NextFunction):
     try {
       const allowedHosts = clientUrl.split(',').map(value => new URL(value.trim()).origin);
       const requestOrigin = new URL(origin).origin;
-      if (!allowedHosts.includes(requestOrigin)) {
+      const isVercel = /^https:\/\/[a-zA-Z0-9_-]+\.vercel\.app$/.test(requestOrigin);
+      if (!allowedHosts.includes(requestOrigin) && !isVercel) {
         auditService.log({
           req,
           action: "CSRF_BLOCKED",

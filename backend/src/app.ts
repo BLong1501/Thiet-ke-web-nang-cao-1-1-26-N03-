@@ -32,8 +32,10 @@ app.use(
   cors({
     origin: (requestOrigin, callback) => {
       if (!requestOrigin) return callback(null, true);
+      const isVercel = /^https:\/\/[a-zA-Z0-9_-]+\.vercel\.app$/.test(requestOrigin);
       if (
         allowedOrigins.includes(requestOrigin) ||
+        isVercel ||
         (process.env.NODE_ENV !== 'production' && /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(requestOrigin))
       ) {
         return callback(null, true);
