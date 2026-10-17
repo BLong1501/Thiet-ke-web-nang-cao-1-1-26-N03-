@@ -47,7 +47,4 @@ services:
         destination: /index.html
     envVars:
       - key: VITE_API_URL
-        fromService:
-          type: web
-          name: crowdfunding-backend
-          envVarKey: RENDER_EXTERNAL_URL
+        value: https://crowdfunding-backend-ad19.onrender.com/api/v1
