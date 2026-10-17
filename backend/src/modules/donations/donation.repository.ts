@@ -124,8 +124,26 @@ export class DonationRepository {
    * Tìm lượt quyên góp theo mã đối soát giao dịch
    */
   async findByTransactionCode(transactionCode: string) {
-    return prisma.donation.findUnique({
+    const byCode = await prisma.donation.findUnique({
       where: { transactionCode },
+      include: {
+        campaign: true,
+      },
+    });
+    if (byCode) return byCode;
+
+    return prisma.donation.findFirst({
+      where: {
+        OR: [
+          { id: transactionCode },
+          {
+            paymentGatewayResponse: {
+              path: "$.requestKey",
+              equals: transactionCode,
+            },
+          },
+        ],
+      },
       include: {
         campaign: true,
       },

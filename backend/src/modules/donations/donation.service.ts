@@ -676,8 +676,9 @@ export class DonationService {
       ""
     );
 
-    const match = content.match(/(DON-[A-Z0-9-]+)/i);
-    const transactionCode = match ? match[1] : content.trim();
+    const uuidMatch = content.match(/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i);
+    const donMatch = content.match(/(DON-[A-Z0-9-]+)/i);
+    const transactionCode = uuidMatch ? uuidMatch[1] : donMatch ? donMatch[1] : content.trim();
 
     if (!transactionCode) {
       return { success: false, message: "Không tìm thấy mã giao dịch trong nội dung chuyển khoản" };
