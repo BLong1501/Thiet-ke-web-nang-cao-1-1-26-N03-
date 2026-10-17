@@ -12,6 +12,7 @@ import { useAuthStore } from "../store/authStore";
 import { Page, Field, Notice, RemoteState } from "../components/ui/WorkspaceUI";
 import toast from "react-hot-toast";
 import { VIETNAM_BANKS } from "../data/vietnamBanks";
+import { FiShield } from "react-icons/fi";
 export default function CreateCampaignPage() {
   const { id } = useParams();
   const result = useRemote(async () => {
@@ -421,11 +422,31 @@ function CampaignForm({
             </Field>
           </>
         )}
+        {/* THÔNG BÁO CƠ CHẾ KÝ QUỸ MINH BẠCH FUNDTRUST ESCROW */}
+        <div style={{
+          background: "#f0fdf4",
+          border: "1px solid #bbf7d0",
+          borderRadius: "8px",
+          padding: "16px",
+          marginBottom: "20px"
+        }}>
+          <div style={{ display: "flex", gap: "10px", alignItems: "flex-start" }}>
+            <FiShield size={22} color="#16a34a" style={{ flexShrink: 0, marginTop: "2px" }} />
+            <div style={{ fontSize: "14px", color: "#166534", lineHeight: "1.5" }}>
+              <strong>Cơ chế Ký quỹ Minh bạch (FundTrust Escrow):</strong>
+              <p style={{ margin: "4px 0 0" }}>
+                Mọi khoản đóng góp của Nhà hảo tâm sẽ được chuyển trực tiếp vào <strong>Tài khoản Quỹ trung tâm (Vietcombank - 1020369607)</strong>. 
+                Tài khoản ngân hàng bạn cung cấp dưới đây là <strong>tài khoản thụ hưởng của Chủ chiến dịch dùng để nhận tiền giải ngân</strong> sau khi được Ban quản trị thẩm định hóa đơn chứng từ.
+              </p>
+            </div>
+          </div>
+        </div>
+
         {/* LỚP 1: DROPDOWN CHUẨN NAPAS & LỚP 2: REGEX SỐ TÀI KHOẢN */}
         <div className="form-grid">
           <Field
-            label="Ngân hàng thụ hưởng (Chuẩn Napas 247)"
-            hint="Chọn ngân hàng chính thức tại Việt Nam có liên thông VietQR Napas"
+            label="Ngân hàng nhận giải ngân (Chuẩn Napas 247)"
+            hint="Chọn ngân hàng của bạn để nhận tiền giải ngân khi được Admin phê duyệt"
           >
             <select
               name="bankName"
@@ -441,8 +462,8 @@ function CampaignForm({
             </select>
           </Field>
           <Field
-            label="Số tài khoản ngân hàng"
-            hint="Chỉ gồm 6 đến 19 chữ số (không chứa ký tự hoặc chữ cái)"
+            label="Số tài khoản nhận giải ngân"
+            hint="Số tài khoản ngân hàng chính chủ của bạn (gồm 6 đến 19 chữ số)"
           >
             <input
               name="bankAccountNumber"

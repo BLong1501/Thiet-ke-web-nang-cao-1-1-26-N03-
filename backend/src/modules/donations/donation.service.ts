@@ -127,13 +127,14 @@ export class DonationService {
    */
   private buildPaymentInstructions(campaign: any, amount: number | Prisma.Decimal, transactionCode: string, donationId: string) {
     const numericAmount = Number(amount);
-    const bankName = campaign.bankName || "Vietcombank";
-    const bankAccountNumber = campaign.bankAccountNumber || "123456789";
-    const bankAccountName = campaign.bankAccountName || "QUY GAY QUY CONG DONG";
+    // 1. Tài khoản Quỹ trung tâm FundTrust (Ký quỹ trung gian tiếp nhận tiền ủng hộ qua SePay)
+    const bankName = "Ngân hàng Ngoại thương Việt Nam (Vietcombank)";
+    const bankAccountNumber = "1020369607";
+    const bankAccountName = "QUY GAY QUY CONG DONG FUNDTRUST";
 
-    // Tìm mã BIN hoặc Code ngắn gọn của ngân hàng chuẩn Napas 247
+    // Tìm mã BIN ngân hàng chuẩn Napas 247 (Vietcombank: 970436)
     const foundBank = findBank(bankName);
-    const bankIdentifier = foundBank?.bin || foundBank?.code || "970436";
+    const bankIdentifier = foundBank?.bin || "970436";
 
     // 1. VietQR ngân hàng chuẩn Napas 247
     const vietQrUrl = `https://img.vietqr.io/image/${encodeURIComponent(bankIdentifier)}-${encodeURIComponent(bankAccountNumber)}-compact2.png?amount=${numericAmount}&addInfo=${encodeURIComponent(transactionCode)}&accountName=${encodeURIComponent(bankAccountName)}`;
