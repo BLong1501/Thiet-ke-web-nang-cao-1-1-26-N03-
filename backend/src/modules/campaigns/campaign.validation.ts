@@ -224,10 +224,30 @@ export const createDisbursementSchema = z.object({
   amount: z.number().min(10000, "Số tiền giải ngân tối thiểu 10.000 VNĐ"),
   disbursementDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Ngày giải ngân phải có định dạng YYYY-MM-DD"),
   proofDocuments: z.array(z.string().url("Đường dẫn chứng từ không hợp lệ")).min(1, "Cần tối thiểu 1 chứng từ minh chứng"),
-  note: z.string().max(2000).optional(),
+  note: z.string().max(5000).optional(),
   bankName: z.string().trim().optional(),
   bankAccountNumber: z.string().trim().optional(),
   bankAccountName: z.string().trim().optional(),
+  // Các trường định danh CCCD & xác minh người nhận giải ngân
+  idCardFullName: z.string().trim().optional(),
+  idCardNumber: z.string().trim().optional(),
+  idCardIssueDate: z.string().trim().optional(),
+  idCardIssuePlace: z.string().trim().optional(),
+  idCardPhone: z.string().trim().optional(),
+  recipientRelationship: z.string().trim().optional(),
+  idCardFrontUrl: z.string().trim().optional(),
+  idCardBackUrl: z.string().trim().optional(),
+  idCardSelfieUrl: z.string().trim().optional(),
+  legalCommitment: z.boolean().optional(),
+});
+
+// Schema duyệt hồ sơ giải ngân của Admin
+export const reviewDisbursementSchema = z.object({
+  status: z.enum(["APPROVED", "REJECTED"], {
+    message: "Trạng thái phê duyệt phải là APPROVED hoặc REJECTED",
+  }),
+  rejectionReason: z.string().trim().max(1000).optional(),
+  reviewNote: z.string().trim().max(1000).optional(),
 });
 
 // Schema tra cứu tài khoản ngân hàng (Account Lookup)
@@ -244,5 +264,6 @@ export type AddMediaInput = z.infer<typeof addMediaSchema>;
 export type CreateUpdateInput = z.infer<typeof createUpdateSchema>;
 export type CategoryInput = z.infer<typeof categorySchema>;
 export type CreateDisbursementInput = z.infer<typeof createDisbursementSchema>;
+export type ReviewDisbursementInput = z.infer<typeof reviewDisbursementSchema>;
 export type LookupBankAccountInput = z.infer<typeof lookupBankAccountSchema>;
 

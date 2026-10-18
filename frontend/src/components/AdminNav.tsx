@@ -10,11 +10,13 @@ import {
   LuTags,
   LuUsers,
   LuChartColumn,
+  LuBanknote,
 } from "react-icons/lu";
 
 const ITEMS: [to: string, label: string, icon: IconType][] = [
   ["/admin", "Tổng quan", LuLayoutDashboard],
   ["/admin/campaigns", "Chiến dịch", LuHandHeart],
+  ["/admin/disbursements", "Duyệt giải ngân", LuBanknote],
   ["/admin/verifications", "Hồ sơ KYC", LuShieldCheck],
   ["/admin/users", "Người dùng", LuUsers],
   ["/admin/categories", "Danh mục", LuTags],

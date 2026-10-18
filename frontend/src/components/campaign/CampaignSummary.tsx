@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Link } from "react-router-dom";
-import { LuCalendarClock, LuFlag, LuShare2, LuUsers } from "react-icons/lu";
+import { LuCalendarClock, LuFlag, LuShare2, LuUsers, LuBanknote } from "react-icons/lu";
 import { formatCurrency, formatDate, getProgress } from "../../services/api";
 import { campaignPath, type RecordData } from "../../services/platform";
 import { Meter, Notice, Status } from "../ui/WorkspaceUI";
@@ -72,6 +72,7 @@ export default function CampaignSummary({
   onDonate,
   onShare,
   onReport,
+  onDisburse,
 }: {
   campaign: RecordData;
   signedIn: boolean;
@@ -79,6 +80,7 @@ export default function CampaignSummary({
   onDonate: () => void;
   onShare: () => void;
   onReport: () => void;
+  onDisburse?: () => void;
 }) {
   const raised = Number(campaign.currentAmount);
   const target = Number(campaign.targetAmount);
@@ -187,6 +189,25 @@ export default function CampaignSummary({
             >
               Chỉnh sửa chiến dịch
             </Link>
+          )}
+          {owner && onDisburse && (
+            <button
+              type="button"
+              className="button secondary block"
+              onClick={onDisburse}
+              style={{
+                borderColor: "#0d9488",
+                color: "#0f766e",
+                fontWeight: 600,
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: "6px",
+              }}
+            >
+              <LuBanknote aria-hidden="true" size={16} />
+              Tạo hồ sơ giải ngân
+            </button>
           )}
         </div>
 

@@ -8,6 +8,7 @@ import {
   CreateUpdateInput,
   CategoryInput,
   CreateDisbursementInput,
+  ReviewDisbursementInput,
   LookupBankAccountInput,
 } from "./campaign.validation";
 import { findBank, NAPAS_BANKS } from "../../core/constants/banks.constant";
@@ -578,6 +579,55 @@ export class CampaignService {
    */
   async getAdminDisbursements(page: number = 1, limit: number = 10) {
     return this.repo.findDisbursements(page, limit);
+  }
+
+  /**
+   * Admin phê duyệt hoặc từ chối hồ sơ giải ngân
+   */
+  async reviewDisbursement(
+    adminId: string,
+    disbursementId: string,
+    input: ReviewDisbursementInput
+  ) {
+    const disbursement = await this.repo.findDisbursementById(disbursementId);
+    if (!disbursement) throw new AppError("Hồ sơ giải ngân không tồn tại", 404);
+
+    const updated = await this.repo.reviewDisbursement(disbursementId, input, adminId);
+
+    // Ghi Audit Log
+    await prisma.auditLog.create({
+      data: {
+        userId: adminId,
+        action: input.status === "APPROVED" ? "APPROVE_DISBURSEMENT" : "REJECT_DISBURSEMENT",
+        entityName: "Disbursement",
+        entityId: disbursementId,
+        details: {
+          campaignId: disbursement.campaignId,
+          amount: disbursement.amount,
+          status: input.status,
+          rejectionReason: input.rejectionReason || null,
+        },
+      },
+    });
+
+    // Tạo thông báo cho người lập hồ sơ giải ngân
+    try {
+      await prisma.notification.create({
+        data: {
+          userId: disbursement.createdBy,
+          title: input.status === "APPROVED" ? "Hồ sơ giải ngân đã được phê duyệt" : "Hồ sơ giải ngân bị từ chối",
+          message: input.status === "APPROVED"
+            ? `Khoản giải ngân "${disbursement.title}" trị giá ${Number(disbursement.amount).toLocaleString("vi-VN")} đ đã được Admin phê duyệt thành công.`
+            : `Hồ sơ giải ngân "${disbursement.title}" bị từ chối. Lý do: ${input.rejectionReason || "Chưa đạt yêu cầu chứng từ/đối soát tài khoản."}`,
+          type: "SYSTEM",
+        },
+      });
+    } catch {
+      // Bỏ qua nếu lỗi tạo notification phụ
+    }
+
+    await invalidatePublicCampaignCache();
+    return updated;
   }
 
 

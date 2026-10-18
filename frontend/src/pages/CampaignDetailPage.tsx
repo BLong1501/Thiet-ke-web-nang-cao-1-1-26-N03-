@@ -26,6 +26,8 @@ import ManageCampaign from "../components/campaign/ManageCampaign";
 import CampaignSummary from "../components/campaign/CampaignSummary";
 import { categoryIcon } from "../components/ui/categoryIcon";
 import { imageSources } from "../components/home/homeData";
+import DisbursementModal from "../components/campaign/DisbursementModal";
+import { LuBanknote } from "react-icons/lu";
 import toast from "react-hot-toast";
 import "./campaign-detail.css";
 
@@ -37,6 +39,7 @@ export default function CampaignDetailPage() {
   const [tab, setTab] = useState("story");
   const [donate, setDonate] = useState(false);
   const [report, setReport] = useState(false);
+  const [disburseModalOpen, setDisburseModalOpen] = useState(false);
   const user = useAuthStore((s) => s.user);
   const c = result.data;
   const owner =
@@ -143,9 +146,59 @@ export default function CampaignDetailPage() {
               onDonate={() => setDonate(true)}
               onShare={share}
               onReport={() => setReport(true)}
+              onDisburse={() => setDisburseModalOpen(true)}
             />
 
             <div className="cd-main">
+              {owner && (
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    flexWrap: "wrap",
+                    gap: "10px",
+                    background: "#f0fdf4",
+                    border: "1px solid #bbf7d0",
+                    padding: "10px 16px",
+                    borderRadius: "8px",
+                    marginBottom: "16px",
+                  }}
+                >
+                  <div style={{ fontSize: "14px", color: "#166534", fontWeight: 600 }}>
+                    Khu vực Quản trị & Giải ngân cho Chiến dịch của bạn
+                  </div>
+                  <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+                    <button
+                      type="button"
+                      className="button secondary"
+                      onClick={() => setTab("manage")}
+                      style={{ fontSize: "13px", padding: "6px 14px" }}
+                    >
+                      Quản lý
+                    </button>
+                    <button
+                      type="button"
+                      className="button"
+                      onClick={() => setDisburseModalOpen(true)}
+                      style={{
+                        background: "#0d9488",
+                        borderColor: "#0f766e",
+                        color: "#fff",
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: "6px",
+                        fontSize: "13px",
+                        padding: "6px 14px",
+                        fontWeight: 600,
+                      }}
+                    >
+                      <LuBanknote size={15} /> Tạo hồ sơ giải ngân
+                    </button>
+                  </div>
+                </div>
+              )}
+
               <Tabs
                 label="Nội dung chiến dịch"
                 tabs={[
@@ -327,6 +380,16 @@ export default function CampaignDetailPage() {
           )}
           {report && (
             <ReportDialog targetId={c.id} onClose={() => setReport(false)} />
+          )}
+          {disburseModalOpen && (
+            <DisbursementModal
+              campaign={c}
+              onClose={() => setDisburseModalOpen(false)}
+              onSuccess={() => {
+                setDisburseModalOpen(false);
+                result.reload();
+              }}
+            />
           )}
         </article>
       )}

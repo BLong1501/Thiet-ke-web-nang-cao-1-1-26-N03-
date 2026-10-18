@@ -166,8 +166,26 @@ export const campaignApi = {
       bankName?: string;
       bankAccountNumber?: string;
       bankAccountName?: string;
+      idCardFullName?: string;
+      idCardNumber?: string;
+      idCardIssueDate?: string;
+      idCardIssuePlace?: string;
+      idCardPhone?: string;
+      recipientRelationship?: string;
+      idCardFrontUrl?: string;
+      idCardBackUrl?: string;
+      idCardSelfieUrl?: string;
+      legalCommitment?: boolean;
     },
   ) => api.post(`/campaigns/${id}/disbursements`, data),
+  reviewDisbursement: (
+    id: string,
+    data: {
+      status: "APPROVED" | "REJECTED";
+      rejectionReason?: string;
+      reviewNote?: string;
+    },
+  ) => api.patch(`/campaigns/admin/disbursements/${id}/review`, data),
   getCategories: () => api.get("/campaigns/categories"),
   getAdminDisbursements: (params?: { page?: number; limit?: number }) =>
     api.get("/campaigns/admin/disbursements", { params }),

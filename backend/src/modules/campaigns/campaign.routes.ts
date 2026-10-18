@@ -11,6 +11,7 @@ import {
   createUpdateSchema,
   categorySchema,
   createDisbursementSchema,
+  reviewDisbursementSchema,
   lookupBankAccountSchema,
 } from "./campaign.validation";
 import { UserRole } from "@prisma/client";
@@ -120,6 +121,15 @@ router.get(
   authenticate,
   authorize(UserRole.ADMIN),
   campaignController.getAdminDisbursements
+);
+
+// Admin phê duyệt hoặc từ chối giải ngân
+router.patch(
+  "/admin/disbursements/:id/review",
+  authenticate,
+  authorize(UserRole.ADMIN),
+  validate(reviewDisbursementSchema),
+  campaignController.reviewDisbursement
 );
 
 // Phê duyệt hoặc từ chối chiến dịch

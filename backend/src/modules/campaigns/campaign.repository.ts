@@ -7,6 +7,7 @@ import {
   CreateUpdateInput,
   CategoryInput,
   CreateDisbursementInput,
+  ReviewDisbursementInput,
 } from "./campaign.validation";
 
 
@@ -387,14 +388,47 @@ export class CampaignRepository {
   }
 
   /**
-   * Fundraiser thêm minh chứng giải ngân minh bạch
+   * Fundraiser thêm minh chứng giải ngân minh bạch kèm định danh CCCD
    */
   async addDisbursement(campaignId: string, createdBy: string, input: CreateDisbursementInput) {
     let finalNote = input.note || "";
+    const headers: string[] = [];
+
+    // 1. Trạng thái khởi tạo hồ sơ giải ngân
+    headers.push(`[TRẠNG THÁI: PENDING]`);
+
+    // 2. Tài khoản thụ hưởng đối soát
     if (input.bankAccountNumber) {
-      const bankHeader = `[TÀI KHOẢN NHẬN: ${input.bankName || "N/A"} - STK: ${input.bankAccountNumber} - TÊN: ${input.bankAccountName || "N/A"}]`;
-      finalNote = finalNote ? `${bankHeader}\n${finalNote}` : bankHeader;
+      headers.push(
+        `[TÀI KHOẢN NHẬN: ${input.bankName || "N/A"} - STK: ${input.bankAccountNumber} - TÊN: ${input.bankAccountName || "N/A"}]`
+      );
     }
+
+    // 3. Thông tin định danh CCCD & người nhận
+    if (input.idCardNumber) {
+      headers.push(
+        `[ĐỊNH DANH CCCD: TÊN: ${input.idCardFullName || input.bankAccountName || "N/A"} - SỐ CCCD: ${input.idCardNumber} - NGÀY CẤP: ${input.idCardIssueDate || "N/A"} - NƠI CẤP: ${input.idCardIssuePlace || "N/A"} - SĐT: ${input.idCardPhone || "N/A"} - QUAN HỆ: ${input.recipientRelationship || "Chính chủ"}]`
+      );
+    }
+
+    // 4. Đường dẫn ảnh chứng minh nhân dân & chân dung
+    if (input.idCardFrontUrl || input.idCardBackUrl || input.idCardSelfieUrl) {
+      headers.push(
+        `[ẢNH ĐỊNH DANH: TRƯỚC: ${input.idCardFrontUrl || ""} | SAU: ${input.idCardBackUrl || ""} | CHÂN DUNG: ${input.idCardSelfieUrl || ""}]`
+      );
+    }
+
+    if (headers.length > 0) {
+      const headerBlock = headers.join("\n");
+      finalNote = finalNote ? `${headerBlock}\n${finalNote}` : headerBlock;
+    }
+
+    // Gộp ảnh CCCD vào mảng chứng từ để lưu trữ JSON
+    const proofs = [...input.proofDocuments];
+    if (input.idCardFrontUrl && !proofs.includes(input.idCardFrontUrl)) proofs.push(input.idCardFrontUrl);
+    if (input.idCardBackUrl && !proofs.includes(input.idCardBackUrl)) proofs.push(input.idCardBackUrl);
+    if (input.idCardSelfieUrl && !proofs.includes(input.idCardSelfieUrl)) proofs.push(input.idCardSelfieUrl);
+
     return prisma.disbursement.create({
       data: {
         campaignId,
@@ -402,8 +436,52 @@ export class CampaignRepository {
         title: input.title,
         amount: input.amount,
         disbursementDate: new Date(input.disbursementDate),
-        proofDocuments: input.proofDocuments as Prisma.InputJsonValue,
+        proofDocuments: proofs as Prisma.InputJsonValue,
         note: finalNote || null,
+      },
+    });
+  }
+
+  /**
+   * Tìm giải ngân theo ID
+   */
+  async findDisbursementById(id: string) {
+    return prisma.disbursement.findUnique({
+      where: { id },
+      include: {
+        campaign: true,
+        creator: true,
+      },
+    });
+  }
+
+  /**
+   * Admin duyệt hoặc từ chối hồ sơ giải ngân
+   */
+  async reviewDisbursement(id: string, input: ReviewDisbursementInput, adminId: string) {
+    const item = await prisma.disbursement.findUnique({ where: { id } });
+    if (!item) return null;
+
+    let currentNote = item.note || "";
+    const reason = input.rejectionReason || input.reviewNote;
+    // Thay thế hoặc bổ sung tag [TRẠNG THÁI: ...]
+    if (currentNote.includes("[TRẠNG THÁI:")) {
+      currentNote = currentNote.replace(
+        /\[TRẠNG THÁI:\s*[A-Z_]+(\s*-\s*Lý do:[^\]]*)?\]/i,
+        `[TRẠNG THÁI: ${input.status}${reason ? ` - Lý do: ${reason}` : ""}]`
+      );
+    } else {
+      currentNote = `[TRẠNG THÁI: ${input.status}${reason ? ` - Lý do: ${reason}` : ""}]\n${currentNote}`;
+    }
+
+    return prisma.disbursement.update({
+      where: { id },
+      data: {
+        note: currentNote,
+      },
+      include: {
+        campaign: true,
+        creator: true,
       },
     });
   }

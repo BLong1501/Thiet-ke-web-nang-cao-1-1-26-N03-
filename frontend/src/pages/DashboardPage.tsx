@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, Navigate } from "react-router-dom";
 import { campaignApi, formatCurrency } from "../services/api";
-import { campaignPath, listResult } from "../services/platform";
+import { campaignPath, listResult, type RecordData } from "../services/platform";
 import { useRemote } from "../hooks/useRemote";
 import { useAuthStore } from "../store/authStore";
 import {
@@ -14,6 +14,7 @@ import {
 } from "../components/ui/WorkspaceUI";
 import Tabs from "../components/ui/Tabs";
 import DonationHistory from "../components/DonationHistory";
+import DisbursementModal from "../components/campaign/DisbursementModal";
 export default function DashboardPage() {
   const user = useAuthStore((s) => s.user);
   const role = user?.role?.toUpperCase();
@@ -66,6 +67,8 @@ export default function DashboardPage() {
 }
 function MyCampaigns() {
   const [page, setPage] = useState(1);
+  const [selectedDisburseCampaign, setSelectedDisburseCampaign] =
+    useState<RecordData | null>(null);
   const result = useRemote(
     () => campaignApi.getMyCampaigns({ page, limit: 10 }).then(listResult),
     [page],
@@ -104,13 +107,41 @@ function MyCampaigns() {
                         </small>
                       </td>
                       <td>
-                        <Link to={campaignPath(c)}>Quản lý</Link>
-                        {["DRAFT", "PENDING_APPROVAL"].includes(c.status) && (
-                          <>
-                            {" "}
-                            · <Link to={`${campaignPath(c)}/edit`}>Sửa</Link>
-                          </>
-                        )}
+                        <div
+                          style={{
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: "6px",
+                            flexWrap: "wrap",
+                          }}
+                        >
+                          <Link to={campaignPath(c)} style={{ fontWeight: 500 }}>
+                            Quản lý
+                          </Link>
+                          <span style={{ color: "#94a3b8" }}>·</span>
+                          <button
+                            type="button"
+                            onClick={() => setSelectedDisburseCampaign(c)}
+                            style={{
+                              background: "none",
+                              border: "none",
+                              padding: 0,
+                              color: "#0d9488",
+                              fontWeight: 600,
+                              cursor: "pointer",
+                              fontSize: "inherit",
+                              textDecoration: "underline",
+                            }}
+                          >
+                            Tạo hồ sơ giải ngân
+                          </button>
+                          {["DRAFT", "PENDING_APPROVAL"].includes(c.status) && (
+                            <>
+                              <span style={{ color: "#94a3b8" }}>·</span>
+                              <Link to={`${campaignPath(c)}/edit`}>Sửa</Link>
+                            </>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -125,6 +156,17 @@ function MyCampaigns() {
           )}
           <Pager page={page} pages={result.data.pages} onChange={setPage} />
         </>
+      )}
+
+      {selectedDisburseCampaign && (
+        <DisbursementModal
+          campaign={selectedDisburseCampaign}
+          onClose={() => setSelectedDisburseCampaign(null)}
+          onSuccess={() => {
+            setSelectedDisburseCampaign(null);
+            result.reload();
+          }}
+        />
       )}
     </>
   );

@@ -177,6 +177,21 @@ export class CampaignController {
     }
   }
 
+  /**
+   * [PATCH /api/v1/campaigns/admin/disbursements/:id/review] Admin phê duyệt hoặc từ chối giải ngân
+   */
+  async reviewDisbursement(req: Request, res: Response, next: NextFunction) {
+    try {
+      const adminId = (req as any).user.id;
+      const id = String(req.params.id);
+      const updated = await campaignService.reviewDisbursement(adminId, id, req.body);
+      const actionMsg = req.body.status === "APPROVED" ? "Phê duyệt hồ sơ giải ngân thành công" : "Từ chối hồ sơ giải ngân thành công";
+      return sendSuccess(res, 200, actionMsg, updated);
+    } catch (error) {
+      next(error);
+    }
+  }
+
 
   // ==========================================
   // CATEGORIES CONTROLLER METHODS
