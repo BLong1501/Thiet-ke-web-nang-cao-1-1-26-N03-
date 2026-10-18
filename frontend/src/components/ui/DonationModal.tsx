@@ -15,6 +15,9 @@ import {
   RiWallet3Line,
   RiCheckDoubleLine,
   RiLightbulbLine,
+  RiTimeLine,
+  RiLockLine,
+  RiRefreshLine,
 } from "react-icons/ri";
 import {
   FiCopy,
@@ -50,7 +53,47 @@ export default function DonationModal({
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
   const [qrLoaded, setQrLoaded] = useState(false);
   const [qrHasError, setQrHasError] = useState(false);
+  const [timeLeft, setTimeLeft] = useState<number>(600);
   const request = useRef<{ signature: string; key: string } | null>(null);
+
+  // Bộ đếm ngược 10 phút (600 giây) cho phiên giao dịch
+  useEffect(() => {
+    if (!donation) return;
+    if (donation.paymentStatus !== "PENDING") return;
+
+    const calcRemaining = () => {
+      const createdTime = donation.createdAt ? new Date(donation.createdAt).getTime() : Date.now();
+      const expiresTime = createdTime + 10 * 60 * 1000;
+      return Math.max(0, Math.floor((expiresTime - Date.now()) / 1000));
+    };
+
+    const initial = calcRemaining();
+    setTimeLeft(initial);
+    if (initial <= 0) {
+      setDonation((prev) => (prev ? { ...prev, paymentStatus: "FAILED" } : null));
+      return;
+    }
+
+    const timer = setInterval(() => {
+      const remaining = calcRemaining();
+      setTimeLeft(remaining);
+      if (remaining <= 0) {
+        clearInterval(timer);
+        setDonation((prev) => (prev ? { ...prev, paymentStatus: "FAILED" } : null));
+        toast.error("Giao dịch đã quá hạn 10 phút và bị khóa! Mã QR đã hết hiệu lực.");
+      }
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [donation?.id, donation?.createdAt, donation?.paymentStatus]);
+
+  const isExpired = donation?.paymentStatus === "FAILED" || (donation?.paymentStatus === "PENDING" && timeLeft <= 0);
+
+  const formatCountdown = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
+  };
 
   async function submit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -59,6 +102,7 @@ export default function DonationModal({
     setError("");
     setQrLoaded(false);
     setQrHasError(false);
+    setTimeLeft(600);
     const f = new FormData(e.currentTarget);
     const body = {
       campaignId: campaign.id,
@@ -89,9 +133,9 @@ export default function DonationModal({
     }
   }
 
-  // Tự động Polling kiểm tra trạng thái thanh toán từ Ngân hàng mỗi 2.5 giây
+  // Tự động Polling kiểm tra trạng thái thanh toán từ Ngân hàng mỗi 2.5 giây khi còn hiệu lực
   useEffect(() => {
-    if (!donation || donation.paymentStatus !== "PENDING") return;
+    if (!donation || donation.paymentStatus !== "PENDING" || isExpired) return;
     const interval = setInterval(async () => {
       try {
         const res = await donationApi.getStatus(donation.id);
@@ -108,7 +152,7 @@ export default function DonationModal({
       }
     }, 2500);
     return () => clearInterval(interval);
-  }, [donation?.id, donation?.paymentStatus, onSuccess]);
+  }, [donation?.id, donation?.paymentStatus, isExpired, onSuccess]);
 
   function copyText(text: string, label: string, key: string) {
     if (!text) return;
@@ -313,6 +357,85 @@ export default function DonationModal({
                 </h3>
               </div>
 
+              {/* THÔNG BÁO HẾT HẠN HOẶC ĐỒNG HỒ ĐẾM NGƯỢC 10 PHÚT */}
+              {isExpired ? (
+                <div
+                  style={{
+                    padding: "14px 16px",
+                    background: "#fef2f2",
+                    border: "1px solid #fecaca",
+                    borderRadius: "12px",
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "8px",
+                    textAlign: "center",
+                  }}
+                >
+                  <div
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: "6px",
+                      color: "#b91c1c",
+                      fontWeight: 700,
+                      fontSize: "0.95rem",
+                    }}
+                  >
+                    <RiLockLine size={20} /> Phiên giao dịch đã hết hạn & bị khóa
+                  </div>
+                  <p
+                    style={{
+                      margin: 0,
+                      fontSize: "0.85rem",
+                      color: "#991b1b",
+                      lineHeight: 1.5,
+                    }}
+                  >
+                    Giao dịch quá 10 phút chưa hoàn tất đã tự động bị khóa. Mã QR và nội dung chuyển khoản đã hết hiệu lực trong hệ thống. Quý vị vui lòng <strong>không chuyển tiền</strong> vào phiên này để tránh sai sót.
+                  </p>
+                  <button
+                    type="button"
+                    className="button"
+                    style={{
+                      marginTop: "4px",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: "6px",
+                    }}
+                    onClick={() => {
+                      setDonation(null);
+                      setInstructions(null);
+                    }}
+                  >
+                    <RiRefreshLine size={16} /> Tạo giao dịch ủng hộ mới
+                  </button>
+                </div>
+              ) : (
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    padding: "8px 14px",
+                    background: timeLeft <= 120 ? "#fff1f2" : "#f0fdf4",
+                    border: `1px solid ${timeLeft <= 120 ? "#fecdd3" : "#bbf7d0"}`,
+                    borderRadius: "10px",
+                    fontSize: "0.85rem",
+                    color: timeLeft <= 120 ? "#be123c" : "#166534",
+                  }}
+                >
+                  <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                    <RiTimeLine size={17} />
+                    <span>Phiên thanh toán hết hạn sau:</span>
+                  </div>
+                  <strong style={{ fontFamily: "monospace", fontSize: "1.05rem" }}>
+                    {formatCountdown(timeLeft)}
+                  </strong>
+                </div>
+              )}
+
               {/* TAB CHUYỂN ĐỔI PHƯƠNG THỨC THANH TOÁN */}
               <div
                 style={{
@@ -382,8 +505,8 @@ export default function DonationModal({
                 <>
                   <div
                     style={{
-                      background: "#f8fafc",
-                      border: "2px dashed #cbd5e1",
+                      background: isExpired ? "#fef2f2" : "#f8fafc",
+                      border: isExpired ? "2px dashed #fca5a5" : "2px dashed #cbd5e1",
                       borderRadius: "16px",
                       padding: "1.25rem",
                       display: "flex",
@@ -398,15 +521,23 @@ export default function DonationModal({
                         display: "inline-flex",
                         alignItems: "center",
                         gap: "6px",
-                        background: "#eff6ff",
-                        color: "#1d4ed8",
+                        background: isExpired ? "#fee2e2" : "#eff6ff",
+                        color: isExpired ? "#b91c1c" : "#1d4ed8",
                         padding: "5px 14px",
                         borderRadius: "999px",
                         fontSize: "0.82rem",
                         fontWeight: 600,
                       }}
                     >
-                      <HiBolt size={16} color="#2563eb" /> VietQR Napas 247 - Mở app ngân hàng quét mã
+                      {isExpired ? (
+                        <>
+                          <RiLockLine size={16} color="#dc2626" /> Mã VietQR đã hết hạn phiên
+                        </>
+                      ) : (
+                        <>
+                          <HiBolt size={16} color="#2563eb" /> VietQR Napas 247 - Mở app ngân hàng quét mã
+                        </>
+                      )}
                     </div>
 
                     <div
@@ -422,41 +553,75 @@ export default function DonationModal({
                         alignItems: "center",
                         justifyContent: "center",
                         position: "relative",
+                        overflow: "hidden",
                       }}
                     >
-                      {!qrLoaded && (
+                      {isExpired ? (
                         <div
                           style={{
                             display: "flex",
                             flexDirection: "column",
                             alignItems: "center",
-                            gap: "8px",
-                            color: "#64748b",
-                            fontSize: "0.8rem",
+                            gap: "10px",
+                            padding: "1.5rem",
+                            color: "#991b1b",
                           }}
                         >
-                          <FiLoader className="spin" size={24} color="#2563eb" />
-                          <span>Đang tải mã VietQR...</span>
+                          <div
+                            style={{
+                              width: "56px",
+                              height: "56px",
+                              borderRadius: "50%",
+                              background: "#fee2e2",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                            }}
+                          >
+                            <RiLockLine size={28} color="#dc2626" />
+                          </div>
+                          <strong style={{ fontSize: "0.95rem" }}>MÃ QR ĐÃ BỊ KHÓA</strong>
+                          <span style={{ fontSize: "0.78rem", color: "#6b7280" }}>
+                            Phiên thanh toán đã hết hạn sau 10 phút. Không thể quét mã này.
+                          </span>
                         </div>
+                      ) : (
+                        <>
+                          {!qrLoaded && (
+                            <div
+                              style={{
+                                display: "flex",
+                                flexDirection: "column",
+                                alignItems: "center",
+                                gap: "8px",
+                                color: "#64748b",
+                                fontSize: "0.8rem",
+                              }}
+                            >
+                              <FiLoader className="spin" size={24} color="#2563eb" />
+                              <span>Đang tải mã VietQR...</span>
+                            </div>
+                          )}
+                          <img
+                            src={qrHasError ? fallbackQrUrl : vietQrUrl}
+                            alt="VietQR Napas 247"
+                            style={{
+                              width: "100%",
+                              height: "auto",
+                              display: qrLoaded ? "block" : "none",
+                              borderRadius: "8px",
+                            }}
+                            onLoad={() => setQrLoaded(true)}
+                            onError={() => {
+                              if (!qrHasError) {
+                                setQrHasError(true);
+                              } else {
+                                setQrLoaded(true);
+                              }
+                            }}
+                          />
+                        </>
                       )}
-                      <img
-                        src={qrHasError ? fallbackQrUrl : vietQrUrl}
-                        alt="VietQR Napas 247"
-                        style={{
-                          width: "100%",
-                          height: "auto",
-                          display: qrLoaded ? "block" : "none",
-                          borderRadius: "8px",
-                        }}
-                        onLoad={() => setQrLoaded(true)}
-                        onError={() => {
-                          if (!qrHasError) {
-                            setQrHasError(true);
-                          } else {
-                            setQrLoaded(true);
-                          }
-                        }}
-                      />
                     </div>
                   </div>
 
@@ -471,6 +636,7 @@ export default function DonationModal({
                       display: "flex",
                       flexDirection: "column",
                       gap: "0.6rem",
+                      opacity: isExpired ? 0.6 : 1,
                     }}
                   >
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
@@ -485,6 +651,7 @@ export default function DonationModal({
                         <button
                           type="button"
                           className="button secondary"
+                          disabled={isExpired}
                           style={{ padding: "4px 8px", fontSize: "0.75rem", display: "inline-flex", alignItems: "center", gap: "4px" }}
                           onClick={() => copyText(accNumber, "Số tài khoản", "accNumber")}
                         >
@@ -506,6 +673,7 @@ export default function DonationModal({
                         <button
                           type="button"
                           className="button secondary"
+                          disabled={isExpired}
                           style={{ padding: "4px 8px", fontSize: "0.75rem", display: "inline-flex", alignItems: "center", gap: "4px" }}
                           onClick={() => copyText(String(transferAmount), "Số tiền", "amount")}
                         >
@@ -520,24 +688,32 @@ export default function DonationModal({
                         display: "flex",
                         justifyContent: "space-between",
                         alignItems: "center",
-                        background: "#fef3c7",
+                        background: isExpired ? "#fee2e2" : "#fef3c7",
                         padding: "8px 10px",
                         borderRadius: "8px",
-                        border: "1px solid #fde68a",
+                        border: `1px solid ${isExpired ? "#fca5a5" : "#fde68a"}`,
                       }}
                     >
-                      <span style={{ color: "#92400e", fontWeight: 600 }}>Nội dung chuyển:</span>
+                      <span style={{ color: isExpired ? "#991b1b" : "#92400e", fontWeight: 600 }}>Nội dung chuyển:</span>
                       <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                        <strong style={{ color: "#b45309", fontFamily: "monospace", fontSize: "0.95rem" }}>
+                        <strong
+                          style={{
+                            color: isExpired ? "#b91c1c" : "#b45309",
+                            fontFamily: "monospace",
+                            fontSize: "0.95rem",
+                            textDecoration: isExpired ? "line-through" : "none",
+                          }}
+                        >
                           {transferCode}
                         </strong>
                         <button
                           type="button"
                           className="button"
+                          disabled={isExpired}
                           style={{
                             padding: "4px 8px",
                             fontSize: "0.75rem",
-                            background: "#d97706",
+                            background: isExpired ? "#9ca3af" : "#d97706",
                             display: "inline-flex",
                             alignItems: "center",
                             gap: "4px",
@@ -562,7 +738,11 @@ export default function DonationModal({
                     }}
                   >
                     <RiLightbulbLine size={16} color="#eab308" />
-                    <span>Khi quét mã VietQR, app ngân hàng (VCB, MB, BIDV, Techcombank...) sẽ tự điền toàn bộ thông tin.</span>
+                    <span>
+                      {isExpired
+                        ? "Phiên đã hết hạn. Vui lòng tạo giao dịch ủng hộ mới để nhận mã QR và nội dung hợp lệ."
+                        : "Khi quét mã VietQR, app ngân hàng (VCB, MB, BIDV, Techcombank...) sẽ tự điền toàn bộ thông tin."}
+                    </span>
                   </div>
                 </>
               )}
@@ -572,8 +752,8 @@ export default function DonationModal({
                 <>
                   <div
                     style={{
-                      background: "#fdf2f8",
-                      border: "2px dashed #f472b6",
+                      background: isExpired ? "#fef2f2" : "#fdf2f8",
+                      border: isExpired ? "2px dashed #fca5a5" : "2px dashed #f472b6",
                       borderRadius: "16px",
                       padding: "1.25rem",
                       display: "flex",
@@ -588,15 +768,23 @@ export default function DonationModal({
                         display: "inline-flex",
                         alignItems: "center",
                         gap: "6px",
-                        background: "#fce7f3",
-                        color: "#be185d",
+                        background: isExpired ? "#fee2e2" : "#fce7f3",
+                        color: isExpired ? "#b91c1c" : "#be185d",
                         padding: "5px 14px",
                         borderRadius: "999px",
                         fontSize: "0.82rem",
                         fontWeight: 600,
                       }}
                     >
-                      <RiWallet3Line size={16} color="#be185d" /> Ví MoMo - Quét mã hoặc bấm Mở App MoMo
+                      {isExpired ? (
+                        <>
+                          <RiLockLine size={16} color="#dc2626" /> Mã MoMo đã hết hạn phiên
+                        </>
+                      ) : (
+                        <>
+                          <RiWallet3Line size={16} color="#be185d" /> Ví MoMo - Quét mã hoặc bấm Mở App MoMo
+                        </>
+                      )}
                     </div>
 
                     <div
@@ -613,53 +801,88 @@ export default function DonationModal({
                         justifyContent: "center",
                       }}
                     >
-                      {!qrLoaded && (
+                      {isExpired ? (
                         <div
                           style={{
                             display: "flex",
                             flexDirection: "column",
                             alignItems: "center",
-                            gap: "8px",
-                            color: "#64748b",
-                            fontSize: "0.8rem",
+                            gap: "10px",
+                            padding: "1.5rem",
+                            color: "#9d174d",
                           }}
                         >
-                          <FiLoader className="spin" size={24} color="#d82d8b" />
-                          <span>Đang tải mã MoMo...</span>
+                          <div
+                            style={{
+                              width: "56px",
+                              height: "56px",
+                              borderRadius: "50%",
+                              background: "#fce7f3",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                            }}
+                          >
+                            <RiLockLine size={28} color="#be185d" />
+                          </div>
+                          <strong style={{ fontSize: "0.95rem" }}>MÃ QR MOMO ĐÃ BỊ KHÓA</strong>
+                          <span style={{ fontSize: "0.78rem", color: "#6b7280" }}>
+                            Phiên thanh toán đã quá 10 phút. Không thể quét mã này.
+                          </span>
                         </div>
+                      ) : (
+                        <>
+                          {!qrLoaded && (
+                            <div
+                              style={{
+                                display: "flex",
+                                flexDirection: "column",
+                                alignItems: "center",
+                                gap: "8px",
+                                color: "#64748b",
+                                fontSize: "0.8rem",
+                              }}
+                            >
+                              <FiLoader className="spin" size={24} color="#d82d8b" />
+                              <span>Đang tải mã MoMo...</span>
+                            </div>
+                          )}
+                          <img
+                            src={momoQrUrl}
+                            alt="QR Ví MoMo"
+                            style={{
+                              width: "100%",
+                              height: "auto",
+                              display: qrLoaded ? "block" : "none",
+                              borderRadius: "8px",
+                            }}
+                            onLoad={() => setQrLoaded(true)}
+                          />
+                        </>
                       )}
-                      <img
-                        src={momoQrUrl}
-                        alt="QR Ví MoMo"
-                        style={{
-                          width: "100%",
-                          height: "auto",
-                          display: qrLoaded ? "block" : "none",
-                          borderRadius: "8px",
-                        }}
-                        onLoad={() => setQrLoaded(true)}
-                      />
                     </div>
 
-                    {/* NÚT DEEP LINK CHO DI ĐỘNG */}
-                    <a
-                      href={momoDeepLink}
-                      style={{
-                        background: "#d82d8b",
-                        color: "#ffffff",
-                        padding: "8px 16px",
-                        borderRadius: "8px",
-                        textDecoration: "none",
-                        fontWeight: 600,
-                        fontSize: "0.85rem",
-                        display: "inline-flex",
-                        alignItems: "center",
-                        gap: "6px",
-                        boxShadow: "0 2px 4px rgba(216, 45, 139, 0.3)",
-                      }}
-                    >
-                      <FiSmartphone size={16} /> Mở ứng dụng MoMo (Trên điện thoại)
-                    </a>
+                    {/* NÚT DEEP LINK CHO DI ĐỘNG (CHỈ KHI CÒN HẠN) */}
+                    {!isExpired && (
+                      <a
+                        href={momoDeepLink}
+                        style={{
+                          background: "#d82d8b",
+                          color: "#ffffff",
+                          padding: "8px 16px",
+                          borderRadius: "8px",
+                          textDecoration: "none",
+                          fontWeight: 600,
+                          fontSize: "0.85rem",
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: "6px",
+                          boxShadow: "0 2px 4px rgba(216, 45, 139, 0.3)",
+                        }}
+                      >
+                        <FiSmartphone size={16} /> Mở ứng dụng MoMo (Trên điện thoại)
+                      </a>
+                    )}
                   </div>
 
                   {/* BẢNG CHI TIẾT VÍ MOMO */}
@@ -673,6 +896,7 @@ export default function DonationModal({
                       display: "flex",
                       flexDirection: "column",
                       gap: "0.6rem",
+                      opacity: isExpired ? 0.6 : 1,
                     }}
                   >
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
@@ -684,6 +908,7 @@ export default function DonationModal({
                         <button
                           type="button"
                           className="button secondary"
+                          disabled={isExpired}
                           style={{ padding: "4px 8px", fontSize: "0.75rem", display: "inline-flex", alignItems: "center", gap: "4px" }}
                           onClick={() => copyText(momoPhone, "Số điện thoại MoMo", "momoPhone")}
                         >
@@ -705,6 +930,7 @@ export default function DonationModal({
                         <button
                           type="button"
                           className="button secondary"
+                          disabled={isExpired}
                           style={{ padding: "4px 8px", fontSize: "0.75rem", display: "inline-flex", alignItems: "center", gap: "4px" }}
                           onClick={() => copyText(String(transferAmount), "Số tiền", "momoAmount")}
                         >
@@ -719,24 +945,32 @@ export default function DonationModal({
                         display: "flex",
                         justifyContent: "space-between",
                         alignItems: "center",
-                        background: "#fdf2f8",
+                        background: isExpired ? "#fee2e2" : "#fdf2f8",
                         padding: "8px 10px",
                         borderRadius: "8px",
-                        border: "1px solid #fbcfe8",
+                        border: `1px solid ${isExpired ? "#fca5a5" : "#fbcfe8"}`,
                       }}
                     >
-                      <span style={{ color: "#9d174d", fontWeight: 600 }}>Lời nhắn MoMo:</span>
+                      <span style={{ color: isExpired ? "#991b1b" : "#9d174d", fontWeight: 600 }}>Lời nhắn MoMo:</span>
                       <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                        <strong style={{ color: "#be185d", fontFamily: "monospace", fontSize: "0.95rem" }}>
+                        <strong
+                          style={{
+                            color: isExpired ? "#b91c1c" : "#be185d",
+                            fontFamily: "monospace",
+                            fontSize: "0.95rem",
+                            textDecoration: isExpired ? "line-through" : "none",
+                          }}
+                        >
                           {transferCode}
                         </strong>
                         <button
                           type="button"
                           className="button"
+                          disabled={isExpired}
                           style={{
                             padding: "4px 8px",
                             fontSize: "0.75rem",
-                            background: "#d82d8b",
+                            background: isExpired ? "#9ca3af" : "#d82d8b",
                             display: "inline-flex",
                             alignItems: "center",
                             gap: "4px",
@@ -761,46 +995,65 @@ export default function DonationModal({
                     }}
                   >
                     <RiLightbulbLine size={16} color="#eab308" />
-                    <span>Mở MoMo quét mã QR sẽ tự động điền người nhận, số tiền và lời nhắn chuyển khoản.</span>
+                    <span>
+                      {isExpired
+                        ? "Phiên đã hết hạn. Vui lòng tạo giao dịch ủng hộ mới để nhận mã QR và lời nhắn hợp lệ."
+                        : "Mở MoMo quét mã QR sẽ tự động điền người nhận, số tiền và lời nhắn chuyển khoản."}
+                    </span>
                   </div>
                 </>
               )}
 
-              {/* NÚT XÁC NHẬN HOÀN TẤT GIAO DỊCH */}
+              {/* NÚT XÁC NHẬN HOÀN TẤT GIAO DỊCH VÀ ĐIỀU HƯỚNG */}
               <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem", marginTop: "0.5rem" }}>
-                <button
-                  type="button"
-                  className="button"
-                  style={{
-                    width: "100%",
-                    padding: "10px 16px",
-                    fontSize: "0.95rem",
-                    fontWeight: 600,
-                    background: "#16a34a",
-                    borderColor: "#15803d",
-                    color: "#ffffff",
-                    display: "inline-flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    gap: "8px",
-                    boxShadow: "0 2px 4px rgba(22, 163, 74, 0.25)",
-                    cursor: "pointer",
-                  }}
-                  disabled={simulating}
-                  onClick={handleSimulate}
-                >
-                  {simulating ? (
-                    <>
-                      <FiLoader className="spin" size={16} /> Đang xác nhận giao dịch...
-                    </>
-                  ) : (
-                    <>
-                      <FiZap size={16} /> Tôi đã chuyển tiền thành công - Hoàn tất giao dịch
-                    </>
-                  )}
-                </button>
+                {!isExpired && (
+                  <button
+                    type="button"
+                    className="button"
+                    style={{
+                      width: "100%",
+                      padding: "10px 16px",
+                      fontSize: "0.95rem",
+                      fontWeight: 600,
+                      background: "#16a34a",
+                      borderColor: "#15803d",
+                      color: "#ffffff",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: "8px",
+                      boxShadow: "0 2px 4px rgba(22, 163, 74, 0.25)",
+                      cursor: "pointer",
+                    }}
+                    disabled={simulating}
+                    onClick={handleSimulate}
+                  >
+                    {simulating ? (
+                      <>
+                        <FiLoader className="spin" size={16} /> Đang xác nhận giao dịch...
+                      </>
+                    ) : (
+                      <>
+                        <FiZap size={16} /> Tôi đã chuyển tiền thành công - Hoàn tất giao dịch
+                      </>
+                    )}
+                  </button>
+                )}
 
-                <div style={{ display: "flex", justifyContent: "flex-end" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  {isExpired && (
+                    <button
+                      type="button"
+                      className="button secondary"
+                      style={{ fontSize: "0.82rem", display: "inline-flex", alignItems: "center", gap: "4px" }}
+                      onClick={() => {
+                        setDonation(null);
+                        setInstructions(null);
+                      }}
+                    >
+                      <RiRefreshLine size={14} /> Tạo phiên mới
+                    </button>
+                  )}
                   <Link
                     to={`/donations/${donation.id}`}
                     onClick={onClose}
@@ -811,6 +1064,7 @@ export default function DonationModal({
                       display: "inline-flex",
                       alignItems: "center",
                       gap: "4px",
+                      marginLeft: "auto",
                     }}
                   >
                     <FiExternalLink size={13} /> Xem trang biên nhận đơn
@@ -818,25 +1072,27 @@ export default function DonationModal({
                 </div>
               </div>
 
-              {/* TỰ ĐỘNG NHẬN DIỆN TRẠNG THÁI (POLLING 2.5s) */}
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  gap: "8px",
-                  fontSize: "0.82rem",
-                  color: "#15803d",
-                  fontWeight: 500,
-                  padding: "6px 12px",
-                  background: "#f0fdf4",
-                  borderRadius: "8px",
-                  border: "1px solid #bbf7d0",
-                }}
-              >
-                <FiLoader className="spin" size={14} color="#22c55e" />
-                <span>Hệ thống đang tự động lắng nghe chuyển tiền (Polling 2.5s)...</span>
-              </div>
+              {/* TỰ ĐỘNG NHẬN DIỆN TRẠNG THÁI (POLLING 2.5s) - CHỈ KHI CÒN HIỆU LỰC */}
+              {!isExpired && (
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: "8px",
+                    fontSize: "0.82rem",
+                    color: "#15803d",
+                    fontWeight: 500,
+                    padding: "6px 12px",
+                    background: "#f0fdf4",
+                    borderRadius: "8px",
+                    border: "1px solid #bbf7d0",
+                  }}
+                >
+                  <FiLoader className="spin" size={14} color="#22c55e" />
+                  <span>Hệ thống đang tự động lắng nghe chuyển tiền (Polling 2.5s)...</span>
+                </div>
+              )}
             </>
           )}
         </div>

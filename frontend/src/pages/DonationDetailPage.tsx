@@ -15,6 +15,9 @@ import toast from "react-hot-toast";
 import {
   RiBankCardLine,
   RiWallet3Line,
+  RiTimeLine,
+  RiLockLine,
+  RiRefreshLine,
 } from "react-icons/ri";
 import {
   FiZap,
@@ -30,17 +33,54 @@ export default function DonationDetailPage() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [activeTab, setActiveTab] = useState<"VIETQR" | "MOMO">("VIETQR");
+  const [timeLeft, setTimeLeft] = useState<number>(600);
 
   const d = result.data;
 
-  // Tự động Polling cập nhật trạng thái khi PENDING
+  // Bộ đếm ngược 10 phút
   useEffect(() => {
     if (!d || d.paymentStatus !== "PENDING") return;
+    const calcRemaining = () => {
+      const createdTime = d.createdAt ? new Date(d.createdAt).getTime() : Date.now();
+      const expiresTime = createdTime + 10 * 60 * 1000;
+      return Math.max(0, Math.floor((expiresTime - Date.now()) / 1000));
+    };
+
+    const initial = calcRemaining();
+    setTimeLeft(initial);
+    if (initial <= 0) {
+      result.reload();
+      return;
+    }
+
+    const timer = setInterval(() => {
+      const rem = calcRemaining();
+      setTimeLeft(rem);
+      if (rem <= 0) {
+        clearInterval(timer);
+        result.reload();
+      }
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [d?.id, d?.createdAt, d?.paymentStatus]);
+
+  const isExpired = d?.paymentStatus === "FAILED" || (d?.paymentStatus === "PENDING" && timeLeft <= 0);
+
+  const formatCountdown = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
+  };
+
+  // Tự động Polling cập nhật trạng thái khi PENDING và còn hạn
+  useEffect(() => {
+    if (!d || d.paymentStatus !== "PENDING" || isExpired) return;
     const interval = setInterval(() => {
       result.reload();
     }, 3000);
     return () => clearInterval(interval);
-  }, [d?.paymentStatus]);
+  }, [d?.paymentStatus, isExpired]);
   async function act(path: string, body: object) {
     setBusy(true);
     setError("");
@@ -131,7 +171,55 @@ export default function DonationDetailPage() {
             <dt>Lời nhắn</dt>
             <dd>{d.message || "—"}</dd>
           </dl>
-          {d.paymentStatus === "PENDING" && (() => {
+          {/* TRƯỜNG HỢP GIAO DỊCH HẾT HẠN / THẤT BẠI */}
+          {isExpired ? (
+            <div
+              style={{
+                marginTop: "1.25rem",
+                padding: "16px",
+                background: "#fef2f2",
+                border: "1px solid #fecaca",
+                borderRadius: "12px",
+                textAlign: "center",
+                display: "flex",
+                flexDirection: "column",
+                gap: "10px",
+              }}
+            >
+              <div
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: "8px",
+                  color: "#b91c1c",
+                  fontWeight: 700,
+                  fontSize: "1rem",
+                }}
+              >
+                <RiLockLine size={22} /> Giao dịch đã hết hạn & bị khóa (Quá 10 phút)
+              </div>
+              <p
+                style={{
+                  margin: 0,
+                  fontSize: "0.88rem",
+                  color: "#991b1b",
+                  lineHeight: 1.5,
+                }}
+              >
+                Phiên giao dịch từ thiện này chưa hoàn tất trong 10 phút và đã được hệ thống tự động khóa và đánh dấu hết hiệu lực trong cơ sở dữ liệu. Mã QR và thông tin chuyển khoản phiên này không còn giá trị tiếp nhận.
+              </p>
+              <div style={{ display: "flex", justifyContent: "center", marginTop: "4px" }}>
+                <Link
+                  to={campaignPath({ id: d.campaignId, slug: d.campaign?.slug })}
+                  className="button"
+                  style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}
+                >
+                  <RiRefreshLine size={16} /> Ủng hộ lại chiến dịch này
+                </Link>
+              </div>
+            </div>
+          ) : d.paymentStatus === "PENDING" && (() => {
             let legalMeta: any = null;
             if (d.campaign?.beneficiaryInfo) {
               try {
@@ -155,6 +243,29 @@ export default function DonationDetailPage() {
 
             return (
               <div style={{ marginTop: "1rem", display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+                {/* ĐỒNG HỒ ĐẾM NGƯỢC 10 PHÚT */}
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    padding: "8px 14px",
+                    background: timeLeft <= 120 ? "#fff1f2" : "#f0fdf4",
+                    border: `1px solid ${timeLeft <= 120 ? "#fecdd3" : "#bbf7d0"}`,
+                    borderRadius: "10px",
+                    fontSize: "0.85rem",
+                    color: timeLeft <= 120 ? "#be123c" : "#166534",
+                  }}
+                >
+                  <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                    <RiTimeLine size={17} />
+                    <span>Phiên thanh toán hết hạn sau:</span>
+                  </div>
+                  <strong style={{ fontFamily: "monospace", fontSize: "1.05rem" }}>
+                    {formatCountdown(timeLeft)}
+                  </strong>
+                </div>
+
                 {/* TAB SWITCHER */}
                 <div
                   style={{

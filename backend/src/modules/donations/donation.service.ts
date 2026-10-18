@@ -16,8 +16,61 @@ import { assertAnyObjectAccess, assertObjectAccess, type Actor } from "../../cor
 import { findBank } from "../../core/constants/banks.constant";
 import { mailService } from "../../core/services/mail.service";
 
+export const DONATION_EXPIRATION_MS = 10 * 60 * 1000; // 10 phút hiệu lực
+
 export class DonationService {
   constructor(private repo: DonationRepository = donationRepository) {}
+
+  /**
+   * Kiểm tra và tự động cập nhật trạng thái hết hạn cho giao dịch PENDING quá 10 phút
+   */
+  async checkAndExpireDonation<T extends { id: string; paymentStatus: PaymentStatus; createdAt: Date | string; paymentGatewayResponse?: any }>(
+    donation: T
+  ): Promise<T> {
+    if (!donation || donation.paymentStatus !== PaymentStatus.PENDING) {
+      return donation;
+    }
+    const createdAtTime = new Date(donation.createdAt).getTime();
+    if (Date.now() - createdAtTime > DONATION_EXPIRATION_MS) {
+      const existingGatewayResp =
+        typeof donation.paymentGatewayResponse === "object" && donation.paymentGatewayResponse !== null
+          ? donation.paymentGatewayResponse
+          : {};
+      return (await prisma.donation.update({
+        where: { id: donation.id },
+        data: {
+          paymentStatus: PaymentStatus.FAILED,
+          paymentGatewayResponse: {
+            ...existingGatewayResp,
+            failureReason: "EXPIRED_AFTER_10_MINUTES",
+            expiredAt: new Date().toISOString(),
+          },
+        },
+        include: {
+          campaign: {
+            select: {
+              id: true,
+              title: true,
+              slug: true,
+              bankName: true,
+              bankAccountNumber: true,
+              bankAccountName: true,
+              beneficiaryInfo: true,
+              fundraiserId: true,
+            },
+          },
+          donor: {
+            select: {
+              id: true,
+              fullName: true,
+              email: true,
+            },
+          },
+        },
+      })) as unknown as T;
+    }
+    return donation;
+  }
 
   /**
    * Khởi tạo giao dịch quyên góp mới:
@@ -64,7 +117,7 @@ export class DonationService {
           replayed: true,
           message: "Yêu cầu quyên góp đã được khởi tạo từ trước (Idempotent Replay)",
           donation: existing,
-          paymentInstructions: this.buildPaymentInstructions(campaign, existing.amount, existing.transactionCode, existing.id),
+          paymentInstructions: this.buildPaymentInstructions(campaign, existing.amount, existing.transactionCode, existing.id, existing.createdAt),
         };
       }
     }
@@ -111,21 +164,21 @@ export class DonationService {
       paymentGatewayResponse: input.requestKey ? { requestKey: input.requestKey } : undefined,
     });
 
-    // 6. Tạo hướng dẫn thanh toán chi tiết (VietQR hoặc MoMo)
-    const paymentInstructions = this.buildPaymentInstructions(campaign, input.amount, transactionCode, donation.id);
+    // 6. Tạo hướng dẫn thanh toán chi tiết (VietQR hoặc MoMo) kèm thời gian hết hạn
+    const paymentInstructions = this.buildPaymentInstructions(campaign, input.amount, transactionCode, donation.id, donation.createdAt);
 
     return {
       replayed: false,
-      message: "Khởi tạo yêu cầu quyên góp thành công. Vui lòng quét mã QR hoặc chuyển khoản để hoàn tất.",
+      message: "Khởi tạo yêu cầu quyên góp thành công. Vui lòng quét mã QR hoặc chuyển khoản để hoàn tất (hết hạn sau 10 phút).",
       donation,
       paymentInstructions,
     };
   }
 
   /**
-   * Tạo chi tiết hướng dẫn thanh toán: VietQR Ngân hàng & Mã QR Ví MoMo
+   * Tạo chi tiết hướng dẫn thanh toán: VietQR Ngân hàng & Mã QR Ví MoMo kèm thông tin hết hạn
    */
-  private buildPaymentInstructions(campaign: any, amount: number | Prisma.Decimal, transactionCode: string, donationId: string) {
+  private buildPaymentInstructions(campaign: any, amount: number | Prisma.Decimal, transactionCode: string, donationId: string, createdAt?: Date | string) {
     const numericAmount = Number(amount);
     // 1. Tài khoản Quỹ trung tâm FundTrust (Ký quỹ trung gian tiếp nhận tiền ủng hộ qua SePay)
     const bankName = "Ngân hàng Ngoại thương Việt Nam (Vietcombank)";
@@ -153,10 +206,15 @@ export class DonationService {
     const momoQrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=350x350&data=2|99|${momoPhone}|${encodeURIComponent(momoAccountName)}||0|0|${numericAmount}|${encodeURIComponent(transactionCode)}|transfer_p2p`;
     const momoDeepLink = `momo://?action=payWithApp&isScanQR=true`;
 
+    const createdTime = createdAt ? new Date(createdAt).getTime() : Date.now();
+    const expiresAt = new Date(createdTime + DONATION_EXPIRATION_MS).toISOString();
+
     return {
       transactionCode,
       amount: numericAmount,
       currency: "VND",
+      expiresAt,
+      expiresInSeconds: Math.max(0, Math.floor((new Date(expiresAt).getTime() - Date.now()) / 1000)),
       bankTransfer: {
         methodName: "Chuyển khoản Ngân hàng (VietQR Napas 247)",
         bankName,
@@ -185,10 +243,12 @@ export class DonationService {
    * Xác nhận thanh toán thành công (Mô phỏng Webhook / IPN / Cổng thanh toán)
    */
   async confirmPayment(donationId: string, input: ConfirmDonationInput, actor: Actor) {
-    const donation = await this.repo.findById(donationId);
+    let donation = await this.repo.findById(donationId);
     if (!donation) {
       throw new AppError("Không tìm thấy giao dịch quyên góp", 404);
     }
+
+    donation = await this.checkAndExpireDonation(donation);
 
     await assertObjectAccess({
       actor,
@@ -206,7 +266,7 @@ export class DonationService {
     }
 
     if (donation.paymentStatus !== PaymentStatus.PENDING) {
-      throw new AppError("Giao dịch không ở trạng thái chờ thanh toán", 400);
+      throw new AppError("Giao dịch đã hết hạn hoặc không ở trạng thái chờ thanh toán", 400);
     }
 
     const result = await this.repo.confirmPayment(
@@ -527,10 +587,12 @@ export class DonationService {
    * Tra cứu chi tiết một giao dịch quyên góp
    */
   async getDonationDetail(donationId: string, currentUserId?: string, userRole?: UserRole) {
-    const donation = await this.repo.findById(donationId);
+    let donation = await this.repo.findById(donationId);
     if (!donation) {
       throw new AppError("Không tìm thấy giao dịch quyên góp", 404);
     }
+
+    donation = await this.checkAndExpireDonation(donation);
 
     await assertAnyObjectAccess({
       actor: currentUserId ? { userId: currentUserId, role: userRole || UserRole.USER } : null,
@@ -654,6 +716,13 @@ export class DonationService {
     if (!donation) {
       throw new AppError("Không tìm thấy giao dịch quyên góp", 404);
     }
+    donation = await this.checkAndExpireDonation(donation);
+
+    const isExpired = donation.paymentStatus === PaymentStatus.FAILED;
+    const createdTime = new Date(donation.createdAt).getTime();
+    const expiresAt = new Date(createdTime + DONATION_EXPIRATION_MS).toISOString();
+    const remainingSeconds = Math.max(0, Math.floor((new Date(expiresAt).getTime() - Date.now()) / 1000));
+
     return {
       id: donation.id,
       transactionCode: donation.transactionCode,
@@ -661,6 +730,10 @@ export class DonationService {
       amount: Number(donation.amount),
       campaignId: donation.campaignId,
       paidAt: donation.paidAt,
+      createdAt: donation.createdAt,
+      expiresAt,
+      remainingSeconds,
+      isExpired,
     };
   }
 
@@ -685,13 +758,22 @@ export class DonationService {
       return { success: false, message: "Không tìm thấy mã giao dịch trong nội dung chuyển khoản" };
     }
 
-    const donation = await this.repo.findByTransactionCode(transactionCode);
+    let donation = await this.repo.findByTransactionCode(transactionCode);
     if (!donation) {
       return { success: false, message: `Không tìm thấy khoản quyên góp với mã: ${transactionCode}` };
     }
 
     if (donation.paymentStatus === PaymentStatus.SUCCESS) {
       return { success: true, message: "Giao dịch đã được thanh toán thành công trước đó", donation };
+    }
+
+    donation = await this.checkAndExpireDonation(donation);
+    if (donation.paymentStatus === PaymentStatus.FAILED) {
+      return {
+        success: false,
+        message: `Giao dịch ${transactionCode} đã hết hạn (quá 10 phút), phiên giao dịch đã bị khóa`,
+        donation,
+      };
     }
 
     const result = await this.repo.confirmPayment(donation.id, {
@@ -718,9 +800,13 @@ export class DonationService {
    * Mô phỏng chuyển khoản thành công (phục vụ kiểm thử/demo trên giao diện)
    */
   async simulateSuccess(donationId: string) {
-    const donation = await this.repo.findById(donationId);
+    let donation = await this.repo.findById(donationId);
     if (!donation) {
       throw new AppError("Không tìm thấy giao dịch quyên góp", 404);
+    }
+    donation = await this.checkAndExpireDonation(donation);
+    if (donation.paymentStatus === PaymentStatus.FAILED) {
+      throw new AppError("Giao dịch đã quá hạn 10 phút và đã hết hiệu lực. Vui lòng tạo giao dịch mới.", 400);
     }
     if (donation.paymentStatus === PaymentStatus.SUCCESS) {
       return {
