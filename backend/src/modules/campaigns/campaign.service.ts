@@ -59,7 +59,11 @@ export class CampaignService {
 
     const target = Number(campaign.targetAmount);
     const current = Number(currentAmount);
-    const progressPercentage = target > 0 ? Math.min(100, Math.round((current / target) * 100)) : 0;
+    const rawProgress = target > 0 ? (current / target) * 100 : 0;
+    const progressPercentage =
+      rawProgress > 0 && rawProgress < 1
+        ? Number(rawProgress.toFixed(1))
+        : Math.min(100, Math.round(rawProgress));
     const now = new Date();
     const end = new Date(campaign.endDate);
     const diffTime = end.getTime() - now.getTime();
@@ -111,13 +115,14 @@ export class CampaignService {
     if (campaigns.length === 0) return [];
     const ids = campaigns.map((item) => item.id);
     const nets = await this.repo.findLedgerNetByCampaignIds(ids);
-    return campaigns.map((item) =>
-      this.formatCampaign(
-        item,
-        nets.get(item.id) ?? Number(item.currentAmount) ?? 0,
-        options
-      )
-    );
+    return campaigns.map((item) => {
+      const netFromLedger = nets.get(item.id);
+      const activeAmount = Math.max(
+        netFromLedger ?? 0,
+        Number(item.currentAmount || 0)
+      );
+      return this.formatCampaign(item, activeAmount, options);
+    });
   }
 
   private async hydrateCampaign(campaign: any, options: { includeSensitive?: boolean } = {}) {

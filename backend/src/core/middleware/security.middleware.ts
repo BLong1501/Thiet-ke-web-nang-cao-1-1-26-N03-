@@ -89,6 +89,11 @@ export const csrfProtection = (req: Request, res: Response, next: NextFunction):
     return next();
   }
 
+  // 0. Bỏ qua CSRF đối với Webhook tự động biến động số dư ngân hàng (SePay / VietQR / PayOS)
+  if (req.originalUrl.includes("/donations/webhook")) {
+    return next();
+  }
+
   // 1. Nếu request sử dụng Authorization: Bearer <token>, nó được gửi thủ công bởi ứng dụng client
   // Trình duyệt KHÔNG tự động đính kèm header Authorization trong tấn công CSRF (Khác với Cookie).
   const authHeader = req.headers.authorization;

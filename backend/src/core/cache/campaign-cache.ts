@@ -58,8 +58,11 @@ export function applyPublicCacheHeaders(
   maxAgeSeconds: number
 ): void {
   res.setHeader("X-Cache", cacheStatus);
+  // Không cho trình duyệt lưu cache cứng cục bộ để người dùng vừa ủng hộ là thấy số tiền & tiến độ nhảy ngay lập tức
   res.setHeader(
     "Cache-Control",
-    `public, max-age=${maxAgeSeconds}, stale-while-revalidate=${maxAgeSeconds * 2}`
+    "no-cache, no-store, must-revalidate"
   );
+  res.setHeader("Pragma", "no-cache");
+  res.setHeader("Expires", "0");
 }

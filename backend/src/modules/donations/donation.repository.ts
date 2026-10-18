@@ -30,33 +30,45 @@ export class DonationRepository {
   }
 
   /**
-   * Tính tổng thu (RECEIPT) và tổng hoàn (REFUND) từ bảng sổ cái ledger_entries
+   * Tính tổng thu (RECEIPT / SUCCESS donations) và tổng hoàn (REFUND) từ bảng sổ cái ledger_entries và donations
    */
   async totals(tx: Prisma.TransactionClient, campaignId: string) {
-    const rows = await tx.ledgerEntry.groupBy({
-      by: ["kind"],
-      where: { donation: { campaignId } },
+    // 1. Tính tổng tiền từ các giao dịch quyên góp thành công
+    const donationAgg = await tx.donation.aggregate({
+      where: {
+        campaignId,
+        paymentStatus: PaymentStatus.SUCCESS,
+      },
       _sum: { amount: true },
       _count: true,
     });
-    const received = rows.find((r) => r.kind === "RECEIPT")?._sum.amount ?? new Prisma.Decimal(0);
-    const refunded = rows.find((r) => r.kind === "REFUND")?._sum.amount ?? new Prisma.Decimal(0);
-    return { received, refunded, net: received.minus(refunded) };
+
+    // 2. Tính các khoản hoàn tiền (nếu có trong Sổ cái)
+    const refundRows = await tx.ledgerEntry.groupBy({
+      by: ["kind"],
+      where: { donation: { campaignId }, kind: "REFUND" },
+      _sum: { amount: true },
+    });
+
+    const received = donationAgg._sum.amount ?? new Prisma.Decimal(0);
+    const refunded = refundRows.find((r) => r.kind === "REFUND")?._sum.amount ?? new Prisma.Decimal(0);
+    const net = received.minus(refunded);
+    const donorCount = donationAgg._count ?? 0;
+
+    return { received, refunded, net, donorCount };
   }
 
   /**
-   * Đồng bộ lại số dư currentAmount và donorCount của chiến dịch từ Sổ cái
+   * Đồng bộ lại số dư currentAmount và donorCount của chiến dịch từ các giao dịch thành công
    */
   async refreshCampaign(tx: Prisma.TransactionClient, campaignId: string) {
     const totals = await this.totals(tx, campaignId);
-    const donors = await tx.donation.findMany({
-      where: { campaignId, paymentStatus: "SUCCESS" },
-      select: { donorId: true },
-      distinct: ["donorId"],
-    });
     await tx.campaign.update({
       where: { id: campaignId },
-      data: { currentAmount: totals.net, donorCount: donors.length },
+      data: {
+        currentAmount: totals.net,
+        donorCount: totals.donorCount,
+      },
     });
     return totals;
   }
@@ -280,11 +292,14 @@ export class DonationRepository {
         campaignProgress: {
           targetAmount: campaign.targetAmount,
           currentAmount: totals.net,
-          donorCount: campaign.donorCount,
-          percent: Math.min(
-            100,
-            Math.round((Number(totals.net) / Number(campaign.targetAmount)) * 100)
-          ),
+          donorCount: totals.donorCount,
+          percent:
+            Number(totals.net) > 0 && (Number(totals.net) / Number(campaign.targetAmount)) * 100 < 1
+              ? Number(((Number(totals.net) / Number(campaign.targetAmount)) * 100).toFixed(1))
+              : Math.min(
+                  100,
+                  Math.round((Number(totals.net) / Number(campaign.targetAmount)) * 100)
+                ),
         },
       };
     });

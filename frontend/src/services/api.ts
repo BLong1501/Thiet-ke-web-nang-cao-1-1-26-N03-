@@ -132,8 +132,14 @@ export const uploadApi = {
 // --- Campaign APIs ---
 export const campaignApi = {
   getAll: (params?: Record<string, unknown>) =>
-    api.get("/campaigns", { params }),
-  getById: (idOrSlug: string) => api.get(`/campaigns/${idOrSlug}`),
+    api.get("/campaigns", {
+      params,
+      headers: { "Cache-Control": "no-cache", Pragma: "no-cache" },
+    }),
+  getById: (idOrSlug: string) =>
+    api.get(`/campaigns/${idOrSlug}`, {
+      headers: { "Cache-Control": "no-cache", Pragma: "no-cache" },
+    }),
   getMyCampaigns: (params?: Record<string, unknown>) =>
     api.get("/campaigns/my/list", { params }),
   getPending: (params?: Record<string, unknown>) =>
@@ -214,15 +220,25 @@ export const donationApi = {
   getCampaignDonations: (
     campaignId: string,
     params?: Record<string, unknown>,
-  ) => api.get(`/donations/campaign/${campaignId}`, { params }),
+  ) =>
+    api.get(`/donations/campaign/${campaignId}`, {
+      params,
+      headers: { "Cache-Control": "no-cache", Pragma: "no-cache" },
+    }),
   getMyDonations: (params?: Record<string, unknown>) =>
     api.get("/donations/my/history", { params }),
   getCampaignTimeline: (campaignId: string) =>
     api.get(`/donations/campaign/${campaignId}/timeline`),
   getAllForAdmin: (params?: Record<string, unknown>) =>
     api.get("/donations/admin/all", { params }),
-  getById: (id: string) => api.get(`/donations/${id}`),
-  getStatus: (id: string) => api.get(`/donations/${id}/status`),
+  getById: (id: string) =>
+    api.get(`/donations/${id}`, {
+      headers: { "Cache-Control": "no-cache", Pragma: "no-cache" },
+    }),
+  getStatus: (id: string) =>
+    api.get(`/donations/${id}/status`, {
+      headers: { "Cache-Control": "no-cache", Pragma: "no-cache" },
+    }),
   simulateSuccess: (id: string) => api.post(`/donations/${id}/simulate-success`),
 };
 
@@ -358,5 +374,7 @@ export const getDaysLeft = (deadline: string): number => {
 
 export const getProgress = (raised: number, target: number): number => {
   if (!target || target <= 0) return 0;
-  return Math.min(100, Math.round((raised / target) * 100));
+  const p = (raised / target) * 100;
+  if (p > 0 && p < 1) return Number(p.toFixed(1));
+  return Math.min(100, Math.round(p));
 };

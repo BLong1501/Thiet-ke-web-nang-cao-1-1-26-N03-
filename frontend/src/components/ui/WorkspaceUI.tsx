@@ -322,7 +322,7 @@ export function Badge({
 
 /** Thanh tiến độ. Không có `label` thì chỉ mang tính trang trí (giá trị đã hiển thị bằng chữ). */
 export function Meter({ value, label }: { value: number; label?: string }) {
-  const v = Math.max(0, Math.min(100, Math.round(value)));
+  const v = value > 0 && value < 1 ? 1 : Math.max(0, Math.min(100, Math.round(value)));
   const a11y = label
     ? {
         role: "progressbar",

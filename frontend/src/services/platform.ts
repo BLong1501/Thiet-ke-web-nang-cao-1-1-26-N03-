@@ -53,7 +53,7 @@ export function normalizeCampaign(c: RecordData): Campaign {
       typeof c.category?.name === "string" ? c.category.name : undefined,
     targetAmount: Number(c.targetAmount || 0),
     raisedAmount: Number(c.currentAmount || 0),
-    donorCount: Number(c._count?.donations || c.donorCount || 0),
+    donorCount: Number(c.donorCount ?? c._count?.donations ?? 0),
     deadline: c.endDate,
     status: c.status,
     creator: normalizeUser(c.fundraiser || {}),

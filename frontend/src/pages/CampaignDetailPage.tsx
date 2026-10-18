@@ -370,11 +370,14 @@ export default function CampaignDetailPage() {
           {donate && (
             <DonationModal
               campaign={normalizeCampaign(c)}
-              onClose={() => setDonate(false)}
-              onSuccess={() => {
+              onClose={() => {
                 setDonate(false);
+                result.reload();
+              }}
+              onSuccess={() => {
                 toast.success("Máy chủ đã xác nhận đóng góp. Cảm ơn bạn!");
                 result.reload();
+                setTimeout(() => result.reload(), 1000);
               }}
             />
           )}
