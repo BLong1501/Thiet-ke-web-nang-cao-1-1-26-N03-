@@ -741,14 +741,27 @@ export class DonationService {
    * Xử lý Webhook tự động biến động số dư ngân hàng (SePay / Casso / PayOS / Banking Webhook)
    */
   async handleBankingWebhook(payload: any) {
+    // payOS bọc dữ liệu trong payload.data, còn SePay/Casso gửi trực tiếp ở payload
+    const data = payload?.data || payload || {};
+
     const content = String(
+      data.content ||
+      data.description ||
+      data.transferContent ||
+      data.transactionCode ||
+      data.orderCode ||
       payload.content ||
       payload.description ||
-      payload.transferContent ||
-      payload.transactionCode ||
-      payload.orderCode ||
       ""
     );
+
+    // Xử lý gói tin ping/xác nhận Webhook URL của payOS (thường chứa VQRIO hoặc orderCode mẫu 123)
+    if (content.includes("VQRIO") || data.orderCode === 123 || payload.desc === "Webhook URL confirmation") {
+      return {
+        success: true,
+        message: "Xác nhận Webhook URL payOS thành công",
+      };
+    }
 
     const uuidMatch = content.match(/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i);
     const donMatch = content.match(/(DON-[A-Z0-9-]+)/i);
@@ -777,10 +790,10 @@ export class DonationService {
     }
 
     const result = await this.repo.confirmPayment(donation.id, {
-      gateway: payload.gateway || "BANKING_WEBHOOK",
-      referenceCode: payload.referenceCode || payload.id || null,
-      transferAmount: payload.transferAmount || payload.amount || Number(donation.amount),
-      note: "Xác nhận tự động qua Webhook biến động số dư ngân hàng (VietQR)",
+      gateway: data.gateway || payload.gateway || "PAYOS_OR_BANKING",
+      referenceCode: data.reference || data.referenceCode || payload.referenceCode || data.paymentLinkId || payload.id || null,
+      transferAmount: data.amount || data.transferAmount || payload.transferAmount || Number(donation.amount),
+      note: "Xác nhận tự động qua Webhook biến động số dư ngân hàng (VietQR / payOS)",
     });
 
     await invalidatePublicCampaignCache();
