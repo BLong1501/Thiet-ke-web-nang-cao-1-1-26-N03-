@@ -12,6 +12,40 @@
    Luôn viết dạng max-width theo đúng 3 mốc trên.
    ============================================================= */
 
+/* Self-hosted fonts: compatible with the same-origin Vercel CSP.
+   Full character sets include Vietnamese; license: public/fonts/Inter-LICENSE.txt. */
+@font-face {
+  font-family: "Inter";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/fonts/inter-400.ttf") format("truetype");
+}
+
+@font-face {
+  font-family: "Inter";
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("/fonts/inter-500.ttf") format("truetype");
+}
+
+@font-face {
+  font-family: "Inter";
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("/fonts/inter-600.ttf") format("truetype");
+}
+
+@font-face {
+  font-family: "Inter";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("/fonts/inter-700.ttf") format("truetype");
+}
+
 :root {
   /* ---------- Brand palette (không đổi) ---------- */
   --brand-blue: #216b93;
@@ -74,7 +108,7 @@
   --font-sans:
     "Inter", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue",
     Arial, sans-serif;
-  --font-serif: "Source Serif 4", Georgia, "Times New Roman", serif;
+  --font-serif: var(--font-sans);
 
   --text-xs: 0.75rem; /* 12 */
   --text-sm: 0.875rem; /* 14 */
@@ -355,10 +389,6 @@ progress,
   to {
     transform: rotate(360deg);
   }
-}
-
-.spin {
-  animation: spin 1s linear infinite;
 }
 
 @keyframes shimmer {
