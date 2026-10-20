@@ -18,9 +18,12 @@ const titles: Record<Mode, string> = {
   reset: "Đặt lại mật khẩu",
 };
 
-/** Admin → Tổng quan; mọi tài khoản khác → trang chủ. */
+/** Admin → Tổng quan; User → Chiến dịch; còn lại → trang chủ. */
 function postLoginPath(role: string | undefined): string {
-  return String(role || "").toUpperCase() === "ADMIN" ? "/admin" : "/";
+  const r = String(role || "").toUpperCase();
+  if (r === "ADMIN") return "/admin";
+  if (r === "USER") return "/campaigns";
+  return "/";
 }
 
 export default function AuthPage({ mode }: { mode: Mode }) {
@@ -217,9 +220,6 @@ export default function AuthPage({ mode }: { mode: Mode }) {
           {mode === "login" && (
             <>
               <Link to="/forgot-password">Quên mật khẩu?</Link>
-              <Link to={`/verify-email?email=${encodeURIComponent(email)}`}>
-                Xác minh tài khoản chưa kích hoạt
-              </Link>
               <p>
                 Chưa có tài khoản? <Link to="/register">Đăng ký</Link>
               </p>
