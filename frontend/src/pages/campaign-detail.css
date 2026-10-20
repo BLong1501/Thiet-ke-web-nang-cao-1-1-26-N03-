@@ -51,6 +51,8 @@
 
 .cd-title {
   margin: 0;
+  font-family: var(--font-sans);
+  font-weight: var(--weight-bold);
   font-size: var(--text-3xl);
   line-height: var(--leading-tight);
   letter-spacing: -0.02em;
@@ -142,9 +144,8 @@
   padding: var(--space-6);
   background: var(--color-surface);
   border: 1px solid var(--color-border);
-  border-top: 2px solid var(--color-primary);
-  border-radius: var(--radius-md);
-  box-shadow: var(--shadow-sm);
+  border-top: 4px solid var(--color-brand-deep);
+  border-radius: var(--radius-lg);
 }
 
 .cd-summary-head {

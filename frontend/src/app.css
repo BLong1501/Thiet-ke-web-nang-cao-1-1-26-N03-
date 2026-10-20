@@ -48,7 +48,7 @@
   position: sticky;
   top: 0;
   z-index: var(--z-sticky);
-  background: rgba(255, 255, 255, 0.96);
+  background: var(--color-surface);
   border-bottom: 1px solid var(--color-border);
 }
 
@@ -65,7 +65,7 @@
   gap: var(--space-2);
   font-size: 1.25rem;
   font-weight: var(--weight-bold);
-  letter-spacing: -0.03em;
+  letter-spacing: -0.045em;
   color: var(--color-text-heading);
   white-space: nowrap;
 }
@@ -259,8 +259,8 @@
 
 .site-footer {
   margin-top: auto;
-  padding: var(--space-12) 0 0;
-  background: var(--color-surface);
+  padding: var(--space-16) 0 0;
+  background: var(--color-surface-muted);
   border-top: 1px solid var(--color-border);
 }
 
@@ -339,6 +339,9 @@
 
 .page-heading h1 {
   margin: 0;
+  font-family: var(--font-sans);
+  font-weight: var(--weight-bold);
+  letter-spacing: -0.035em;
 }
 
 .page-heading p {
@@ -453,7 +456,7 @@
   background: var(--btn-bg);
   border: 1px solid var(--btn-border);
   border-radius: var(--radius-md);
-  box-shadow: var(--shadow-xs);
+  box-shadow: none;
   transition:
     background-color var(--duration-fast) var(--ease-standard),
     border-color var(--duration-fast) var(--ease-standard),
@@ -1738,7 +1741,14 @@ summary {
 .campaign-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: var(--space-6);
+  gap: var(--space-8);
+}
+
+.campaign-filters {
+  padding: var(--space-5);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
 }
 
 .campaign-card {
@@ -1752,12 +1762,11 @@ summary {
   border-radius: var(--radius-lg);
   transition:
     border-color var(--duration-base) var(--ease-standard),
-    box-shadow var(--duration-base) var(--ease-standard);
+    background-color var(--duration-base) var(--ease-standard);
 }
 
 .campaign-card:hover {
-  border-color: var(--color-border-strong);
-  box-shadow: var(--shadow-md);
+  border-color: var(--color-primary);
 }
 
 .campaign-card:focus-within {
@@ -1766,7 +1775,7 @@ summary {
 
 .campaign-card-media {
   position: relative;
-  aspect-ratio: 16 / 10;
+  aspect-ratio: 4 / 3;
   overflow: hidden;
   background: var(--color-surface-muted);
 }
@@ -1779,7 +1788,7 @@ summary {
 }
 
 .campaign-card:hover .campaign-card-media img {
-  transform: scale(1.03);
+  transform: scale(1.015);
 }
 
 .campaign-card-flag {
@@ -1794,7 +1803,7 @@ summary {
   flex-direction: column;
   flex: 1;
   gap: var(--space-3);
-  padding: var(--space-5);
+  padding: var(--space-6);
 }
 
 .campaign-card-category {
@@ -1815,9 +1824,9 @@ summary {
 }
 
 .campaign-card-title {
-  font-family: var(--font-serif);
+  font-family: var(--font-sans);
   font-size: var(--text-lg);
-  font-weight: var(--weight-semibold);
+  font-weight: var(--weight-bold);
   line-height: var(--leading-snug);
   letter-spacing: -0.01em;
   display: -webkit-box;
@@ -2354,4 +2363,3 @@ summary {
     background: #fff;
   }
 }
-

@@ -42,8 +42,8 @@ export default function Footer() {
             FundTrust
           </Link>
           <p>
-            Nền tảng gây quỹ cộng đồng: chiến dịch được duyệt trước khi công
-            khai, đóng góp được máy chủ xác nhận, giải ngân kèm chứng từ.
+            Cùng nhau, giúp đúng nơi. Kết nối những tấm lòng với các chiến dịch
+            được duyệt, theo dõi đóng góp và công khai từng khoản chi.
           </p>
         </div>
         {COLUMNS.map(([title, links]) => (

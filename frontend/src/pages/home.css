@@ -33,37 +33,71 @@
 }
 
 /* ---------- Hero ---------- */
+.home-intro {
+  background: var(--color-brand-night);
+}
+
 .home-hero {
   display: grid;
   grid-template-columns: minmax(0, 1.08fr) minmax(0, 0.92fr);
   align-items: center;
-  column-gap: var(--space-16);
+  column-gap: var(--space-12);
   row-gap: var(--space-12);
-  padding-top: var(--space-16);
-  padding-bottom: var(--space-20);
+  padding-top: var(--space-12);
+  padding-bottom: var(--space-8);
   overflow-x: clip;
 }
 
 .home-hero-title {
-  font-size: var(--text-display);
-  line-height: 1.08;
-  letter-spacing: -0.025em;
+  font-family: var(--font-sans);
+  font-weight: var(--weight-bold);
+  font-size: clamp(2.75rem, 2rem + 3vw, 4.75rem);
+  line-height: 1.12;
+  letter-spacing: -0.045em;
   text-wrap: balance;
-  color: var(--color-text-heading);
+  color: var(--color-text-inverse);
 }
 
 .home-hero-title em {
   display: block;
-  font-style: italic;
-  color: var(--color-primary);
+  font-style: normal;
+  color: var(--color-brand-light);
 }
 
 .home-hero-lead {
-  max-width: 36rem;
+  max-width: 30rem;
   margin-top: var(--space-6);
   font-size: var(--text-md);
   line-height: var(--leading-relaxed);
-  color: var(--color-text-body);
+  color: var(--color-brand-light);
+}
+
+.home-hero-copy .home-kicker {
+  color: var(--color-brand-light);
+}
+
+.home-hero-actions .button {
+  min-height: 52px;
+  --btn-bg: var(--color-text-inverse);
+  --btn-fg: var(--color-brand-night);
+  --btn-bg-hover: var(--color-brand-light);
+  --btn-bg-active: var(--color-primary-border);
+}
+
+.home-hero-actions .button.secondary {
+  --btn-bg: transparent;
+  --btn-bg-hover: var(--color-brand-deep);
+  --btn-bg-active: var(--color-brand-deep);
+  --btn-fg: var(--color-text-inverse);
+  --btn-border: var(--color-brand-light);
+}
+
+.home-intro :focus-visible {
+  outline-color: var(--color-brand-light);
+}
+
+.home-slip :focus-visible {
+  outline-color: var(--color-primary);
 }
 
 .home-hero-actions {
@@ -80,29 +114,31 @@
   gap: var(--space-6);
   padding-top: var(--space-6);
   list-style: none;
-  border-top: 1px solid var(--color-border);
+  border-top: 1px solid
+    color-mix(in srgb, var(--color-brand-light) 25%, transparent);
 }
 
 .home-assurances li {
   display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
+  flex-direction: row;
+  align-items: center;
+  gap: var(--space-3);
   font-size: var(--text-sm);
   font-weight: var(--weight-medium);
   line-height: var(--leading-snug);
-  color: var(--color-text-subtle);
+  color: var(--color-brand-light);
 }
 
 .home-assurances svg {
   flex-shrink: 0;
   width: 20px;
   height: 20px;
-  color: var(--color-success-text);
+  color: var(--color-brand-light);
 }
 
 .home-hero-visual {
   position: relative;
-  padding-bottom: var(--space-10);
+  padding-bottom: 0;
 }
 
 .home-spotlight {
@@ -113,8 +149,8 @@
 .home-spotlight-media,
 .home-spotlight-skeleton,
 .home-hero-fallback {
-  aspect-ratio: 4 / 5;
-  max-height: 620px;
+  aspect-ratio: 5 / 4;
+  max-height: 480px;
   width: 100%;
   border-radius: var(--radius-lg);
 }
@@ -146,20 +182,22 @@
   border: 1px solid var(--color-border);
 }
 
-/* "Phiếu" tiến độ đặt lệch khỏi khung ảnh — điểm nhấn bất đối xứng của hero */
+/* Phiếu nằm ngay dưới ảnh: câu chuyện và số liệu đọc theo cùng một trục. */
 .home-slip {
-  position: absolute;
-  left: calc(-1 * var(--space-12));
-  bottom: calc(-1 * var(--space-10));
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
-  width: min(23rem, 88%);
+  width: 100%;
   padding: var(--space-5);
   background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  box-shadow: var(--shadow-md);
+  border: 0;
+  border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+  color: var(--color-text);
+}
+
+.home-spotlight-media {
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
 }
 
 .home-slip-eyebrow {
@@ -285,6 +323,8 @@
 }
 
 .home-section-head h2 {
+  font-family: var(--font-sans);
+  font-weight: var(--weight-bold);
   max-width: 24ch;
   font-size: var(--text-3xl);
   line-height: var(--leading-tight);
@@ -622,7 +662,7 @@
   );
   padding: var(--space-20) 0;
   color: var(--color-border-strong);
-  background: var(--color-text-heading);
+  background: var(--color-brand-deep);
 }
 
 .home-trust-inner {
@@ -642,6 +682,8 @@
 }
 
 .home-trust h2 {
+  font-family: var(--font-sans);
+  font-weight: var(--weight-bold);
   margin-bottom: var(--space-5);
   font-size: var(--text-3xl);
   line-height: var(--leading-tight);
@@ -813,6 +855,8 @@
 }
 
 .home-closing h2 {
+  font-family: var(--font-sans);
+  font-weight: var(--weight-bold);
   max-width: 22ch;
   margin-bottom: var(--space-4);
   font-size: var(--text-3xl);
@@ -842,7 +886,7 @@
   }
 
   .home-slip {
-    left: calc(-1 * var(--space-6));
+    left: auto;
   }
 
   .home-assurances {
@@ -904,13 +948,13 @@
     max-height: none;
   }
 
-  /* Trên màn hẹp, phiếu nằm dưới ảnh và chồng lên mép ảnh thay vì lệch sang trái */
+  /* Giữ phiếu gắn với ảnh, không che nội dung khi tiêu đề dài. */
   .home-slip {
     position: relative;
     left: auto;
     bottom: auto;
     width: auto;
-    margin: calc(-1 * var(--space-12)) var(--space-4) 0;
+    margin: 0;
   }
 
   .home-section {
@@ -958,7 +1002,7 @@
   }
 
   .home-slip {
-    margin-inline: var(--space-3);
+    margin-inline: 0;
     padding: var(--space-4);
   }
 

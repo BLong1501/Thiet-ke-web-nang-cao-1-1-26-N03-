@@ -54,7 +54,7 @@ export default function CampaignsPage() {
   }, [totalPages, page, params, setParams]);
   return (
     <Page
-      title="Những điều tốt đẹp bắt đầu từ bạn"
+      title="Tìm nơi bạn muốn đồng hành."
       intro="Khám phá chiến dịch, tìm hiểu câu chuyện và lựa chọn cách bạn muốn đóng góp."
       actions={
         <Link className="button" to="/campaigns/create">
@@ -63,7 +63,7 @@ export default function CampaignsPage() {
       }
     >
       <form
-        className="filters"
+        className="filters campaign-filters"
         onSubmit={(e) => {
           e.preventDefault();
           filter(

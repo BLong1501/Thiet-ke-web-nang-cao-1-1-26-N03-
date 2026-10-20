@@ -14,20 +14,23 @@
 
 :root {
   /* ---------- Brand palette (không đổi) ---------- */
-  --brand-blue: #2563eb;
+  --brand-blue: #216b93;
   --brand-green: #10b981;
   --brand-amber: #f59e0b;
   --brand-red: #ef4444;
-  --brand-ink: #0f172a;
+  --brand-ink: #20292f;
   --brand-slate: #64748b;
-  --brand-mist: #f8fafc;
-  --brand-line: #e2e8f0;
+  --brand-mist: #faf9f6;
+  --brand-line: #dedfda;
+  --color-brand-deep: #183b50;
+  --color-brand-night: #172e3b;
+  --color-brand-light: #c6e1ec;
 
   /* ---------- Semantic colors ---------- */
   --color-bg: var(--brand-mist);
   --color-surface: #ffffff;
-  --color-surface-muted: #f1f5f9;
-  --color-surface-sunken: #f8fafc;
+  --color-surface-muted: #f0f1ed;
+  --color-surface-sunken: #f6f5f1;
 
   --color-text-heading: var(--brand-ink);
   --color-text: #1e293b;
@@ -42,11 +45,11 @@
   --color-border-focus: var(--brand-blue);
 
   --color-primary: var(--brand-blue);
-  --color-primary-hover: #1d4ed8;
-  --color-primary-active: #1e40af;
-  --color-primary-subtle: #eff6ff;
-  --color-primary-border: #bfdbfe;
-  --color-primary-text: #1d4ed8;
+  --color-primary-hover: #195575;
+  --color-primary-active: #183b50;
+  --color-primary-subtle: #edf4f7;
+  --color-primary-border: #b5d3e0;
+  --color-primary-text: #195575;
 
   --color-success: var(--brand-green);
   --color-success-subtle: #ecfdf5;
@@ -65,7 +68,7 @@
   --color-danger-text: #b91c1c;
 
   --color-overlay: rgba(15, 23, 42, 0.55);
-  --color-focus-ring: rgba(37, 99, 235, 0.35);
+  --color-focus-ring: rgba(33, 107, 147, 0.4);
 
   /* ---------- Typography ---------- */
   --font-sans:
@@ -122,7 +125,7 @@
   --radius-xs: 4px;
   --radius-sm: 6px;
   --radius-md: 8px;
-  --radius-lg: 12px;
+  --radius-lg: 16px;
   --radius-pill: 999px;
 
   /* ---------- Elevation (mỏng, ám màu slate) ---------- */

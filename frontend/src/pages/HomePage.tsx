@@ -29,22 +29,22 @@ import "./home.css";
 const TRUST: [title: string, body: string, where: string][] = [
   [
     "Xác minh người gây quỹ",
-    "Tài khoản phải nộp hồ sơ định danh (KYC) và được quản trị viên phê duyệt mới có quyền tạo chiến dịch.",
+    "Người gây quỹ hoàn tất xác minh danh tính trước khi bắt đầu một chiến dịch.",
     "Áp dụng cho mọi tài khoản gây quỹ",
   ],
   [
     "Duyệt trước khi công khai",
-    "Chiến dịch mới ở trạng thái chờ duyệt. Chỉ chiến dịch được chấp thuận mới xuất hiện trên trang chủ và danh sách.",
+    "Mỗi chiến dịch đều được xem xét trước khi xuất hiện để cộng đồng tìm hiểu và đóng góp.",
     "Trạng thái hiển thị trên từng chiến dịch",
   ],
   [
-    "Chỉ ghi nhận khi máy chủ xác nhận",
-    "Đóng góp chuyển sang thành công sau khi hệ thống xác nhận thanh toán. Mỗi giao dịch có mã tra cứu và biên lai có thể in.",
+    "Theo dõi từng khoản đóng góp",
+    "Kiểm tra trạng thái thanh toán, tra cứu giao dịch và lưu biên lai ngay trong tài khoản của bạn.",
     "Lịch sử đóng góp trong bảng điều khiển",
   ],
   [
     "Sao kê giải ngân công khai",
-    "Người gây quỹ công bố từng khoản chi kèm chứng từ; bạn có thể tải toàn bộ sao kê dưới dạng CSV.",
+    "Xem từng khoản chi, chứng từ đi kèm và tải sao kê để biết khoản đóng góp được sử dụng ra sao.",
     "Tab “Minh bạch” trên trang chiến dịch",
   ],
   [
@@ -64,8 +64,8 @@ const DONOR_STEPS: [string, string][] = [
     "Chọn số tiền, có thể ẩn tên. Bạn nhận mã giao dịch để tra cứu.",
   ],
   [
-    "Chờ máy chủ xác nhận",
-    "Trạng thái chỉ chuyển sang thành công khi thanh toán được xác nhận.",
+    "Theo dõi thanh toán",
+    "Kiểm tra trạng thái và nhận biên lai sau khi thanh toán được xác nhận.",
   ],
   [
     "Theo dõi việc sử dụng quỹ",
@@ -144,58 +144,61 @@ export default function HomePage() {
         description="FundTrust công khai chiến dịch đã được duyệt, ghi nhận đóng góp khi máy chủ xác nhận và lưu từng khoản giải ngân kèm chứng từ."
       />
 
-      <section className="home-hero container" aria-labelledby="home-title">
-        <div className="home-hero-copy">
-          <p className="home-kicker">Nền tảng gây quỹ cộng đồng</p>
-          <h1 id="home-title" className="home-hero-title">
-            Sẻ chia có địa chỉ, <em>minh bạch đến từng khoản chi.</em>
-          </h1>
-          <p className="home-hero-lead">
-            FundTrust chỉ công khai chiến dịch đã được duyệt, ghi nhận đóng góp
-            khi máy chủ xác nhận và lưu lại từng khoản giải ngân kèm chứng từ —
-            để bạn tự kiểm chứng trước khi tin.
-          </p>
-          <div className="home-hero-actions">
-            <Link className="button" to="/campaigns">
-              Khám phá chiến dịch
-              <LuArrowRight aria-hidden="true" />
-            </Link>
-            <Link className="button secondary" to={fundraise.to}>
-              {fundraise.label}
-            </Link>
-          </div>
-        </div>
-
-        <div className="home-hero-visual">
-          {campaigns.loading ? (
-            <div
-              className="skeleton home-spotlight-skeleton"
-              aria-hidden="true"
-            />
-          ) : spotlight ? (
-            <HeroSpotlight item={spotlight} />
-          ) : (
-            <div className="home-hero-fallback">
-              <img src="/logo.png" alt="" width={144} height={144} />
-              <p>Chiến dịch được duyệt sẽ xuất hiện tại đây.</p>
+      <section className="home-intro" aria-labelledby="home-title">
+        <div className="home-hero container">
+          <div className="home-hero-copy">
+            <p className="home-kicker">Nền tảng gây quỹ cộng đồng</p>
+            <h1 id="home-title" className="home-hero-title">
+              Cùng nhau,
+              <br />
+              <em>giúp đúng nơi.</em>
+            </h1>
+            <p className="home-hero-lead">
+              Tìm chiến dịch bạn muốn đồng hành và theo dõi cách từng khoản đóng
+              góp được sử dụng. Một sự sẻ chia, thêm một cơ hội.
+            </p>
+            <div className="home-hero-actions">
+              <Link className="button" to="/campaigns">
+                Khám phá chiến dịch
+                <LuArrowRight aria-hidden="true" />
+              </Link>
+              <Link className="button secondary" to={fundraise.to}>
+                {fundraise.label}
+              </Link>
             </div>
-          )}
-        </div>
+          </div>
 
-        <ul className="home-assurances" aria-label="Cơ chế minh bạch">
-          <li>
-            <LuShieldCheck aria-hidden="true" />
-            Người gây quỹ được xác minh danh tính
-          </li>
-          <li>
-            <LuClipboardCheck aria-hidden="true" />
-            Chiến dịch được duyệt trước khi công khai
-          </li>
-          <li>
-            <LuReceipt aria-hidden="true" />
-            Giải ngân công khai kèm chứng từ
-          </li>
-        </ul>
+          <div className="home-hero-visual">
+            {campaigns.loading ? (
+              <div
+                className="skeleton home-spotlight-skeleton"
+                aria-hidden="true"
+              />
+            ) : spotlight ? (
+              <HeroSpotlight item={spotlight} />
+            ) : (
+              <div className="home-hero-fallback">
+                <img src="/logo.png" alt="" width={144} height={144} />
+                <p>Chiến dịch được duyệt sẽ xuất hiện tại đây.</p>
+              </div>
+            )}
+          </div>
+
+          <ul className="home-assurances" aria-label="Cơ chế minh bạch">
+            <li>
+              <LuShieldCheck aria-hidden="true" />
+              Người gây quỹ được xác minh danh tính
+            </li>
+            <li>
+              <LuClipboardCheck aria-hidden="true" />
+              Chiến dịch được duyệt trước khi công khai
+            </li>
+            <li>
+              <LuReceipt aria-hidden="true" />
+              Giải ngân công khai kèm chứng từ
+            </li>
+          </ul>
+        </div>
       </section>
 
       {showFeatured && (
@@ -206,13 +209,11 @@ export default function HomePage() {
           <header className="home-section-head">
             <div>
               <p className="home-kicker">Đang gây quỹ</p>
-              <h2 id="home-featured-title">
-                Những chiến dịch đang cần thêm người đồng hành
-              </h2>
+              <h2 id="home-featured-title">Thêm một người, thêm hy vọng.</h2>
             </div>
             <p className="home-section-note">
-              Lấy trực tiếp từ các chiến dịch đã được duyệt, mới đăng gần đây
-              nhất.
+              Những chiến dịch mới được duyệt. Đọc câu chuyện và chọn nơi bạn
+              muốn gửi gắm sự sẻ chia.
             </p>
           </header>
           <RemoteState
@@ -250,12 +251,10 @@ export default function HomePage() {
         <div className="container home-trust-inner">
           <div className="home-trust-intro">
             <p className="home-kicker">Minh bạch</p>
-            <h2 id="home-trust-title">
-              Bạn không cần tin lời hứa. Hãy kiểm chứng.
-            </h2>
+            <h2 id="home-trust-title">Sự tin tưởng bắt đầu từ rõ ràng.</h2>
             <p>
-              Đây là những cơ chế đang vận hành trên FundTrust. Mỗi cơ chế đều
-              có nơi để bạn tự kiểm tra.
+              Từ người đứng ra gây quỹ đến từng khoản chi, bạn luôn có nơi để
+              tìm hiểu và theo dõi.
             </p>
             <Link className="home-trust-link" to="/how-it-works">
               Xem quy trình chi tiết
@@ -286,9 +285,7 @@ export default function HomePage() {
         <header className="home-section-head">
           <div>
             <p className="home-kicker">Cách hoạt động</p>
-            <h2 id="home-process-title">
-              Hai vai trò, cùng một quy trình có thể kiểm chứng
-            </h2>
+            <h2 id="home-process-title">Bắt đầu một điều tốt đẹp.</h2>
           </div>
           <Link className="home-head-link" to="/how-it-works">
             Đọc hướng dẫn đầy đủ
