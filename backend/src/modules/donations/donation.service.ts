@@ -852,15 +852,19 @@ export class DonationService {
     // 4.1 Ưu tiên tìm theo orderCode của PayOS (nếu có)
     const orderCode = Number(data.orderCode || payload.orderCode || 0);
     if (orderCode > 0) {
-      donation = await prisma.donation.findFirst({
-        where: {
-          paymentGatewayResponse: {
-            path: "$.orderCode",
-            equals: orderCode,
+      try {
+        donation = await prisma.donation.findFirst({
+          where: {
+            paymentGatewayResponse: {
+              path: "$.orderCode",
+              equals: orderCode,
+            },
           },
-        },
-        include: { campaign: true },
-      });
+          include: { campaign: true },
+        });
+      } catch {
+        donation = null;
+      }
       if (donation) {
         console.log(`✓ [PAYOS WEBHOOK] Khớp thành công khoản đóng góp qua orderCode #${orderCode}: ${donation.transactionCode}`);
       }
@@ -868,15 +872,41 @@ export class DonationService {
 
     // 4.2 Nếu chưa tìm thấy theo orderCode, trích xuất mã giao dịch từ nội dung chuyển khoản
     if (!donation) {
-      const uuidMatch = content.match(/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i);
-      const donMatch = content.match(/(DON[- ]?[0-9]{6}[- ]?[A-Z0-9]+)/i) || content.match(/(DON[- ]?[A-Z0-9-]+)/i);
-      const transactionCode = uuidMatch ? uuidMatch[1] : donMatch ? donMatch[1] : content.trim();
+      const cleanNoFT = content.replace(/^FT\s*/i, "").trim();
+      const uuidMatch = cleanNoFT.match(/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i);
+      const donMatch = cleanNoFT.match(/(DON[- ]?[0-9]{6}[- ]?[A-Z0-9]+)/i) || cleanNoFT.match(/(DON[- ]?[A-Z0-9-]+)/i);
+      const transactionCode = uuidMatch ? uuidMatch[1] : donMatch ? donMatch[1] : cleanNoFT;
 
       if (transactionCode) {
         donation = await this.repo.findByTransactionCode(transactionCode);
         if (!donation && content !== transactionCode) {
           donation = await this.repo.findByTransactionCode(content);
         }
+      }
+    }
+
+    // 4.3 Fallback quét 50 giao dịch gần nhất để khớp theo orderCode hoặc tiền tố mã giao dịch
+    if (!donation) {
+      const recentDonations = await prisma.donation.findMany({
+        where: {
+          createdAt: { gte: new Date(Date.now() - 48 * 60 * 60 * 1000) },
+        },
+        include: { campaign: true },
+        orderBy: { createdAt: "desc" },
+        take: 50,
+      });
+
+      donation = recentDonations.find((d) => {
+        const gw = (d.paymentGatewayResponse as any) || {};
+        if (orderCode > 0 && (Number(gw.orderCode) === orderCode || String(gw.orderCode) === String(orderCode))) return true;
+        const normDb = d.transactionCode.replace(/[^A-Za-z0-9]/g, "").toUpperCase();
+        const cleanContent = content.replace(/^FT\s*/i, "").replace(/[^A-Za-z0-9]/g, "").toUpperCase();
+        if (cleanContent.length >= 6 && (normDb.includes(cleanContent) || cleanContent.includes(normDb))) return true;
+        return false;
+      }) || null;
+
+      if (donation) {
+        console.log(`✓ [PAYOS WEBHOOK] Khớp thành công khoản đóng góp qua quét danh sách gần nhất: ${donation.transactionCode}`);
       }
     }
 
