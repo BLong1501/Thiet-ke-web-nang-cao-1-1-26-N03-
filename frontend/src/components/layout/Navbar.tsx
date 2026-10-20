@@ -73,8 +73,69 @@ export default function Navbar() {
     }
   }
 
+  const accountActions = isAuthenticated ? (
+    <>
+      <NavLink
+        to="/notifications"
+        className="nav-icon-link"
+        onClick={close}
+        aria-label={
+          unread > 0 ? `Thông báo, ${unread} chưa đọc` : "Thông báo"
+        }
+        data-tooltip="Thông báo"
+      >
+        <LuBell aria-hidden="true" />
+        {unread > 0 && (
+          <span className="nav-badge" aria-hidden="true">
+            {unread > 99 ? "99+" : unread}
+          </span>
+        )}
+      </NavLink>
+      <Dropdown
+        label={`Tài khoản ${name}`}
+        triggerClassName="account-trigger"
+        onOpen={close}
+        trigger={
+          <>
+            <span className="avatar" aria-hidden="true">
+              {avatar ? <img src={avatar} alt="" /> : initials(name)}
+            </span>
+            <span className="account-name">{name}</span>
+            <LuChevronDown aria-hidden="true" />
+          </>
+        }
+      >
+        <div className="dropdown-header">
+          <strong>{name}</strong>
+          {user?.email && <span>{user.email}</span>}
+        </div>
+        <NavLink to="/profile">
+          <LuUserRound aria-hidden="true" />
+          Hồ sơ
+        </NavLink>
+        <NavLink to={isAdmin ? "/admin/activity-logs" : "/activity-logs"}>
+          <LuHistory aria-hidden="true" />
+          {isAdmin ? "Nhật ký hệ thống" : "Nhật ký của tôi"}
+        </NavLink>
+        <div className="dropdown-separator" role="presentation" />
+        <button
+          type="button"
+          disabled={busy}
+          aria-busy={busy}
+          onClick={signOut}
+        >
+          <LuLogOut aria-hidden="true" />
+          {busy ? "Đang thoát…" : "Đăng xuất"}
+        </button>
+      </Dropdown>
+    </>
+  ) : null;
+
   return (
-    <header className={isAdmin ? "site-header site-header--admin" : "site-header"} ref={headerRef}>
+    <header
+      className={isAdmin ? "site-header site-header--admin" : "site-header"}
+      ref={headerRef}
+    >
       <a className="skip-link" href="#main">
         Đến nội dung chính
       </a>
@@ -89,118 +150,63 @@ export default function Navbar() {
           />
           FundTrust
         </Link>
-        <nav className="main-nav" aria-label="Điều hướng chính">
-          <div
-            id="primary-nav"
-            className={open ? "primary-nav open" : "primary-nav"}
-          >
-            {isAdmin ? (
+        {isAdmin ? (
+          <>
+            <div className="nav-actions">{accountActions}</div>
+            <div className="admin-nav-row" id="primary-nav">
               <AdminNav onNavigate={close} />
-            ) : (
-              <>
-                <NavLink to="/campaigns" onClick={close}>
-                  Chiến dịch
-                </NavLink>
-                <NavLink to="/how-it-works" onClick={close}>
-                  Cách hoạt động
-                </NavLink>
-                <NavLink to="/community" onClick={close}>
-                  Cộng đồng
-                </NavLink>
-                {isAuthenticated ? (
-                  <NavLink to="/dashboard" onClick={close}>
-                    Bảng điều khiển
-                  </NavLink>
-                ) : (
-                  <div className="nav-auth">
-                    <NavLink to="/login" onClick={close}>
-                      Đăng nhập
-                    </NavLink>
-                    <Link className="button" to="/register" onClick={close}>
-                      Tham gia
-                    </Link>
-                  </div>
-                )}
-              </>
-            )}
-          </div>
-          <div className="nav-actions">
-            {isAuthenticated && (
-              <>
-                <NavLink
-                  to="/notifications"
-                  className="nav-icon-link"
-                  onClick={close}
-                  aria-label={
-                    unread > 0 ? `Thông báo, ${unread} chưa đọc` : "Thông báo"
-                  }
-                  data-tooltip="Thông báo"
-                >
-                  <LuBell aria-hidden="true" />
-                  {unread > 0 && (
-                    <span className="nav-badge" aria-hidden="true">
-                      {unread > 99 ? "99+" : unread}
-                    </span>
-                  )}
-                </NavLink>
-                <Dropdown
-                  label={`Tài khoản ${name}`}
-                  triggerClassName="account-trigger"
-                  onOpen={close}
-                  trigger={
-                    <>
-                      <span className="avatar" aria-hidden="true">
-                        {avatar ? <img src={avatar} alt="" /> : initials(name)}
-                      </span>
-                      <span className="account-name">{name}</span>
-                      <LuChevronDown aria-hidden="true" />
-                    </>
-                  }
-                >
-                  <div className="dropdown-header">
-                    <strong>{name}</strong>
-                    {user?.email && <span>{user.email}</span>}
-                  </div>
-                  <NavLink to="/profile">
-                    <LuUserRound aria-hidden="true" />
-                    Hồ sơ
-                  </NavLink>
-                  <NavLink
-                    to={isAdmin ? "/admin/activity-logs" : "/activity-logs"}
-                  >
-                    <LuHistory aria-hidden="true" />
-                    {isAdmin ? "Nhật ký hệ thống" : "Nhật ký của tôi"}
-                  </NavLink>
-                  <div className="dropdown-separator" role="presentation" />
-                  <button
-                    type="button"
-                    disabled={busy}
-                    aria-busy={busy}
-                    onClick={signOut}
-                  >
-                    <LuLogOut aria-hidden="true" />
-                    {busy ? "Đang thoát…" : "Đăng xuất"}
-                  </button>
-                </Dropdown>
-              </>
-            )}
-            <button
-              ref={toggleRef}
-              type="button"
-              className="icon-button mobile-toggle"
-              aria-label="Menu"
-              aria-expanded={open}
-              aria-controls="primary-nav"
-              onClick={() => setOpen(!open)}
+            </div>
+          </>
+        ) : (
+          <nav className="main-nav" aria-label="Điều hướng chính">
+            <div
+              id="primary-nav"
+              className={open ? "primary-nav open" : "primary-nav"}
             >
-              {open ? (
-                <LuX aria-hidden="true" />
+              <NavLink to="/campaigns" onClick={close}>
+                Chiến dịch
+              </NavLink>
+              <NavLink to="/how-it-works" onClick={close}>
+                Cách hoạt động
+              </NavLink>
+              <NavLink to="/community" onClick={close}>
+                Cộng đồng
+              </NavLink>
+              {isAuthenticated ? (
+                <NavLink to="/dashboard" onClick={close}>
+                  Bảng điều khiển
+                </NavLink>
               ) : (
-                <LuMenu aria-hidden="true" />
+                <div className="nav-auth">
+                  <NavLink to="/login" onClick={close}>
+                    Đăng nhập
+                  </NavLink>
+                  <Link className="button" to="/register" onClick={close}>
+                    Tham gia
+                  </Link>
+                </div>
               )}
-            </button>
-          </div>
-        </nav>
+            </div>
+            <div className="nav-actions">
+              {accountActions}
+              <button
+                ref={toggleRef}
+                type="button"
+                className="icon-button mobile-toggle"
+                aria-label="Menu"
+                aria-expanded={open}
+                aria-controls="primary-nav"
+                onClick={() => setOpen(!open)}
+              >
+                {open ? (
+                  <LuX aria-hidden="true" />
+                ) : (
+                  <LuMenu aria-hidden="true" />
+                )}
+              </button>
+            </div>
+          </nav>
+        )}
       </div>
     </header>
   );

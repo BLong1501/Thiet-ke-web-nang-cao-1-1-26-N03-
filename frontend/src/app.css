@@ -216,7 +216,24 @@
   white-space: nowrap;
 }
 
-/* An ten tai khoan khi admin de tiet kiem khong gian */
+/* Admin: hàng 1 = logo + tài khoản; hàng 2 = toàn bộ menu quản trị */
+.site-header--admin .nav-inner {
+  flex-wrap: wrap;
+  align-items: center;
+  row-gap: var(--space-2);
+  padding-block: var(--space-2);
+  min-height: auto;
+}
+
+.site-header--admin .nav-actions {
+  margin-left: auto;
+}
+
+.site-header--admin .admin-nav-row {
+  flex: 1 0 100%;
+  min-width: 0;
+}
+
 .site-header--admin .account-trigger .account-name {
   display: none;
 }
@@ -1629,20 +1646,15 @@ summary {
   display: none;
 }
 
-/* Admin nav items displayed inline in the main nav bar. */
+/* Admin nav: wrap dưới logo để hiện đủ mục, không cắt ngang. */
 .admin-navigation-bar {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 2px;
-  flex: 1;
+  width: 100%;
   min-width: 0;
-  overflow-x: auto;
-  scrollbar-width: none;
-  -webkit-mask-image: linear-gradient(to right, black 90%, transparent 100%);
-  mask-image: linear-gradient(to right, black 90%, transparent 100%);
-}
-.admin-navigation-bar::-webkit-scrollbar {
-  display: none;
+  overflow: visible;
 }
 .admin-navigation-bar a {
   display: inline-flex;

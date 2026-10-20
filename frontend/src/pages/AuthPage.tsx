@@ -2,7 +2,6 @@ import { useState, type FormEvent } from "react";
 import {
   Link,
   Navigate,
-  useLocation,
   useNavigate,
   useSearchParams,
 } from "react-router-dom";
@@ -18,9 +17,14 @@ const titles: Record<Mode, string> = {
   forgot: "Quên mật khẩu",
   reset: "Đặt lại mật khẩu",
 };
+
+/** Admin → Tổng quan; mọi tài khoản khác → trang chủ. */
+function postLoginPath(role: string | undefined): string {
+  return String(role || "").toUpperCase() === "ADMIN" ? "/admin" : "/";
+}
+
 export default function AuthPage({ mode }: { mode: Mode }) {
   const [params] = useSearchParams();
-  const location = useLocation();
   const navigate = useNavigate();
   const [email, setEmail] = useState(params.get("email") || "");
   const [name, setName] = useState("");
@@ -31,14 +35,8 @@ export default function AuthPage({ mode }: { mode: Mode }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
-  const { isAuthenticated, setUser } = useAuthStore();
-  const requested = location.state?.from;
-  const destination =
-    typeof requested === "string" &&
-    requested.startsWith("/") &&
-    !requested.startsWith("//")
-      ? requested
-      : "/dashboard";
+  const { isAuthenticated, setUser, user } = useAuthStore();
+  const destination = postLoginPath(user?.role);
   if (isAuthenticated && ["login", "register", "verify"].includes(mode))
     return <Navigate to={destination} replace />;
   async function submit(e: FormEvent) {
@@ -61,8 +59,9 @@ export default function AuthPage({ mode }: { mode: Mode }) {
         const data = payload(r);
         if (!data?.accessToken || !data?.user)
           throw new Error("Phản hồi đăng nhập không hợp lệ.");
-        setUser(normalizeUser(data.user), data.accessToken);
-        navigate(destination, { replace: true });
+        const nextUser = normalizeUser(data.user);
+        setUser(nextUser, data.accessToken);
+        navigate(postLoginPath(nextUser.role), { replace: true });
       } else if (mode === "register") {
         await authApi.register({
           fullName: name.trim(),
