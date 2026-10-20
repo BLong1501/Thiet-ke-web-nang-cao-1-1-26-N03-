@@ -29,6 +29,28 @@ services:
         value: 15m
       - key: JWT_REFRESH_EXPIRES_IN
         value: 30d
+      - key: SMTP_HOST
+        value: smtp.gmail.com
+      - key: SMTP_PORT
+        value: "587"
+      - key: SMTP_USER
+        value: tranbaolong5b@gmail.com
+      - key: SMTP_PASS
+        value: sukcntvgsttmuiod
+      - key: SMTP_FROM
+        value: tranbaolong5b@gmail.com
+      - key: BANK_NAME
+        value: Ngân hàng Quân Đội (MB Bank)
+      - key: BANK_ACCOUNT_NUMBER
+        value: "0344907168"
+      - key: BANK_ACCOUNT_NAME
+        value: TRAN BAO LONG
+      - key: PAYOS_CLIENT_ID
+        value: 99117638-dbdc-4d5c-974b-602417302469
+      - key: PAYOS_API_KEY
+        value: 1739f504-6547-4343-90d6-be0aa137865a
+      - key: PAYOS_CHECKSUM_KEY
+        value: 597b0976837f20611cf161f7dd2d0ed995af2a8a053b624cf73379d9e692b9b6
 
   # ==========================================
   # 2. FRONTEND STATIC SITE (React / Vite)
