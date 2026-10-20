@@ -10,7 +10,7 @@ export const api = axios.create({
   baseURL: BASE_URL,
   headers: { "Content-Type": "application/json" },
   withCredentials: true,
-  timeout: 20000,
+  timeout: 60000,
 });
 
 // Request interceptor - attach token
@@ -50,7 +50,7 @@ api.interceptors.response.use(
             .post(
               `${BASE_URL}/auth/refresh-token`,
               {},
-              { withCredentials: true, timeout: 20000 },
+              { withCredentials: true, timeout: 60000 },
             )
             .then((r) => {
               const token = r.data?.data?.accessToken;
