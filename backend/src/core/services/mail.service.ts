@@ -22,6 +22,9 @@ export class MailService {
         port,
         secure: port === 465,
         auth: { user, pass },
+        connectionTimeout: 3500,
+        greetingTimeout: 3500,
+        socketTimeout: 3500,
       });
     }
   }
@@ -172,20 +175,51 @@ export class MailService {
     console.log(`💰 Số tiền: ${formattedAmount} - Mã GD: ${params.transactionCode}`);
     console.log(`======================================================\n`);
 
+    // 1. Nếu có cấu hình Resend API (HTTP Port 443 - không bao giờ bị Render chặn)
+    if (process.env.RESEND_API_KEY) {
+      try {
+        const fromAddress = (process.env.RESEND_FROM || "onboarding@resend.dev").trim();
+        const res = await fetch("https://api.resend.com/emails", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            from: `Crowdfunding <${fromAddress}>`,
+            to: [params.to.trim()],
+            subject,
+            html: htmlContent,
+          }),
+        });
+        if (res.ok) {
+          console.log(`✅ [RESEND API] Đã gửi biên nhận đóng góp thành công tới: ${params.to}\n`);
+          return true;
+        }
+      } catch (err) {
+        console.warn("⚠️ [RESEND API] Gửi biên nhận qua Resend lỗi:", err);
+      }
+    }
+
+    // 2. Fallback SMTP với timeout 4s
     const transporter = this.getTransporter();
     if (transporter) {
       try {
         const fromAddress = (process.env.SMTP_FROM || process.env.SMTP_USER || "").trim();
-        const info = await transporter.sendMail({
+        const sendPromise = transporter.sendMail({
           from: `"Crowdfunding Platform" <${fromAddress}>`,
           to: params.to.trim(),
           subject,
           html: htmlContent,
         });
-        console.log(`✅ [GMAIL SMTP] Đã gửi biên nhận đóng góp thành công tới: ${params.to} (MessageId: ${info.messageId})\n`);
+        const timeoutPromise = new Promise((_, reject) =>
+          setTimeout(() => reject(new Error("SMTP_CONNECTION_TIMEOUT")), 4000)
+        );
+        const info = (await Promise.race([sendPromise, timeoutPromise])) as any;
+        console.log(`✅ [GMAIL SMTP] Đã gửi biên nhận đóng góp thành công tới: ${params.to} (MessageId: ${info?.messageId})\n`);
         return true;
       } catch (error) {
-        console.error("❌ Gửi email biên nhận đóng góp qua SMTP thất bại:", error);
+        console.warn("⚠️ Gửi email biên nhận đóng góp qua SMTP thất bại hoặc timeout (Render Free Tier chặn port SMTP):", error);
         return false;
       }
     }
@@ -199,27 +233,64 @@ export class MailService {
     otp: string,
     purpose: string
   ): Promise<boolean> {
-    // In trực tiếp ra console trong môi trường Dev để test nhanh
+    // In trực tiếp ra console để kiểm tra tức thì trong Render Dashboard Logs
     console.log(`\n======================================================`);
-    console.log(`📧 [MOCK EMAIL SERVICE - ${purpose}]`);
+    console.log(`📧 [MÃ XÁC THỰC EMAIL - ${purpose}]`);
     console.log(`👉 Người nhận: ${to}`);
     console.log(`🔑 MÃ OTP: >>> ${otp} <<< (Hạn 10 phút)`);
     console.log(`======================================================\n`);
 
+    // 1. Thử gửi qua Resend API nếu có cấu hình (Cực kỳ tối ưu cho Render Free Tier vì dùng HTTPS Port 443)
+    if (process.env.RESEND_API_KEY) {
+      try {
+        const fromAddress = (process.env.RESEND_FROM || "onboarding@resend.dev").trim();
+        const res = await fetch("https://api.resend.com/emails", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            from: `Crowdfunding <${fromAddress}>`,
+            to: [to.trim()],
+            subject,
+            html,
+          }),
+        });
+        if (res.ok) {
+          console.log(`✅ [RESEND API] Đã gửi mã OTP thực tế thành công tới: ${to}\n`);
+          return true;
+        } else {
+          const errData = await res.text();
+          console.warn(`⚠️ [RESEND API] Phản hồi lỗi:`, errData);
+        }
+      } catch (err) {
+        console.warn(`⚠️ [RESEND API] Lỗi kết nối Resend:`, err);
+      }
+    }
+
+    // 2. Thử gửi qua SMTP (Gmail) kèm cơ chế ngắt Timeout 4 giây
+    // Tránh việc Render Free Tier bóp/chặn các port 25/465/587 làm treo HTTP request
     const transporter = this.getTransporter();
     if (transporter) {
       try {
         const fromAddress = (process.env.SMTP_FROM || process.env.SMTP_USER || "").trim();
-        const info = await transporter.sendMail({
+        const sendPromise = transporter.sendMail({
           from: `"Crowdfunding Platform" <${fromAddress}>`,
           to: to.trim(),
           subject,
           html,
         });
-        console.log(`✅ [GMAIL SMTP] Đã gửi email thực tế thành công tới: ${to} (MessageId: ${info.messageId})\n`);
+        const timeoutPromise = new Promise((_, reject) =>
+          setTimeout(() => reject(new Error("SMTP_CONNECTION_TIMEOUT")), 4000)
+        );
+        const info = (await Promise.race([sendPromise, timeoutPromise])) as any;
+        console.log(`✅ [GMAIL SMTP] Đã gửi email thực tế thành công tới: ${to} (MessageId: ${info?.messageId})\n`);
         return true;
-      } catch (error) {
-        console.error("❌ Gửi email thực tế qua SMTP thất bại:", error);
+      } catch (error: any) {
+        console.warn(`⚠️ [GMAIL SMTP BỊ CHẶN] Không gửi được qua cổng 587/465 (${error?.message || error}).`);
+        console.warn(`💡 Render Free tier chặn kết nối gửi thư SMTP ra ngoài (port 25, 465, 587) để tránh spam.`);
+        console.warn(`🔑 MÃ OTP CỦA ${to} LÀ: >>> ${otp} <<< (Xem trực tiếp tại Render Logs)`);
         return false;
       }
     }

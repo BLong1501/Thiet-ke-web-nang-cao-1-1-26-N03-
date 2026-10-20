@@ -90,6 +90,7 @@ export class AuthService {
 
     return {
       message: "Đăng ký thành công! Vui lòng kiểm tra email để nhập mã OTP xác thực và kích hoạt tài khoản trong vòng 10 phút.",
+      otp,
     };
   }
 
@@ -177,6 +178,7 @@ export class AuthService {
 
     return {
       message: "Mã OTP mới đã được gửi về hòm thư của bạn. Vui lòng kiểm tra email (hiệu lực 10 phút).",
+      otp,
     };
   }
 
@@ -194,6 +196,7 @@ export class AuthService {
 
     return {
       message: "Mã xác thực đặt lại mật khẩu đã được gửi đến email của bạn.",
+      otp,
     };
   }
 

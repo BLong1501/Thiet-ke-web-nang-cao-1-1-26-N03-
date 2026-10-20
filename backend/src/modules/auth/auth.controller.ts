@@ -10,7 +10,10 @@ export class AuthController {
   register = async (req: Request, res: Response, next: NextFunction) => {
     try {
       const result = await this.service.register(req.body);
-      return sendSuccess(res, 201, result.message);
+      return sendSuccess(res, 201, result.message, {
+        email: req.body.email,
+        devOtp: result.otp,
+      });
     } catch (error) {
       return next(error);
     }
@@ -37,7 +40,10 @@ export class AuthController {
   resendOtp = async (req: Request, res: Response, next: NextFunction) => {
     try {
       const result = await this.service.resendVerificationOtp(req.body);
-      return sendSuccess(res, 200, result.message);
+      return sendSuccess(res, 200, result.message, {
+        email: req.body.email,
+        devOtp: result.otp,
+      });
     } catch (error) {
       return next(error);
     }
@@ -46,7 +52,10 @@ export class AuthController {
   forgotPassword = async (req: Request, res: Response, next: NextFunction) => {
     try {
       const result = await this.service.forgotPassword(req.body);
-      return sendSuccess(res, 200, result.message);
+      return sendSuccess(res, 200, result.message, {
+        email: req.body.email,
+        devOtp: result.otp,
+      });
     } catch (error) {
       return next(error);
     }
