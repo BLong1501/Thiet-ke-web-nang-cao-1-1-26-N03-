@@ -133,25 +133,30 @@ export class DonationRepository {
   }
 
   /**
-   * Tìm lượt quyên góp theo mã đối soát giao dịch
+   * Tìm lượt quyên góp theo mã đối soát giao dịch (hỗ trợ cả mã chính xác, ID, và dạng chuẩn hóa không dấu gạch ngang)
    */
   async findByTransactionCode(transactionCode: string) {
+    if (!transactionCode) return null;
+    const cleanCode = transactionCode.trim();
+
+    // 1. Tìm chính xác tuyệt đối theo transactionCode
     const byCode = await prisma.donation.findUnique({
-      where: { transactionCode },
+      where: { transactionCode: cleanCode },
       include: {
         campaign: true,
       },
     });
     if (byCode) return byCode;
 
-    return prisma.donation.findFirst({
+    // 2. Tìm theo ID bản ghi hoặc requestKey
+    const byIdOrKey = await prisma.donation.findFirst({
       where: {
         OR: [
-          { id: transactionCode },
+          { id: cleanCode },
           {
             paymentGatewayResponse: {
               path: "$.requestKey",
-              equals: transactionCode,
+              equals: cleanCode,
             },
           },
         ],
@@ -160,6 +165,30 @@ export class DonationRepository {
         campaign: true,
       },
     });
+    if (byIdOrKey) return byIdOrKey;
+
+    // 3. Tìm kiếm chuẩn hóa: nhiều ngân hàng tự xóa dấu gạch nối "-" hoặc khoảng trắng
+    // Ví dụ: mã DON-261021-AB12 khi ngân hàng gửi về có thể thành DON261021AB12
+    const normalizedInput = cleanCode.replace(/[^A-Za-z0-9]/g, "").toUpperCase();
+    if (normalizedInput.length >= 6) {
+      const recentDonations = await prisma.donation.findMany({
+        where: {
+          createdAt: { gte: new Date(Date.now() - 48 * 60 * 60 * 1000) },
+        },
+        include: { campaign: true },
+        orderBy: { createdAt: "desc" },
+        take: 100,
+      });
+
+      const matched = recentDonations.find((d) => {
+        const normalizedDb = d.transactionCode.replace(/[^A-Za-z0-9]/g, "").toUpperCase();
+        return normalizedInput.includes(normalizedDb) || normalizedDb.includes(normalizedInput);
+      });
+
+      if (matched) return matched;
+    }
+
+    return null;
   }
 
   /**

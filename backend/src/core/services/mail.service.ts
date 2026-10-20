@@ -175,9 +175,10 @@ export class MailService {
     const transporter = this.getTransporter();
     if (transporter) {
       try {
+        const fromAddress = (process.env.SMTP_FROM || process.env.SMTP_USER || "").trim();
         const info = await transporter.sendMail({
-          from: `"Crowdfunding Platform" <${process.env.SMTP_FROM || process.env.SMTP_USER}>`,
-          to: params.to,
+          from: `"Crowdfunding Platform" <${fromAddress}>`,
+          to: params.to.trim(),
           subject,
           html: htmlContent,
         });
@@ -208,9 +209,10 @@ export class MailService {
     const transporter = this.getTransporter();
     if (transporter) {
       try {
+        const fromAddress = (process.env.SMTP_FROM || process.env.SMTP_USER || "").trim();
         const info = await transporter.sendMail({
-          from: `"Crowdfunding Platform" <${process.env.SMTP_FROM || process.env.SMTP_USER}>`,
-          to,
+          from: `"Crowdfunding Platform" <${fromAddress}>`,
+          to: to.trim(),
           subject,
           html,
         });
