@@ -93,6 +93,13 @@ app.use("/api/v1/admin/reports", adminReportRouter);
 app.use("/api/v1/communities", communityRouter);
 app.use('/api/v1/admin/analytics', analyticsRouter);
 
+// Alias linh hoạt cho Webhook PayOS (bắt được cả khi PayOS gọi vào /api/v1 hoặc /api/v1/webhook)
+import { donationController } from "./modules/donations/donation.controller";
+app.post(["/api/v1", "/api/v1/", "/api/v1/webhook"], donationController.handleBankingWebhook);
+app.get(["/api/v1", "/api/v1/", "/api/v1/webhook", "/api/v1/donations/webhook"], (_req, res) => {
+  res.status(200).json({ success: true, message: "PayOS Webhook URL is alive and ready." });
+});
+
 import { sendError } from "./core/utils/response.util";
 
 // Middleware xử lý lỗi tập trung (Global Error Handler - Bảo vệ BM9: Không rò rỉ thông tin qua thông báo lỗi)

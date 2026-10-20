@@ -90,7 +90,12 @@ export const csrfProtection = (req: Request, res: Response, next: NextFunction):
   }
 
   // 0. Bỏ qua CSRF đối với Webhook tự động biến động số dư ngân hàng (SePay / VietQR / PayOS)
-  if (req.originalUrl.includes("/donations/webhook")) {
+  if (
+    req.originalUrl.includes("/donations/webhook") ||
+    req.originalUrl.includes("/webhook") ||
+    req.originalUrl.split("?")[0] === "/api/v1" ||
+    req.originalUrl.split("?")[0] === "/api/v1/"
+  ) {
     return next();
   }
 
