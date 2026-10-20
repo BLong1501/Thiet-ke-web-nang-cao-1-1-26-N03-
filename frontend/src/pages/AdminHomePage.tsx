@@ -11,6 +11,11 @@ import {
   CartesianGrid,
 } from "recharts";
 import {
+  LuCalendarRange,
+  LuChartColumn,
+  LuDownload,
+} from "react-icons/lu";
+import {
   campaignApi,
   verificationApi,
   userApi,
@@ -109,6 +114,16 @@ function AnalyticsPanel({
       net: Number(r.net),
     })) ?? [];
 
+  const totals = chartRows.reduce(
+    (acc, r) => ({
+      donations: acc.donations + Number(r.donations || 0),
+      received: acc.received + r.received,
+      refunded: acc.refunded + r.refunded,
+      net: acc.net + r.net,
+    }),
+    { donations: 0, received: 0, refunded: 0, net: 0 },
+  );
+
   return (
     <section className="panel analytics-panel" aria-label={data?.title || kind}>
       <RemoteState {...result} />
@@ -116,19 +131,44 @@ function AnalyticsPanel({
       {data && (
         <>
           <div className="analytics-panel__head">
-            <h2>{data.title}</h2>
+            <div>
+              <h2>{data.title}</h2>
+              <p className="analytics-panel__note">{data.note}</p>
+              <time className="analytics-panel__meta" dateTime={data.generatedAt}>
+                Cập nhật {new Date(data.generatedAt).toLocaleString("vi-VN")}
+              </time>
+            </div>
             <button
               type="button"
-              className="button secondary"
+              className="button secondary analytics-export"
               onClick={download}
             >
-              Xuất CSV toàn bộ báo cáo
+              <LuDownload size={16} aria-hidden="true" />
+              Xuất CSV
             </button>
           </div>
-          <p>{data.note}</p>
-          <small>
-            Cập nhật: {new Date(data.generatedAt).toLocaleString("vi-VN")}
-          </small>
+
+          {!!data.rows.length && (
+            <div className="analytics-kpis" aria-label="Tổng hợp nhanh">
+              <div className="analytics-kpi">
+                <span>Số khoản</span>
+                <strong>{totals.donations.toLocaleString("vi-VN")}</strong>
+              </div>
+              <div className="analytics-kpi analytics-kpi--received">
+                <span>Đã thu</span>
+                <strong>{formatCurrency(totals.received)}</strong>
+              </div>
+              <div className="analytics-kpi analytics-kpi--refunded">
+                <span>Đã hoàn</span>
+                <strong>{formatCurrency(totals.refunded)}</strong>
+              </div>
+              <div className="analytics-kpi analytics-kpi--net">
+                <span>Ròng</span>
+                <strong>{formatCurrency(totals.net)}</strong>
+              </div>
+            </div>
+          )}
+
           {!data.rows.length ? (
             <Empty>Không có bút toán trong khoảng ngày này.</Empty>
           ) : (
@@ -141,37 +181,56 @@ function AnalyticsPanel({
                 <ResponsiveContainer>
                   <BarChart
                     data={chartRows}
-                    margin={{ left: 24, right: 16, bottom: 24 }}
+                    margin={{ left: 8, right: 8, bottom: 16, top: 8 }}
                   >
-                    <CartesianGrid strokeDasharray="3 3" stroke={CHART.grid} />
+                    <CartesianGrid
+                      strokeDasharray="3 3"
+                      stroke={CHART.grid}
+                      vertical={false}
+                    />
                     <XAxis
                       dataKey="label"
+                      tick={{ fill: "#64748b", fontSize: 12 }}
                       tickFormatter={(v) =>
-                        String(v).length > 18
-                          ? `${String(v).slice(0, 18)}…`
+                        String(v).length > 14
+                          ? `${String(v).slice(0, 14)}…`
                           : String(v)
                       }
                     />
                     <YAxis
+                      tick={{ fill: "#64748b", fontSize: 12 }}
                       tickFormatter={(v) => `${Number(v) / 1000000} tr`}
                     />
-                    <Tooltip formatter={(v) => formatCurrency(Number(v))} />
+                    <Tooltip
+                      formatter={(v) => formatCurrency(Number(v))}
+                      contentStyle={{
+                        borderRadius: 8,
+                        border: "1px solid #dedfda",
+                      }}
+                    />
                     <Legend />
                     <Bar
                       dataKey="received"
                       name="Đã thu"
                       fill={CHART.received}
+                      radius={[4, 4, 0, 0]}
                     />
                     <Bar
                       dataKey="refunded"
                       name="Đã hoàn"
                       fill={CHART.refunded}
+                      radius={[4, 4, 0, 0]}
                     />
-                    <Bar dataKey="net" name="Ròng" fill={CHART.net} />
+                    <Bar
+                      dataKey="net"
+                      name="Ròng"
+                      fill={CHART.net}
+                      radius={[4, 4, 0, 0]}
+                    />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
-              <div className="table-wrap">
+              <div className="table-wrap analytics-table">
                 <table>
                   <caption>
                     {data.title}: {from} đến {to}
@@ -224,6 +283,8 @@ export default function AdminHomePage() {
   const [to, setTo] = useState(today);
   const [range, setRange] = useState({ from, to });
   const [rangeError, setRangeError] = useState("");
+  const [kind, setKind] =
+    useState<(typeof reports)[number][0]>("daily");
 
   return (
     <Page
@@ -243,15 +304,28 @@ export default function AdminHomePage() {
         </div>
       )}
 
-      <section className="admin-overview-analytics" aria-labelledby="analytics-heading">
-        <h2 id="analytics-heading" className="admin-section-title">
-          Báo cáo thống kê
-        </h2>
-        <p className="admin-section-intro">
-          Ba báo cáo từ sổ cái, lọc theo thời gian và xuất CSV.
-        </p>
+      <section
+        className="admin-overview-analytics"
+        aria-labelledby="analytics-heading"
+      >
+        <header className="analytics-hero">
+          <div className="analytics-hero__icon" aria-hidden="true">
+            <LuChartColumn size={22} />
+          </div>
+          <div>
+            <p className="analytics-hero__eyebrow">Sổ cái FundTrust</p>
+            <h2 id="analytics-heading" className="admin-section-title">
+              Báo cáo thống kê
+            </h2>
+            <p className="admin-section-intro">
+              Lọc theo khoảng ngày, xem biểu đồ và xuất CSV theo ngày, chiến
+              dịch hoặc danh mục.
+            </p>
+          </div>
+        </header>
+
         <form
-          className="analytics-filters"
+          className="analytics-toolbar panel"
           onSubmit={(e) => {
             e.preventDefault();
             if (from > to) {
@@ -262,32 +336,58 @@ export default function AdminHomePage() {
             setRange({ from, to });
           }}
         >
-          <label>
-            Từ ngày
-            <input
-              type="date"
-              required
-              value={from}
-              onChange={(e) => setFrom(e.target.value)}
-            />
-          </label>
-          <label>
-            Đến ngày
-            <input
-              type="date"
-              required
-              value={to}
-              onChange={(e) => setTo(e.target.value)}
-            />
-          </label>
+          <div className="analytics-toolbar__dates">
+            <span className="analytics-toolbar__badge" aria-hidden="true">
+              <LuCalendarRange size={16} />
+            </span>
+            <label>
+              Từ ngày
+              <input
+                type="date"
+                required
+                value={from}
+                onChange={(e) => setFrom(e.target.value)}
+              />
+            </label>
+            <span className="analytics-toolbar__sep" aria-hidden="true">
+              →
+            </span>
+            <label>
+              Đến ngày
+              <input
+                type="date"
+                required
+                value={to}
+                onChange={(e) => setTo(e.target.value)}
+              />
+            </label>
+          </div>
           <button className="button" type="submit">
-            Xem báo cáo
+            Áp dụng khoảng
           </button>
         </form>
         {rangeError && <Notice error>{rangeError}</Notice>}
-        {reports.map(([kind]) => (
-          <AnalyticsPanel key={kind} kind={kind} {...range} />
-        ))}
+
+        <div
+          className="analytics-tabs"
+          role="tablist"
+          aria-label="Loại báo cáo"
+        >
+          {reports.map(([id, label]) => (
+            <button
+              key={id}
+              type="button"
+              role="tab"
+              aria-selected={kind === id}
+              className={`analytics-tab ${kind === id ? "is-active" : ""}`}
+              onClick={() => setKind(id)}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+
+        <AnalyticsPanel kind={kind} {...range} />
       </section>
     </Page>
   );

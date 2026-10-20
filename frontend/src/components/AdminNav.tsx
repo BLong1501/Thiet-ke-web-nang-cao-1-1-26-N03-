@@ -21,12 +21,16 @@ const ITEMS: [to: string, label: string, icon: IconType][] = [
   ["/admin/categories", "Danh mục", LuTags],
   ["/admin/donations", "Giao dịch", LuReceipt],
   ["/admin/reports", "Báo cáo vi phạm", LuFlag],
-  ["/admin/activity-logs", "Nhật ký hệ thống", LuHistory],
+  ["/admin/activity-logs", "Nhật ký hoạt động", LuHistory],
 ];
 
 export default function AdminNav({ onNavigate }: { onNavigate?: () => void }) {
   return (
-    <div className="admin-navigation-bar" role="navigation" aria-label="Quản trị">
+    <div
+      className="admin-navigation-bar"
+      role="navigation"
+      aria-label="Quản trị"
+    >
       {ITEMS.map(([to, label, Icon]) => (
         <NavLink key={to} to={to} end onClick={onNavigate}>
           <Icon aria-hidden="true" />

@@ -1,3 +1,4 @@
+import { auditService } from "../../core/services/audit.service";
 import crypto from "crypto";
 import { donationRepository, DonationRepository } from "./donation.repository";
 import { prisma } from "../../core/database/prisma";
@@ -271,7 +272,8 @@ export class DonationService {
 
     const result = await this.repo.confirmPayment(
       donationId,
-      input.paymentGatewayResponse || { simulated: true, note: input.note || "Thanh toán mô phỏng thành công" }
+      input.paymentGatewayResponse || { simulated: true, note: input.note || "Thanh toán mô phỏng thành công" },
+      actor.userId
     );
     await invalidatePublicCampaignCache();
 
@@ -292,15 +294,12 @@ export class DonationService {
     action: string,
     message: string
   ) {
-    await tx.auditLog.create({
-      data: {
+    await auditService.write({
         userId,
         action,
         entityName: "Donation",
         entityId: donation.id,
-        details: { amount: donation.amount.toString(), message, simulated: true },
-      },
-    });
+      }, tx);
     if (donation.donorId) {
       await tx.notification.create({
         data: {
@@ -428,15 +427,12 @@ export class DonationService {
       await this.repo.refreshCampaign(tx, campaign.id);
 
       // 4. Ghi AuditLog & Notification
-      await tx.auditLog.create({
-        data: {
+      await auditService.write({
           userId: actor.userId,
           action: "DEMO_FULL_REFUND",
           entityName: "Donation",
           entityId: donation.id,
-          details: { amount: donation.amount.toString(), reason: reason || "Hoàn tiền đóng góp" },
-        },
-      });
+        }, tx);
 
       if (donation.donorId) {
         await tx.notification.create({
@@ -483,15 +479,12 @@ export class DonationService {
         data: { status: CampaignStatus.CANCELLED },
       });
 
-      await tx.auditLog.create({
-        data: {
+      await auditService.write({
           userId: actor.userId,
           action: "CANCEL_CAMPAIGN",
           entityName: "Campaign",
           entityId: campaignId,
-          details: { reason: reason || "Admin hủy chiến dịch" },
-        },
-      });
+        }, tx);
 
       return updated;
     }).then(async (result) => {

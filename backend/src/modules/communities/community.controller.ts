@@ -38,6 +38,7 @@ export class CommunityController {
   join = async (req: Request, res: Response, next: NextFunction) => {
     try {
       const data = await this.service.toggleJoin(req.user!.userId, param(req, "id"));
+      await auditService.log({ req, action: "UPDATE_MEMBERSHIP", entityName: "Community", entityId: param(req, "id") });
       return sendSuccess(res, 200, "Đã cập nhật tư cách thành viên", data);
     } catch (e) {
       return next(e);
@@ -56,6 +57,7 @@ export class CommunityController {
   createPost = async (req: Request, res: Response, next: NextFunction) => {
     try {
       const post = await this.service.createPost(req.user!.userId, param(req, "id"), req.body);
+      await auditService.log({ req, action: "CREATE_POST", entityName: "Post", entityId: post.id });
       return sendSuccess(res, 201, "Đăng bài thành công", post);
     } catch (e) {
       return next(e);
@@ -97,6 +99,7 @@ export class CommunityController {
         param(req, "postId"),
         req.body,
       );
+      await auditService.log({ req, action: "CREATE_COMMENT", entityName: "Comment", entityId: c.id });
       return sendSuccess(res, 201, "Đã gửi bình luận", c);
     } catch (e) {
       return next(e);

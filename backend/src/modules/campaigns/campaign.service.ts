@@ -1,3 +1,4 @@
+import { auditService } from "../../core/services/audit.service";
 import { campaignRepository, CampaignRepository } from "./campaign.repository";
 import {
   CreateCampaignInput,
@@ -344,24 +345,12 @@ export class CampaignService {
     await invalidatePublicCampaignCache();
 
     // 9. Ghi AuditLog bảo mật hành vi khởi tạo chiến dịch
-    await prisma.auditLog.create({
-      data: {
+    await auditService.log({
         userId: fundraiserId,
         action: "CREATE_CAMPAIGN",
         entityName: "Campaign",
         entityId: campaign.id,
-        details: {
-          organizerType,
-          organizationName: input.organizationName || null,
-          taxCode: input.taxCode || null,
-          representativeRole: input.representativeRole || null,
-          bankAccountName: input.bankAccountName,
-          bankAccountNumber: input.bankAccountNumber,
-          bankName: input.bankName,
-          charityCommitmentAccepted: true,
-        },
-      },
-    });
+      });
 
     return this.hydrateCampaign(campaign, { includeSensitive: true });
   }
@@ -454,18 +443,12 @@ export class CampaignService {
       });
 
       // Ghi vết kiểm toán (AuditLog)
-      await tx.auditLog.create({
-        data: {
+      await auditService.write({
           userId: adminId,
           action: input.status === CampaignStatus.ACTIVE ? "APPROVE_CAMPAIGN" : "REJECT_CAMPAIGN",
           entityName: "Campaign",
           entityId: campaignId,
-          details: {
-            result: input.status,
-            rejectionReason: input.rejectionReason || null,
-          },
-        },
-      });
+        }, tx);
 
       // Tạo thông báo cho chủ chiến dịch
       await tx.notification.create({
@@ -561,19 +544,12 @@ export class CampaignService {
     const disbursement = await this.repo.addDisbursement(campaignId, userId, input);
 
     // Ghi AuditLog
-    await prisma.auditLog.create({
-      data: {
+    await auditService.log({
         userId,
         action: "CREATE_DISBURSEMENT",
         entityName: "Disbursement",
         entityId: disbursement.id,
-        details: {
-          campaignId,
-          amount: input.amount,
-          title: input.title,
-        },
-      },
-    });
+      });
 
     await invalidatePublicCampaignCache();
     return disbursement;
@@ -600,20 +576,12 @@ export class CampaignService {
     const updated = await this.repo.reviewDisbursement(disbursementId, input, adminId);
 
     // Ghi Audit Log
-    await prisma.auditLog.create({
-      data: {
+    await auditService.log({
         userId: adminId,
         action: input.status === "APPROVED" ? "APPROVE_DISBURSEMENT" : "REJECT_DISBURSEMENT",
         entityName: "Disbursement",
         entityId: disbursementId,
-        details: {
-          campaignId: disbursement.campaignId,
-          amount: disbursement.amount,
-          status: input.status,
-          rejectionReason: input.rejectionReason || null,
-        },
-      },
-    });
+      });
 
     // Tạo thông báo cho người lập hồ sơ giải ngân
     try {

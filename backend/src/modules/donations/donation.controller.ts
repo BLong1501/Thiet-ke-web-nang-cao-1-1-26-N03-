@@ -1,3 +1,4 @@
+import { auditService } from "../../core/services/audit.service";
 import { Request, Response, NextFunction } from "express";
 import { donationService, DonationService } from "./donation.service";
 import { sendCreated, sendSuccess } from "../../core/utils/response.util";
@@ -15,6 +16,7 @@ export class DonationController {
       const currentUserId = req.user?.userId;
       const result = await this.service.createDonation(req.body, currentUserId);
       const statusCode = result.replayed ? 200 : 201;
+      if (!result.replayed) await auditService.log({ req, action: "CREATE_DONATION", entityName: "Donation", entityId: result.donation.id });
       return sendSuccess(res, statusCode, result.message, {
         donation: result.donation,
         paymentInstructions: result.paymentInstructions,

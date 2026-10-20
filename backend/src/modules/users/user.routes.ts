@@ -1,3 +1,4 @@
+import { activityLogQuerySchema } from "../activity-logs/activity-log.validation";
 import { Router } from "express";
 import { userController } from "./user.controller";
 import { authenticate, authorize } from "../../core/middleware/auth.middleware";
@@ -14,7 +15,7 @@ router.use(authenticate, authorize(UserRole.ADMIN));
 router.get("/", validate({ query: userQuerySchema }), userController.getUsers);
 
 // Lấy danh sách nhật ký kiểm toán bảo mật (Security Audit Logs)
-router.get("/audit-logs", userController.getAuditLogs);
+router.get("/audit-logs", validate({ query: activityLogQuerySchema }), userController.getAuditLogs);
 
 // Lấy chi tiết thông tin một người dùng
 router.get("/:id", userController.getUserDetail);

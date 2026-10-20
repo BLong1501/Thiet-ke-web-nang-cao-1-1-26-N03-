@@ -1,6 +1,7 @@
+import { safeActivity } from "../../core/services/activity-description";
 import { prisma } from "../../core/database/prisma";
 import { AppError } from "../../core/errors/app.error";
-import { ActivityLogQueryInput, ActivityLogStatsQueryInput, CreateActivityLogInput } from "./activity-log.validation";
+import { ActivityLogQueryInput, ActivityLogStatsQueryInput } from "./activity-log.validation";
 
 export class ActivityLogService {
   /** Only an actor's own events; omit internal details and other identity data. */
@@ -35,7 +36,7 @@ export class ActivityLogService {
         { action: { contains: search } },
         { entityName: { contains: search } },
         { entityId: { contains: search } },
-        { ipAddress: { contains: search } },
+        { details: { path: "$.description", string_contains: search } },
         {
           user: {
             is: {
@@ -72,17 +73,12 @@ export class ActivityLogService {
       }
     }
 
-    const orderBy: any = {};
-    const sortBy = query.sortBy || "createdAt";
-    const sortOrder = query.sortOrder || "desc";
-    orderBy[sortBy] = sortOrder;
-
     const [items, total] = await Promise.all([
       prisma.auditLog.findMany({
         where,
         skip,
         take: limit,
-        orderBy,
+        orderBy: [{ createdAt: "desc" }, { id: "desc" }],
         include: {
           user: {
             select: {
@@ -99,7 +95,7 @@ export class ActivityLogService {
     ]);
 
     return {
-      items,
+      items: items.map(safeActivity),
       meta: {
         page,
         limit,
@@ -194,7 +190,7 @@ export class ActivityLogService {
       throw new AppError("Không tìm thấy bản ghi nhật ký hệ thống", 404);
     }
 
-    return log;
+    return safeActivity(log);
   }
 
   /**
@@ -207,32 +203,6 @@ export class ActivityLogService {
     });
   }
 
-  /**
-   * Tạo bản ghi nhật ký thủ công hoặc ghi nhận sự kiện bảo mật
-   */
-  async createLog(input: CreateActivityLogInput, userId?: string | null) {
-    return prisma.auditLog.create({
-      data: {
-        userId: userId || null,
-        action: input.action.substring(0, 100),
-        entityName: input.entityName.substring(0, 50),
-        entityId: String(input.entityId).substring(0, 36),
-        details: input.details ? (input.details as any) : undefined,
-        ipAddress: input.ipAddress ? String(input.ipAddress).substring(0, 45) : null,
-        userAgent: input.userAgent ? String(input.userAgent).substring(0, 255) : null,
-      },
-      include: {
-        user: {
-          select: {
-            id: true,
-            email: true,
-            fullName: true,
-            role: true,
-          },
-        },
-      },
-    });
-  }
 }
 
 export const activityLogService = new ActivityLogService();
