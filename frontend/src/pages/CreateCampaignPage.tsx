@@ -445,7 +445,7 @@ function CampaignForm({
             <strong>Cơ chế Ký quỹ Minh bạch (FundTrust Escrow):</strong>
             <p>
               Mọi khoản đóng góp của Nhà hảo tâm sẽ được chuyển trực tiếp vào{" "}
-              <strong>Tài khoản Quỹ trung tâm (Vietcombank - 1020369607)</strong>.
+              <strong>Tài khoản Quỹ trung tâm (MBBank - 0344907168 - TRAN BAO LONG)</strong>.
               Tài khoản ngân hàng bạn cung cấp dưới đây là{" "}
               <strong>
                 tài khoản thụ hưởng của Chủ chiến dịch dùng để nhận tiền giải ngân

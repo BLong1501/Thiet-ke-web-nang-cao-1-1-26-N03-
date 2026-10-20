@@ -13,6 +13,7 @@ import {
 import { generateAccessToken, generateRefreshToken, verifyRefreshToken } from "../../core/utils/jwt.util";
 import { redisService } from "../../core/database/redis";
 import { mailService } from "../../core/services/mail.service";
+import { prisma } from "../../core/database/prisma";
 import { OAuth2Client } from "google-auth-library";
 
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
@@ -25,21 +26,42 @@ export class AuthService {
   }
 
   async register(input: RegisterInput) {
-    // 1. Kiểm tra trùng email
+    // 0. Tự động dọn dẹp các tài khoản chưa xác thực email quá thời hạn 10 phút khỏi DB
+    await prisma.user.deleteMany({
+      where: {
+        isEmailVerified: false,
+        createdAt: { lte: new Date(Date.now() - 10 * 60 * 1000) },
+      },
+    }).catch(() => {});
+
+    // 1. Kiểm tra tài khoản đã tồn tại với email này chưa
     const existingEmail = await this.repo.findByEmail(input.email);
     if (existingEmail) {
-      const error: any = new Error("Địa chỉ email này đã được sử dụng bởi một tài khoản khác");
-      error.statusCode = 409;
-      throw error;
+      if (existingEmail.isEmailVerified) {
+        // Tài khoản đã xác thực hoàn tất -> Không cho phép đăng ký đè
+        const error: any = new Error("Địa chỉ email này đã được sử dụng bởi một tài khoản khác");
+        error.statusCode = 409;
+        throw error;
+      }
+
+      // Tài khoản trong DB nhưng CHƯA xác thực email (isEmailVerified = false):
+      // Tự động xóa tài khoản chưa xác thực cũ khỏi DB để cho phép tạo mới hoàn toàn với email này!
+      console.log(`🧹 Tự động xóa tài khoản chưa xác thực cũ (${input.email}) khỏi CSDL để tạo lại.`);
+      await this.repo.deleteUser(existingEmail.id);
+      await redisService.deletePendingRegistration(input.email);
     }
 
     // 2. Kiểm tra trùng số điện thoại (nếu có cung cấp)
     if (input.phoneNumber) {
       const existingPhone = await this.repo.findByPhoneNumber(input.phoneNumber);
       if (existingPhone) {
-        const error: any = new Error("Số điện thoại này đã được liên kết với một tài khoản khác");
-        error.statusCode = 409;
-        throw error;
+        if (existingPhone.isEmailVerified) {
+          const error: any = new Error("Số điện thoại này đã được liên kết với một tài khoản khác");
+          error.statusCode = 409;
+          throw error;
+        }
+        await this.repo.deleteUser(existingPhone.id);
+        await redisService.deletePendingRegistration(existingPhone.email);
       }
     }
 

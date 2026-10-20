@@ -54,11 +54,12 @@ export default function AuthPage({ mode }: { mode: Mode }) {
     setBusy(true);
     try {
       const cleanEmail = email.trim();
+      const cleanOtp = otp.trim();
       if (mode === "login" || mode === "verify") {
         const r =
           mode === "login"
             ? await authApi.login({ email: cleanEmail, password })
-            : await authApi.verifyEmail({ email: cleanEmail, otp });
+            : await authApi.verifyEmail({ email: cleanEmail, otp: cleanOtp });
         const data = payload(r);
         if (!data?.accessToken || !data?.user)
           throw new Error("Phản hồi đăng nhập không hợp lệ.");
@@ -78,7 +79,7 @@ export default function AuthPage({ mode }: { mode: Mode }) {
       } else {
         await authApi.resetPassword({
           email: cleanEmail,
-          otp,
+          otp: cleanOtp,
           newPassword: password,
         });
         setPassword("");

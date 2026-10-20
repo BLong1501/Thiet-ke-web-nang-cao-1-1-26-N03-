@@ -181,16 +181,16 @@ export class DonationService {
    */
   private buildPaymentInstructions(campaign: any, amount: number | Prisma.Decimal, transactionCode: string, donationId: string, createdAt?: Date | string) {
     const numericAmount = Number(amount);
-    // 1. Tài khoản Quỹ trung tâm FundTrust (Ký quỹ trung gian tiếp nhận tiền ủng hộ qua SePay)
-    const bankName = "Ngân hàng Ngoại thương Việt Nam (Vietcombank)";
-    const bankAccountNumber = "1020369607";
-    const bankAccountName = "QUY GAY QUY CONG DONG FUNDTRUST";
+    // 1. Tài khoản Quỹ trung tâm FundTrust (Ký quỹ trung gian tiếp nhận tiền ủng hộ qua PayOS VietQR Pro MBBank)
+    const bankName = process.env.BANK_NAME || "Ngân hàng Quân Đội (MB Bank)";
+    const bankAccountNumber = process.env.BANK_ACCOUNT_NUMBER || "0344907168";
+    const bankAccountName = process.env.BANK_ACCOUNT_NAME || "TRAN BAO LONG";
 
-    // Tìm mã BIN ngân hàng chuẩn Napas 247 (Vietcombank: 970436)
+    // Tìm mã BIN ngân hàng chuẩn Napas 247 (MB: 970422)
     const foundBank = findBank(bankName);
-    const bankIdentifier = foundBank?.bin || "970436";
+    const bankIdentifier = foundBank?.bin || "970422";
 
-    // 1. VietQR ngân hàng chuẩn Napas 247
+    // 1. VietQR ngân hàng chuẩn Napas 247 (Tích hợp PayOS VietQR Pro)
     const vietQrUrl = `https://img.vietqr.io/image/${encodeURIComponent(bankIdentifier)}-${encodeURIComponent(bankAccountNumber)}-compact2.png?amount=${numericAmount}&addInfo=${encodeURIComponent(transactionCode)}&accountName=${encodeURIComponent(bankAccountName)}`;
 
     // 2. Ví MoMo
@@ -731,10 +731,28 @@ export class DonationService {
   }
 
   /**
-   * Xử lý Webhook tự động biến động số dư ngân hàng (SePay / Casso / PayOS / Banking Webhook)
+   * Xác thực chữ ký số HMAC-SHA256 chuẩn PayOS
+   */
+  private verifyPayOsSignature(data: Record<string, any>, signature: string, checksumKey: string): boolean {
+    try {
+      const sortedKeys = Object.keys(data).sort();
+      const queryStr = sortedKeys
+        .filter((k) => data[k] !== undefined && data[k] !== null)
+        .map((k) => `${k}=${data[k]}`)
+        .join("&");
+      const hmac = crypto.createHmac("sha256", checksumKey).update(queryStr).digest("hex");
+      return hmac === signature;
+    } catch {
+      return false;
+    }
+  }
+
+  /**
+   * Xử lý Webhook tự động biến động số dư ngân hàng (PayOS / SePay / Casso / Banking Webhook)
+   * Tự động xác minh nhận đúng số tiền từ mã QR và hoàn tất giao dịch tức thời.
    */
   async handleBankingWebhook(payload: any) {
-    // payOS bọc dữ liệu trong payload.data, còn SePay/Casso gửi trực tiếp ở payload
+    // 1. payOS bọc dữ liệu trong payload.data, SePay/Casso có thể gửi trực tiếp ở payload
     const data = payload?.data || payload || {};
 
     const content = String(
@@ -748,55 +766,111 @@ export class DonationService {
       ""
     );
 
-    // Xử lý gói tin ping/xác nhận Webhook URL của payOS (thường chứa VQRIO hoặc orderCode mẫu 123)
-    if (content.includes("VQRIO") || data.orderCode === 123 || payload.desc === "Webhook URL confirmation") {
+    // 2. Xử lý gói tin ping/xác nhận Webhook URL của payOS (chứa VQRIO hoặc orderCode mẫu 123 hoặc desc xác nhận)
+    if (
+      content.includes("VQRIO") ||
+      data.orderCode === 123 ||
+      payload.desc === "Webhook URL confirmation" ||
+      payload.message === "Webhook URL confirmation"
+    ) {
+      console.log("✓ [PAYOS WEBHOOK] Đã phản hồi xác nhận URL Webhook thành công với máy chủ PayOS.");
       return {
         success: true,
         message: "Xác nhận Webhook URL payOS thành công",
       };
     }
 
+    // 3. Kiểm tra chữ ký số bảo mật của PayOS (nếu có cấu hình PAYOS_CHECKSUM_KEY trong .env)
+    const checksumKey = process.env.PAYOS_CHECKSUM_KEY;
+    if (checksumKey && payload.signature && payload.data) {
+      const isSignatureValid = this.verifyPayOsSignature(payload.data, payload.signature, checksumKey);
+      if (!isSignatureValid) {
+        console.error("❌ [PAYOS WEBHOOK] Chữ ký số HMAC-SHA256 không hợp lệ!");
+        return {
+          success: false,
+          message: "Chữ ký số Webhook PayOS không hợp lệ",
+        };
+      }
+    }
+
+    // 4. Trích xuất mã giao dịch từ nội dung chuyển khoản
     const uuidMatch = content.match(/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i);
-    const donMatch = content.match(/(DON-[A-Z0-9-]+)/i);
+    const donMatch = content.match(/(DON[- ]?[0-9]{6}[- ]?[A-Z0-9]+)/i) || content.match(/(DON[- ]?[A-Z0-9-]+)/i);
     const transactionCode = uuidMatch ? uuidMatch[1] : donMatch ? donMatch[1] : content.trim();
 
     if (!transactionCode) {
       return { success: false, message: "Không tìm thấy mã giao dịch trong nội dung chuyển khoản" };
     }
 
+    // Tìm kiếm khoản đóng góp (hỗ trợ cả dạng đầy đủ, chuẩn hóa, hoặc tìm trực tiếp trong content)
     let donation = await this.repo.findByTransactionCode(transactionCode);
+    if (!donation && content !== transactionCode) {
+      donation = await this.repo.findByTransactionCode(content);
+    }
+
     if (!donation) {
       return { success: false, message: `Không tìm thấy khoản quyên góp với mã: ${transactionCode}` };
     }
 
+    // Nếu giao dịch đã được thanh toán thành công trước đó (Idempotent response)
     if (donation.paymentStatus === PaymentStatus.SUCCESS) {
       return { success: true, message: "Giao dịch đã được thanh toán thành công trước đó", donation };
     }
 
+    // Kiểm tra hết hạn phiên giao dịch
     donation = await this.checkAndExpireDonation(donation);
     if (donation.paymentStatus === PaymentStatus.FAILED) {
       return {
         success: false,
-        message: `Giao dịch ${transactionCode} đã hết hạn (quá 10 phút), phiên giao dịch đã bị khóa`,
+        message: `Giao dịch ${donation.transactionCode} đã hết hạn (quá 10 phút), phiên giao dịch đã bị khóa`,
         donation,
       };
     }
 
+    // 5. KIỂM TRA NHẬN ĐÚNG TIỀN TỪ MÃ QR:
+    // So sánh số tiền thực nhận qua ngân hàng với số tiền yêu cầu của khoản đóng góp
+    const transferAmount = Number(
+      data.amount || data.transferAmount || payload.transferAmount || payload.amount || 0
+    );
+    const requiredAmount = Number(donation.amount);
+
+    if (transferAmount > 0 && transferAmount < requiredAmount) {
+      console.warn(
+        `⚠ [PAYOS WEBHOOK] Số tiền chuyển ${transferAmount} đ nhỏ hơn số tiền quyên góp yêu cầu ${requiredAmount} đ cho mã ${donation.transactionCode}`
+      );
+      return {
+        success: false,
+        message: `Số tiền chuyển khoản (${transferAmount.toLocaleString("vi-VN")} đ) chưa đủ số tiền quyên góp yêu cầu (${requiredAmount.toLocaleString("vi-VN")} đ)`,
+        donation,
+      };
+    }
+
+    // 6. Xác nhận thanh toán thành công vào hệ thống
     const result = await this.repo.confirmPayment(donation.id, {
-      gateway: data.gateway || payload.gateway || "PAYOS_OR_BANKING",
-      referenceCode: data.reference || data.referenceCode || payload.referenceCode || data.paymentLinkId || payload.id || null,
-      transferAmount: data.amount || data.transferAmount || payload.transferAmount || Number(donation.amount),
-      note: "Xác nhận tự động qua Webhook biến động số dư ngân hàng (VietQR / payOS)",
+      gateway: data.gateway || payload.gateway || "PAYOS",
+      referenceCode:
+        data.reference ||
+        data.referenceCode ||
+        payload.referenceCode ||
+        data.paymentLinkId ||
+        payload.id ||
+        null,
+      transferAmount: transferAmount > 0 ? transferAmount : requiredAmount,
+      note: `Xác nhận tự động qua Webhook biến động số dư ngân hàng PayOS (MBBank ${process.env.BANK_ACCOUNT_NUMBER || "0344907168"})`,
     });
+
+    console.log(
+      `✅ [PAYOS WEBHOOK] Đã xác nhận thành công khoản đóng góp ${result.donation.transactionCode}: +${(transferAmount > 0 ? transferAmount : requiredAmount).toLocaleString("vi-VN")} đ`
+    );
 
     await invalidatePublicCampaignCache();
 
-    // Gửi email biên nhận báo cáo giao dịch tới người đóng góp
+    // 7. Gửi email biên nhận tự động tới người đóng góp
     this.sendReceiptEmailSafely(result.donation);
 
     return {
       success: true,
-      message: "Đã xác nhận thanh toán thành công qua Webhook ngân hàng",
+      message: "Đã xác nhận thanh toán thành công qua Webhook ngân hàng PayOS",
       donation: result.donation,
       campaignProgress: result.campaignProgress,
     };
