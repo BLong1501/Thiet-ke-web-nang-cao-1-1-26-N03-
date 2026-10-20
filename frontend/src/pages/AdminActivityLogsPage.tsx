@@ -1,10 +1,12 @@
 import { useState } from "react";
+import { LuDownload, LuHistory, LuRefreshCw, LuSearch } from "react-icons/lu";
 import { activityLogApi } from "../services/api";
 import { downloadCsv, listResult, payload } from "../services/platform";
 import { useRemote } from "../hooks/useRemote";
 import {
   Empty,
   Modal,
+  Notice,
   Page,
   Pager,
   RemoteState,
@@ -20,7 +22,7 @@ function LogDetail({ id, onClose }: { id: string; onClose: () => void }) {
   );
   const log = result.data;
   return (
-    <Modal title="Chi tiết nhật kí hoạt động" onClose={onClose}>
+    <Modal title="Chi tiết nhật ký hoạt động" onClose={onClose}>
       <RemoteState {...result} />
       {log && !result.error && (
         <dl className="detail-list">
@@ -62,165 +64,220 @@ export default function AdminActivityLogsPage() {
       activityLogApi.getLogs({ ...filters, page, limit: 20 }).then(listResult),
     [filters, page],
   );
+
+  function applyFilters(form: HTMLFormElement) {
+    const values = Object.fromEntries(
+      [...new FormData(form).entries()]
+        .map(([key, value]) => [key, String(value).trim()])
+        .filter(([, value]) => value),
+    );
+    if (values.from && values.to && values.from > values.to) {
+      setFormError("Từ ngày phải trước hoặc bằng đến ngày.");
+      return;
+    }
+    setFormError("");
+    setFilters(values);
+    setPage(1);
+  }
+
   return (
     <Page
-      title="Nhật kí hoạt động"
+      title="Nhật ký hoạt động"
       intro="Hoạt động toàn hệ thống, chỉ dành cho quản trị viên. Thời gian hiển thị theo múi giờ Việt Nam (UTC+7)."
     >
-      <form
-        className="filters"
-        onSubmit={(e) => {
-          e.preventDefault();
-          const values = Object.fromEntries(
-            [...new FormData(e.currentTarget).entries()]
-              .map(([key, value]) => [key, String(value).trim()])
-              .filter(([, value]) => value),
-          );
-          if (values.from && values.to && values.from > values.to) {
-            setFormError("Từ ngày phải trước hoặc bằng đến ngày.");
-            return;
-          }
-          setFormError("");
-          setFilters(values);
-          setPage(1);
-        }}
-      >
-        <input
-          name="search"
-          type="search"
-          maxLength={200}
-          aria-label="Tìm nhật kí"
-          placeholder="Tìm tên, email, mô tả, đối tượng…"
-        />
-        <input
-          name="userId"
-          aria-label="ID người thực hiện"
-          placeholder="ID người thực hiện (UUID)"
-          pattern="[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}"
-        />
-        <input
-          name="action"
-          maxLength={100}
-          aria-label="Mã hành động"
-          placeholder="Mã hành động, ví dụ CREATE_CAMPAIGN"
-        />
-        <label>
-          Từ ngày <input name="from" type="date" aria-label="Từ ngày" />
-        </label>
-        <label>
-          Đến ngày <input name="to" type="date" aria-label="Đến ngày" />
-        </label>
-        <button className="button" disabled={result.fetching}>
-          Lọc nhật kí
-        </button>
-        <button
-          type="reset"
-          className="button secondary"
-          onClick={() => {
-            setFilters({});
-            setPage(1);
-            setFormError("");
+      <section className="logs-shell">
+        <header className="logs-hero">
+          <div className="logs-hero__icon" aria-hidden="true">
+            <LuHistory size={22} />
+          </div>
+          <div>
+            <p className="logs-hero__eyebrow">Audit trail</p>
+            <h2 className="logs-hero__title">Bộ lọc nhật ký</h2>
+            <p className="logs-hero__intro">
+              Tìm theo người dùng, mã hành động hoặc khoảng ngày rồi xuất CSV
+              trang hiện tại.
+            </p>
+          </div>
+        </header>
+
+        <form
+          className="logs-toolbar panel"
+          onSubmit={(e) => {
+            e.preventDefault();
+            applyFilters(e.currentTarget);
           }}
         >
-          Xóa bộ lọc
-        </button>
-      </form>
-      {formError && <p role="alert">{formError}</p>}
-      <div className="actions">
-        <button
-          className="button secondary"
-          onClick={result.reload}
-          disabled={result.fetching}
-        >
-          Làm mới
-        </button>
-        <button
-          className="button secondary"
-          disabled={
-            !result.data?.items.length || !!result.error || result.fetching
-          }
-          onClick={() =>
-            downloadCsv(
-              "nhat-ki.csv",
-              [
-                "Thời gian Việt Nam",
-                "Người thực hiện",
-                "Hành động",
-                "Đối tượng",
-                "ID đối tượng",
-                "Mô tả",
-              ],
-              result.data!.items.map((l) => [
-                time(l.createdAt),
-                l.user?.email,
-                l.action,
-                l.entityName,
-                l.entityId,
-                l.description,
-              ]),
-            )
-          }
-        >
-          Xuất CSV trang hiện tại
-        </button>
-      </div>
-      <RemoteState {...result} />
-      {result.fetching && !result.loading && (
-        <p role="status">Đang cập nhật nhật kí…</p>
-      )}
-      {result.data && !result.error && (
-        <>
-          <p aria-live="polite">{result.data.total} bản ghi</p>
-          {result.data.items.length ? (
-            <div className="table-wrap">
-              <table>
-                <thead>
-                  <tr>
-                    <th>Thời gian</th>
-                    <th>Người thực hiện</th>
-                    <th>Hành động</th>
-                    <th>Đối tượng</th>
-                    <th>Mô tả</th>
-                    <th>Chi tiết</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {result.data.items.map((l) => (
-                    <tr key={l.id}>
-                      <td>{time(l.createdAt)}</td>
-                      <td>
-                        {l.user?.fullName ||
-                          (l.userId
-                            ? "Tài khoản không còn khả dụng"
-                            : "Hệ thống / khách")}
-                        <small>{l.user?.email}</small>
-                      </td>
-                      <td>{l.action}</td>
-                      <td>
-                        {l.entityName}
-                        <small>{l.entityId}</small>
-                      </td>
-                      <td>{l.description}</td>
-                      <td>
-                        <button
-                          className="button secondary"
-                          aria-label={`Xem nhật kí ${l.id}`}
-                          onClick={() => setSelected(l.id)}
-                        >
-                          Xem
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+          <div className="logs-toolbar__grid">
+            <label className="logs-field logs-field--grow">
+              <span>Tìm kiếm</span>
+              <span className="logs-field__control">
+                <LuSearch size={16} aria-hidden="true" />
+                <input
+                  name="search"
+                  type="search"
+                  maxLength={200}
+                  aria-label="Tìm nhật ký"
+                  placeholder="Tên, email, mô tả, đối tượng…"
+                />
+              </span>
+            </label>
+            <label className="logs-field">
+              <span>ID người thực hiện</span>
+              <input
+                name="userId"
+                aria-label="ID người thực hiện"
+                placeholder="UUID người dùng"
+                pattern="[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}"
+              />
+            </label>
+            <label className="logs-field">
+              <span>Mã hành động</span>
+              <input
+                name="action"
+                maxLength={100}
+                aria-label="Mã hành động"
+                placeholder="VD: CREATE_CAMPAIGN"
+              />
+            </label>
+            <label className="logs-field">
+              <span>Từ ngày</span>
+              <input name="from" type="date" aria-label="Từ ngày" />
+            </label>
+            <label className="logs-field">
+              <span>Đến ngày</span>
+              <input name="to" type="date" aria-label="Đến ngày" />
+            </label>
+          </div>
+
+          <div className="logs-toolbar__actions">
+            <button className="button" disabled={result.fetching}>
+              Lọc nhật ký
+            </button>
+            <button
+              type="reset"
+              className="button secondary"
+              onClick={() => {
+                setFilters({});
+                setPage(1);
+                setFormError("");
+              }}
+            >
+              Xóa bộ lọc
+            </button>
+            <button
+              type="button"
+              className="button secondary"
+              onClick={result.reload}
+              disabled={result.fetching}
+            >
+              <LuRefreshCw size={15} aria-hidden="true" />
+              Làm mới
+            </button>
+            <button
+              type="button"
+              className="button secondary"
+              disabled={
+                !result.data?.items.length || !!result.error || result.fetching
+              }
+              onClick={() =>
+                downloadCsv(
+                  "nhat-ky.csv",
+                  [
+                    "Thời gian Việt Nam",
+                    "Người thực hiện",
+                    "Hành động",
+                    "Đối tượng",
+                    "ID đối tượng",
+                    "Mô tả",
+                  ],
+                  result.data!.items.map((l) => [
+                    time(l.createdAt),
+                    l.user?.email,
+                    l.action,
+                    l.entityName,
+                    l.entityId,
+                    l.description,
+                  ]),
+                )
+              }
+            >
+              <LuDownload size={15} aria-hidden="true" />
+              Xuất CSV
+            </button>
+          </div>
+        </form>
+
+        {formError && <Notice error>{formError}</Notice>}
+
+        <RemoteState {...result} />
+        {result.fetching && !result.loading && (
+          <p className="logs-status" role="status">
+            Đang cập nhật nhật ký…
+          </p>
+        )}
+
+        {result.data && !result.error && (
+          <>
+            <div className="logs-meta">
+              <strong>{result.data.total.toLocaleString("vi-VN")}</strong>
+              <span>bản ghi phù hợp</span>
             </div>
-          ) : (
-            <Empty>Không có nhật kí phù hợp.</Empty>
-          )}
-          <Pager page={page} pages={result.data.pages} onChange={setPage} />
-        </>
-      )}
+            {result.data.items.length ? (
+              <div className="table-wrap logs-table">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Thời gian</th>
+                      <th>Người thực hiện</th>
+                      <th>Hành động</th>
+                      <th>Đối tượng</th>
+                      <th>Mô tả</th>
+                      <th>Chi tiết</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {result.data.items.map((l) => (
+                      <tr key={l.id}>
+                        <td>
+                          <time dateTime={l.createdAt}>{time(l.createdAt)}</time>
+                        </td>
+                        <td>
+                          {l.user?.fullName ||
+                            (l.userId
+                              ? "Tài khoản không còn khả dụng"
+                              : "Hệ thống / khách")}
+                          <small>{l.user?.email}</small>
+                        </td>
+                        <td>
+                          <code className="logs-action">{l.action}</code>
+                        </td>
+                        <td>
+                          {l.entityName}
+                          <small>{l.entityId}</small>
+                        </td>
+                        <td>{l.description}</td>
+                        <td>
+                          <button
+                            className="button secondary"
+                            aria-label={`Xem nhật ký ${l.id}`}
+                            onClick={() => setSelected(l.id)}
+                          >
+                            Xem
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <Empty>Không có nhật ký phù hợp.</Empty>
+            )}
+            <Pager page={page} pages={result.data.pages} onChange={setPage} />
+          </>
+        )}
+      </section>
+
       {selected && (
         <LogDetail id={selected} onClose={() => setSelected(null)} />
       )}

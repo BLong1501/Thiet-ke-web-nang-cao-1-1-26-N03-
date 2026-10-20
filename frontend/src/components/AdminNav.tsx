@@ -21,7 +21,7 @@ const ITEMS: [to: string, label: string, icon: IconType][] = [
   ["/admin/categories", "Danh mục", LuTags],
   ["/admin/donations", "Giao dịch", LuReceipt],
   ["/admin/reports", "Báo cáo vi phạm", LuFlag],
-  ["/admin/activity-logs", "Nhật kí hoạt động", LuHistory],
+  ["/admin/activity-logs", "Nhật ký hoạt động", LuHistory],
 ];
 
 export default function AdminNav({ onNavigate }: { onNavigate?: () => void }) {
