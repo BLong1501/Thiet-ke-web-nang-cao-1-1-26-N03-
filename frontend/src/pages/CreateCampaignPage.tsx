@@ -79,9 +79,16 @@ function CampaignForm({
   const user = useAuthStore((s) => s.user);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [step, setStep] = useState(0);
   const [organizer, setOrganizer] = useState(c?.organizerType || "INDIVIDUAL");
   const [coverUrl, setCoverUrl] = useState<string>(c?.coverImageUrl || "");
   const [uploadingImage, setUploadingImage] = useState(false);
+
+  const STEPS = [
+    "Câu chuyện của bạn",
+    "Mục tiêu gây quỹ",
+    "Chủ thể & tài khoản",
+  ] as const;
 
   // Dữ liệu thụ hưởng / MoMo hiện có nếu chỉnh sửa
   let existingMomoPhone = "";
@@ -124,7 +131,33 @@ function CampaignForm({
     e.preventDefault();
     if (busy) return;
     setError("");
-    const f = new FormData(e.currentTarget);
+    const form = e.currentTarget;
+    // Bật lại mọi bước để trình duyệt kiểm tra required đủ 3 phần
+    form.querySelectorAll("fieldset").forEach((fs) => {
+      (fs as HTMLFieldSetElement).hidden = false;
+    });
+    if (!form.reportValidity()) {
+      const controls = Array.from(form.elements);
+      const invalid = controls.find(
+        (el): el is HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement =>
+          (el instanceof HTMLInputElement ||
+            el instanceof HTMLSelectElement ||
+            el instanceof HTMLTextAreaElement) &&
+          !el.disabled &&
+          !el.validity.valid,
+      );
+      if (invalid) {
+        const pane = invalid.closest("fieldset");
+        const panes = Array.from(form.querySelectorAll("fieldset"));
+        const idx = pane ? panes.indexOf(pane) : 0;
+        setStep(Math.max(0, idx));
+        panes.forEach((fs, i) => {
+          (fs as HTMLFieldSetElement).hidden = i !== Math.max(0, idx);
+        });
+      }
+      return;
+    }
+    const f = new FormData(form);
     const value = (key: string) => String(f.get(key) || "").trim();
     const start = value("startDate")
       ? new Date(value("startDate"))
@@ -213,7 +246,22 @@ function CampaignForm({
   return (
     <form className="panel form-stack campaign-form" onSubmit={submit}>
       {error && <Notice error>{error}</Notice>}
-      <fieldset disabled={busy}>
+
+      <ol className="wizard-progress" aria-label="Các bước tạo chiến dịch">
+        {STEPS.map((label, i) => (
+          <li
+            key={label}
+            className={`${i === step ? "is-active" : ""} ${i < step ? "is-done" : ""}`}
+          >
+            <button type="button" onClick={() => setStep(i)} disabled={busy}>
+              <span className="wizard-progress__n">{i + 1}</span>
+              <span>{label}</span>
+            </button>
+          </li>
+        ))}
+      </ol>
+
+      <fieldset disabled={busy} hidden={step !== 0}>
         <legend>01 / Câu chuyện của bạn</legend>
         <Field label="Tên chiến dịch">
           <input
@@ -225,7 +273,11 @@ function CampaignForm({
           />
         </Field>
         <Field label="Danh mục">
-          <select name="categoryId" required defaultValue={c?.categoryId || ""}>
+          <select
+            name="categoryId"
+            required
+            defaultValue={c?.categoryId || ""}
+          >
             <option value="" disabled>
               Chọn danh mục
             </option>
@@ -262,70 +314,34 @@ function CampaignForm({
           label="Ảnh bìa chiến dịch"
           hint="Bạn có thể tải ảnh trực tiếp từ máy tính (PNG/JPEG tối đa 5MB) hoặc nhập URL công khai."
         >
-          <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: "12px", flexWrap: "wrap" }}>
+          <div className="cover-upload">
+            <div className="cover-upload__actions">
               <label
-                className="button secondary"
-                style={{
-                  cursor: uploadingImage || busy ? "not-allowed" : "pointer",
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: "6px",
-                  padding: "8px 16px",
-                  borderRadius: "6px",
-                  border: "1px solid #ccc",
-                  backgroundColor: "#f8f9fa",
-                  fontWeight: 500,
-                  fontSize: "0.95rem",
-                }}
+                className={`button secondary cover-upload__file ${uploadingImage || busy ? "is-disabled" : ""}`}
               >
-                {uploadingImage ? "⏳ Đang tải ảnh lên..." : "📁 Chọn ảnh từ máy tính"}
+                {uploadingImage ? "Đang tải ảnh lên…" : "Chọn ảnh từ máy tính"}
                 <input
                   type="file"
                   accept="image/png,image/jpeg,image/jpg"
-                  style={{ display: "none" }}
                   disabled={uploadingImage || busy}
                   onChange={handleImageFileChange}
                 />
               </label>
-
               {coverUrl && (
                 <button
                   type="button"
-                  style={{
-                    background: "none",
-                    border: "none",
-                    color: "#dc3545",
-                    cursor: "pointer",
-                    textDecoration: "underline",
-                    fontSize: "0.9rem",
-                  }}
+                  className="cover-upload__remove"
                   onClick={() => setCoverUrl("")}
                 >
                   Xóa ảnh đã chọn
                 </button>
               )}
             </div>
-
             {coverUrl && (
-              <div
-                style={{
-                  width: "100%",
-                  maxWidth: "400px",
-                  borderRadius: "8px",
-                  overflow: "hidden",
-                  border: "1px solid #e2e8f0",
-                  marginTop: "4px",
-                }}
-              >
-                <img
-                  src={coverUrl}
-                  alt="Ảnh bìa xem trước"
-                  style={{ width: "100%", height: "200px", objectFit: "cover", display: "block" }}
-                />
+              <div className="cover-upload__preview">
+                <img src={coverUrl} alt="Ảnh bìa xem trước" />
               </div>
             )}
-
             <input
               name="coverImageUrl"
               type="text"
@@ -333,7 +349,6 @@ function CampaignForm({
               value={coverUrl}
               onChange={(e) => setCoverUrl(e.target.value)}
               placeholder="Hoặc dán đường dẫn ảnh https://..."
-              style={{ width: "100%" }}
             />
           </div>
         </Field>
@@ -343,7 +358,8 @@ function CampaignForm({
           </Field>
         )}
       </fieldset>
-      <fieldset disabled={busy}>
+
+      <fieldset disabled={busy} hidden={step !== 1}>
         <legend>02 / Mục tiêu gây quỹ</legend>
         <div className="form-grid">
           <Field label="Mục tiêu (VND)">
@@ -381,7 +397,8 @@ function CampaignForm({
           </Field>
         </div>
       </fieldset>
-      <fieldset disabled={busy}>
+
+      <fieldset disabled={busy} hidden={step !== 2}>
         <legend>03 / Chủ thể và tài khoản nhận tiền</legend>
         <Field label="Chủ thể gây quỹ">
           <select
@@ -422,27 +439,22 @@ function CampaignForm({
             </Field>
           </>
         )}
-        {/* THÔNG BÁO CƠ CHẾ KÝ QUỸ MINH BẠCH FUNDTRUST ESCROW */}
-        <div style={{
-          background: "#f0fdf4",
-          border: "1px solid #bbf7d0",
-          borderRadius: "8px",
-          padding: "16px",
-          marginBottom: "20px"
-        }}>
-          <div style={{ display: "flex", gap: "10px", alignItems: "flex-start" }}>
-            <FiShield size={22} color="#16a34a" style={{ flexShrink: 0, marginTop: "2px" }} />
-            <div style={{ fontSize: "14px", color: "#166534", lineHeight: "1.5" }}>
-              <strong>Cơ chế Ký quỹ Minh bạch (FundTrust Escrow):</strong>
-              <p style={{ margin: "4px 0 0" }}>
-                Mọi khoản đóng góp của Nhà hảo tâm sẽ được chuyển trực tiếp vào <strong>Tài khoản Quỹ trung tâm (Vietcombank - 1020369607)</strong>. 
-                Tài khoản ngân hàng bạn cung cấp dưới đây là <strong>tài khoản thụ hưởng của Chủ chiến dịch dùng để nhận tiền giải ngân</strong> sau khi được Ban quản trị thẩm định hóa đơn chứng từ.
-              </p>
-            </div>
+        <div className="escrow-notice">
+          <FiShield size={22} aria-hidden="true" />
+          <div>
+            <strong>Cơ chế Ký quỹ Minh bạch (FundTrust Escrow):</strong>
+            <p>
+              Mọi khoản đóng góp của Nhà hảo tâm sẽ được chuyển trực tiếp vào{" "}
+              <strong>Tài khoản Quỹ trung tâm (Vietcombank - 1020369607)</strong>.
+              Tài khoản ngân hàng bạn cung cấp dưới đây là{" "}
+              <strong>
+                tài khoản thụ hưởng của Chủ chiến dịch dùng để nhận tiền giải ngân
+              </strong>{" "}
+              sau khi được Ban quản trị thẩm định hóa đơn chứng từ.
+            </p>
           </div>
         </div>
 
-        {/* LỚP 1: DROPDOWN CHUẨN NAPAS & LỚP 2: REGEX SỐ TÀI KHOẢN */}
         <div className="form-grid">
           <Field
             label="Ngân hàng nhận giải ngân (Chuẩn Napas 247)"
@@ -474,17 +486,18 @@ function CampaignForm({
               maxLength={19}
               placeholder="Ví dụ: 0987654321"
               value={accountNumber}
-              onChange={(e) => setAccountNumber(e.target.value.replace(/[^0-9]/g, ""))}
+              onChange={(e) =>
+                setAccountNumber(e.target.value.replace(/[^0-9]/g, ""))
+              }
             />
           </Field>
         </div>
 
-        {/* LỚP 3 & 4: TỰ ĐỘNG KHÓA THEO HỒ SƠ KYC ĐÃ XÁC MINH */}
         <Field
           label="Tên chủ tài khoản"
           hint={
             organizer === "INDIVIDUAL"
-              ? `🔒 Hệ thống tự động khóa cố định theo Họ tên KYC đã xác thực (${user?.name || "Người gây quỹ"}). Tuyệt đối không được dùng tài khoản của người khác.`
+              ? `Hệ thống khóa theo Họ tên KYC đã xác thực (${user?.name || "Người gây quỹ"}). Không dùng tài khoản của người khác.`
               : "Tên pháp nhân hoặc chủ tài khoản đại diện cơ quan / tổ chức."
           }
         >
@@ -494,44 +507,30 @@ function CampaignForm({
             minLength={2}
             maxLength={150}
             readOnly={organizer === "INDIVIDUAL"}
-            defaultValue={organizer === "INDIVIDUAL" ? user?.name : (c?.bankAccountName || user?.name)}
-            style={
+            className={organizer === "INDIVIDUAL" ? "input-locked" : undefined}
+            defaultValue={
               organizer === "INDIVIDUAL"
-                ? {
-                    backgroundColor: "#f1f5f9",
-                    cursor: "not-allowed",
-                    fontWeight: 600,
-                    color: "#0f172a",
-                  }
-                : {}
+                ? user?.name
+                : c?.bankAccountName || user?.name
             }
           />
         </Field>
 
-        {/* LỰA CHỌN THÊM VÍ ĐIỆN TỬ MOMO */}
-        <div
-          style={{
-            margin: "1rem 0",
-            padding: "1rem",
-            background: "#fdf2f8",
-            border: "1px solid #fbcfe8",
-            borderRadius: "10px",
-          }}
-        >
-          <label className="check" style={{ margin: 0, fontWeight: 600, color: "#be185d" }}>
+        <div className="momo-opt-in">
+          <label className="check">
             <input
               type="checkbox"
               checked={enableMomo}
               onChange={(e) => setEnableMomo(e.target.checked)}
             />
-            💖 Bật tùy chọn nhận quyên góp qua Ví điện tử MoMo
+            Bật tùy chọn nhận quyên góp qua Ví điện tử MoMo
           </label>
-          <p style={{ margin: "4px 0 10px 0", fontSize: "0.85rem", color: "#6b7280" }}>
-            Cho phép nhà hảo tâm chuyển tiền nhanh 1 chạm bằng App MoMo hoặc quét mã QR MoMo P2P.
+          <p>
+            Cho phép nhà hảo tâm chuyển tiền nhanh bằng App MoMo hoặc quét mã QR
+            MoMo P2P.
           </p>
-
           {enableMomo && (
-            <div className="form-grid" style={{ marginTop: "0.75rem" }}>
+            <div className="form-grid">
               <Field
                 label="Số điện thoại MoMo"
                 hint="Số điện thoại đăng ký ví MoMo (10 chữ số, bắt đầu bằng số 0)"
@@ -544,7 +543,9 @@ function CampaignForm({
                   maxLength={10}
                   placeholder="Ví dụ: 0987654321"
                   value={momoPhone}
-                  onChange={(e) => setMomoPhone(e.target.value.replace(/[^0-9]/g, ""))}
+                  onChange={(e) =>
+                    setMomoPhone(e.target.value.replace(/[^0-9]/g, ""))
+                  }
                 />
               </Field>
               <Field
@@ -559,13 +560,13 @@ function CampaignForm({
                   name="momoAccountName"
                   required={enableMomo}
                   readOnly={organizer === "INDIVIDUAL"}
-                  value={organizer === "INDIVIDUAL" ? (user?.name || "") : momoName}
-                  onChange={(e) => setMomoName(e.target.value)}
-                  style={
-                    organizer === "INDIVIDUAL"
-                      ? { backgroundColor: "#f1f5f9", cursor: "not-allowed", fontWeight: 600 }
-                      : {}
+                  className={
+                    organizer === "INDIVIDUAL" ? "input-locked" : undefined
                   }
+                  value={
+                    organizer === "INDIVIDUAL" ? user?.name || "" : momoName
+                  }
+                  onChange={(e) => setMomoName(e.target.value)}
                 />
               </Field>
             </div>
@@ -582,17 +583,43 @@ function CampaignForm({
           khoản chỉ phục vụ mục đích từ thiện.
         </label>
       </fieldset>
-      <div className="actions">
-        <button className="button secondary" disabled={busy} value="DRAFT">
-          Lưu bản nháp
-        </button>
-        <button
-          className="button"
-          disabled={busy || !categories.length}
-          value="PENDING_APPROVAL"
-        >
-          {busy ? "Đang lưu…" : "Gửi xét duyệt"}
-        </button>
+
+      <div className="wizard-nav">
+        {step > 0 ? (
+          <button
+            type="button"
+            className="button secondary"
+            disabled={busy}
+            onClick={() => setStep((s) => s - 1)}
+          >
+            Quay lại
+          </button>
+        ) : (
+          <span />
+        )}
+        {step < STEPS.length - 1 ? (
+          <button
+            type="button"
+            className="button"
+            disabled={busy}
+            onClick={() => setStep((s) => s + 1)}
+          >
+            Tiếp tục
+          </button>
+        ) : (
+          <div className="actions">
+            <button className="button secondary" disabled={busy} value="DRAFT">
+              Lưu bản nháp
+            </button>
+            <button
+              className="button"
+              disabled={busy || !categories.length}
+              value="PENDING_APPROVAL"
+            >
+              {busy ? "Đang lưu…" : "Gửi xét duyệt"}
+            </button>
+          </div>
+        )}
       </div>
     </form>
   );

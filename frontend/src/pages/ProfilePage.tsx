@@ -1,10 +1,11 @@
 import { useState, type FormEvent } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { profileApi, verificationApi } from "../services/api";
+import { profileApi, uploadApi, verificationApi } from "../services/api";
 import {
   errorMessage,
   normalizeUser,
   payload,
+  safeUrl,
   type RecordData,
 } from "../services/platform";
 import { useAuthStore } from "../store/authStore";
@@ -66,7 +67,36 @@ export default function ProfilePage() {
 }
 function ProfileForm({ data }: { data: RecordData }) {
   const [busy, setBusy] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
+  const [avatarUrl, setAvatarUrl] = useState<string>(data.avatarUrl || "");
+  const preview = safeUrl(avatarUrl);
+
+  async function handleAvatarFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    if (
+      !["image/png", "image/jpeg", "image/jpg"].includes(file.type) ||
+      file.size > 5 * 1024 * 1024
+    ) {
+      toast.error("Chọn ảnh PNG/JPEG tối đa 5MB.");
+      return;
+    }
+    setUploading(true);
+    setError("");
+    try {
+      const res = await uploadApi.uploadPublicImage(file);
+      if (!res.url) throw new Error("Máy chủ chưa trả về đường dẫn ảnh.");
+      setAvatarUrl(res.url);
+      toast.success("Đã tải ảnh đại diện lên.");
+    } catch (err) {
+      setError(errorMessage(err));
+    } finally {
+      setUploading(false);
+    }
+  }
+
   async function submit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const f = new FormData(e.currentTarget);
@@ -77,7 +107,7 @@ function ProfileForm({ data }: { data: RecordData }) {
         fullName: String(f.get("name")).trim(),
         phoneNumber: String(f.get("phone")).trim(),
         bio: String(f.get("bio")).trim(),
-        avatarUrl: String(f.get("avatar")).trim(),
+        avatarUrl: avatarUrl.trim(),
       });
       useAuthStore
         .getState()
@@ -112,14 +142,49 @@ function ProfileForm({ data }: { data: RecordData }) {
           defaultValue={data.phoneNumber || ""}
         />
       </Field>
-      <Field label="Ảnh đại diện (URL công khai)">
-        <input
-          name="avatar"
-          type="url"
-          pattern="https?://.*"
-          maxLength={500}
-          defaultValue={data.avatarUrl || ""}
-        />
+      <Field
+        label="Ảnh đại diện"
+        hint="Tải PNG/JPEG từ máy tính (tối đa 5MB), hoặc dán URL ảnh công khai."
+      >
+        <div className="cover-upload profile-avatar-upload">
+          <div className="cover-upload__actions">
+            <label
+              className={`button secondary cover-upload__file ${uploading || busy ? "is-disabled" : ""}`}
+            >
+              {uploading ? "Đang tải ảnh lên…" : "Chọn ảnh từ máy tính"}
+              <input
+                type="file"
+                accept="image/png,image/jpeg,image/jpg"
+                disabled={uploading || busy}
+                onChange={handleAvatarFile}
+              />
+            </label>
+            {avatarUrl && (
+              <button
+                type="button"
+                className="cover-upload__remove"
+                disabled={uploading || busy}
+                onClick={() => setAvatarUrl("")}
+              >
+                Xóa ảnh
+              </button>
+            )}
+          </div>
+          {preview && (
+            <div className="cover-upload__preview profile-avatar-preview">
+              <img src={preview} alt="Ảnh đại diện xem trước" />
+            </div>
+          )}
+          <input
+            name="avatar"
+            type="url"
+            pattern="https?://.*"
+            maxLength={500}
+            value={avatarUrl}
+            onChange={(e) => setAvatarUrl(e.target.value)}
+            placeholder="Hoặc dán đường dẫn ảnh https://..."
+          />
+        </div>
       </Field>
       <Field label="Giới thiệu">
         <textarea
@@ -129,7 +194,7 @@ function ProfileForm({ data }: { data: RecordData }) {
           defaultValue={data.bio || ""}
         />
       </Field>
-      <button className="button" disabled={busy}>
+      <button className="button" disabled={busy || uploading}>
         {busy ? "Đang lưu…" : "Lưu thông tin"}
       </button>
     </form>
