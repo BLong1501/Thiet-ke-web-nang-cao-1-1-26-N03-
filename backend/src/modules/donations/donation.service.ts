@@ -919,16 +919,6 @@ export class DonationService {
       return { success: true, message: "Giao dịch đã được thanh toán thành công trước đó", donation };
     }
 
-    // Kiểm tra hết hạn phiên giao dịch
-    donation = await this.checkAndExpireDonation(donation);
-    if (donation.paymentStatus === PaymentStatus.FAILED) {
-      return {
-        success: false,
-        message: `Giao dịch ${donation.transactionCode} đã hết hạn (quá 10 phút), phiên giao dịch đã bị khóa`,
-        donation,
-      };
-    }
-
     // 5. KIỂM TRA NHẬN ĐÚNG TIỀN TỪ MÃ QR:
     // So sánh số tiền thực nhận qua ngân hàng với số tiền yêu cầu của khoản đóng góp
     const transferAmount = Number(
@@ -946,6 +936,9 @@ export class DonationService {
         donation,
       };
     }
+
+    // Nếu tiền thực tế đã vào tài khoản ngân hàng, hệ thống chấp nhận hoàn tất giao dịch
+    // (kể cả khi quá 10 phút, nhằm bảo vệ tiền và quyền lợi của nhà hảo tâm)
 
     // 6. Xác nhận thanh toán thành công vào hệ thống
     const result = await this.repo.confirmPayment(donation.id, {
