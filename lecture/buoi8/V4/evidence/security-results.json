@@ -1,7 +1,7 @@
 {
   "environment": "LOCAL",
-  "generatedAt": "2026-10-16T03:18:35.479Z",
-  "baseUrl": "http://127.0.0.1:52105/api/v1",
+  "generatedAt": "2026-10-14T06:48:35.920Z",
+  "baseUrl": "http://127.0.0.1:51471/api/v1",
   "kind": "Actual HTTP/MySQL checks, one explicit production-mode fault injection",
   "checks": [
     {
@@ -11,7 +11,7 @@
       "observations": [
         {
           "method": "GET",
-          "url": "http://127.0.0.1:52105/api/v1/campaigns?search='%20OR%20'1'%3D'1",
+          "url": "http://127.0.0.1:51471/api/v1/campaigns?search='%20OR%20'1'%3D'1",
           "role": "ADMIN",
           "status": 200,
           "data": {
@@ -34,7 +34,7 @@
             "content-type": "application/json; charset=utf-8",
             "cross-origin-opener-policy": "same-origin",
             "cross-origin-resource-policy": "same-origin",
-            "date": "Fri, 16 Oct 2026 03:18:33 GMT",
+            "date": "Wed, 14 Oct 2026 06:48:33 GMT",
             "etag": "W/\"89-wS0Mm2i+r7969gymERffga9NBqY\"",
             "keep-alive": "timeout=5",
             "origin-agent-cluster": "?1",
@@ -47,20 +47,20 @@
             "x-download-options": "noopen",
             "x-frame-options": "SAMEORIGIN",
             "x-permitted-cross-domain-policies": "none",
-            "x-request-id": "ed12cfa9-f2fe-4524-8038-0302ba44d557",
+            "x-request-id": "62f2d00d-3dff-4ed9-ac79-88162160077c",
             "x-xss-protection": "0"
           },
-          "time": "2026-10-16T03:18:33.138Z"
+          "time": "2026-10-14T06:48:33.530Z"
         },
         {
           "method": "GET",
-          "url": "http://127.0.0.1:52105/api/v1/campaigns/'%20OR%20'1'%3D'1",
+          "url": "http://127.0.0.1:51471/api/v1/campaigns/'%20OR%20'1'%3D'1",
           "role": "ADMIN",
           "status": 404,
           "data": {
             "success": false,
             "message": "Chiến dịch không tồn tại hoặc đã bị xóa",
-            "requestId": "70109ab0-c5df-45c0-9096-ab3c07cbb106"
+            "requestId": "7dbb90ca-e7e3-4310-9be5-37734cd84e9a"
           },
           "headers": {
             "access-control-allow-credentials": "true",
@@ -70,8 +70,8 @@
             "content-type": "application/json; charset=utf-8",
             "cross-origin-opener-policy": "same-origin",
             "cross-origin-resource-policy": "same-origin",
-            "date": "Fri, 16 Oct 2026 03:18:33 GMT",
-            "etag": "W/\"88-PcjWJf7pmS3qFnVudYJVkVrJW68\"",
+            "date": "Wed, 14 Oct 2026 06:48:33 GMT",
+            "etag": "W/\"88-JxidiMIalS4344Vrplq+3mA2eGQ\"",
             "keep-alive": "timeout=5",
             "origin-agent-cluster": "?1",
             "referrer-policy": "no-referrer",
@@ -82,14 +82,14 @@
             "x-download-options": "noopen",
             "x-frame-options": "SAMEORIGIN",
             "x-permitted-cross-domain-policies": "none",
-            "x-request-id": "70109ab0-c5df-45c0-9096-ab3c07cbb106",
+            "x-request-id": "7dbb90ca-e7e3-4310-9be5-37734cd84e9a",
             "x-xss-protection": "0"
           },
-          "time": "2026-10-16T03:18:33.146Z"
+          "time": "2026-10-14T06:48:33.540Z"
         },
         {
           "method": "GET",
-          "url": "http://127.0.0.1:52105/api/v1/users?search='%20OR%20'1'%3D'1",
+          "url": "http://127.0.0.1:51471/api/v1/users?search='%20OR%20'1'%3D'1",
           "role": "ADMIN",
           "status": 200,
           "data": {
@@ -111,7 +111,7 @@
             "content-type": "application/json; charset=utf-8",
             "cross-origin-opener-policy": "same-origin",
             "cross-origin-resource-policy": "same-origin",
-            "date": "Fri, 16 Oct 2026 03:18:33 GMT",
+            "date": "Wed, 14 Oct 2026 06:48:33 GMT",
             "etag": "W/\"89-WggJw6wn7/byRmEwzflhSxtGdbU\"",
             "keep-alive": "timeout=5",
             "origin-agent-cluster": "?1",
@@ -123,14 +123,14 @@
             "x-download-options": "noopen",
             "x-frame-options": "SAMEORIGIN",
             "x-permitted-cross-domain-policies": "none",
-            "x-request-id": "dabd2075-778c-4881-a907-7781c62dc158",
+            "x-request-id": "5917c3de-bca3-4dd1-a1f8-50d7f0776eaa",
             "x-xss-protection": "0"
           },
-          "time": "2026-10-16T03:18:33.155Z"
+          "time": "2026-10-14T06:48:33.549Z"
         },
         {
           "method": "GET",
-          "url": "http://127.0.0.1:52105/api/v1/activity-logs?search='%20OR%20'1'%3D'1",
+          "url": "http://127.0.0.1:51471/api/v1/activity-logs?search='%20OR%20'1'%3D'1",
           "role": "ADMIN",
           "status": 200,
           "data": {
@@ -160,7 +160,7 @@
             "content-type": "application/json; charset=utf-8",
             "cross-origin-opener-policy": "same-origin",
             "cross-origin-resource-policy": "same-origin",
-            "date": "Fri, 16 Oct 2026 03:18:33 GMT",
+            "date": "Wed, 14 Oct 2026 06:48:33 GMT",
             "etag": "W/\"d2-PTqrM/gUBInXzpF/SoZqmOsmZGs\"",
             "keep-alive": "timeout=5",
             "origin-agent-cluster": "?1",
@@ -172,14 +172,14 @@
             "x-download-options": "noopen",
             "x-frame-options": "SAMEORIGIN",
             "x-permitted-cross-domain-policies": "none",
-            "x-request-id": "96d369f7-313c-4ae7-8078-baf0ebd8e312",
+            "x-request-id": "0da20115-22f0-40bb-858a-b65540e6821a",
             "x-xss-protection": "0"
           },
-          "time": "2026-10-16T03:18:33.170Z"
+          "time": "2026-10-14T06:48:33.563Z"
         },
         {
           "method": "GET",
-          "url": "http://127.0.0.1:52105/api/v1/campaigns?search=')%3BDROP%20TABLE%20users%3B--",
+          "url": "http://127.0.0.1:51471/api/v1/campaigns?search=')%3BDROP%20TABLE%20users%3B--",
           "role": "ADMIN",
           "status": 200,
           "data": {
@@ -202,7 +202,7 @@
             "content-type": "application/json; charset=utf-8",
             "cross-origin-opener-policy": "same-origin",
             "cross-origin-resource-policy": "same-origin",
-            "date": "Fri, 16 Oct 2026 03:18:33 GMT",
+            "date": "Wed, 14 Oct 2026 06:48:33 GMT",
             "etag": "W/\"89-wS0Mm2i+r7969gymERffga9NBqY\"",
             "keep-alive": "timeout=5",
             "origin-agent-cluster": "?1",
@@ -215,20 +215,20 @@
             "x-download-options": "noopen",
             "x-frame-options": "SAMEORIGIN",
             "x-permitted-cross-domain-policies": "none",
-            "x-request-id": "8d35f89b-3ba8-4b29-bb19-77e55c52db96",
+            "x-request-id": "4180aef7-5153-469f-96c8-91fcd1702628",
             "x-xss-protection": "0"
           },
-          "time": "2026-10-16T03:18:33.182Z"
+          "time": "2026-10-14T06:48:33.574Z"
         },
         {
           "method": "GET",
-          "url": "http://127.0.0.1:52105/api/v1/campaigns/')%3BDROP%20TABLE%20users%3B--",
+          "url": "http://127.0.0.1:51471/api/v1/campaigns/')%3BDROP%20TABLE%20users%3B--",
           "role": "ADMIN",
           "status": 404,
           "data": {
             "success": false,
             "message": "Chiến dịch không tồn tại hoặc đã bị xóa",
-            "requestId": "943d43fb-a113-42b0-9968-ea3fcfbf1918"
+            "requestId": "39e8c138-566d-4a0f-8730-cb356a0ae90a"
           },
           "headers": {
             "access-control-allow-credentials": "true",
@@ -238,8 +238,8 @@
             "content-type": "application/json; charset=utf-8",
             "cross-origin-opener-policy": "same-origin",
             "cross-origin-resource-policy": "same-origin",
-            "date": "Fri, 16 Oct 2026 03:18:33 GMT",
-            "etag": "W/\"88-z09aYe+9mSCG/zkRJtx+4sumf00\"",
+            "date": "Wed, 14 Oct 2026 06:48:33 GMT",
+            "etag": "W/\"88-LO+80NBLbMNN0s2wrCpN19+9aZE\"",
             "keep-alive": "timeout=5",
             "origin-agent-cluster": "?1",
             "referrer-policy": "no-referrer",
@@ -250,14 +250,14 @@
             "x-download-options": "noopen",
             "x-frame-options": "SAMEORIGIN",
             "x-permitted-cross-domain-policies": "none",
-            "x-request-id": "943d43fb-a113-42b0-9968-ea3fcfbf1918",
+            "x-request-id": "39e8c138-566d-4a0f-8730-cb356a0ae90a",
             "x-xss-protection": "0"
           },
-          "time": "2026-10-16T03:18:33.191Z"
+          "time": "2026-10-14T06:48:33.583Z"
         },
         {
           "method": "GET",
-          "url": "http://127.0.0.1:52105/api/v1/users?search=')%3BDROP%20TABLE%20users%3B--",
+          "url": "http://127.0.0.1:51471/api/v1/users?search=')%3BDROP%20TABLE%20users%3B--",
           "role": "ADMIN",
           "status": 200,
           "data": {
@@ -279,7 +279,7 @@
             "content-type": "application/json; charset=utf-8",
             "cross-origin-opener-policy": "same-origin",
             "cross-origin-resource-policy": "same-origin",
-            "date": "Fri, 16 Oct 2026 03:18:33 GMT",
+            "date": "Wed, 14 Oct 2026 06:48:33 GMT",
             "etag": "W/\"89-WggJw6wn7/byRmEwzflhSxtGdbU\"",
             "keep-alive": "timeout=5",
             "origin-agent-cluster": "?1",
@@ -291,14 +291,14 @@
             "x-download-options": "noopen",
             "x-frame-options": "SAMEORIGIN",
             "x-permitted-cross-domain-policies": "none",
-            "x-request-id": "ca2bf52f-ec7a-4227-a238-fd22737b33e7",
+            "x-request-id": "bf541be7-0587-4a07-8538-1f9eb6919454",
             "x-xss-protection": "0"
           },
-          "time": "2026-10-16T03:18:33.203Z"
+          "time": "2026-10-14T06:48:33.596Z"
         },
         {
           "method": "GET",
-          "url": "http://127.0.0.1:52105/api/v1/activity-logs?search=')%3BDROP%20TABLE%20users%3B--",
+          "url": "http://127.0.0.1:51471/api/v1/activity-logs?search=')%3BDROP%20TABLE%20users%3B--",
           "role": "ADMIN",
           "status": 200,
           "data": {
@@ -328,7 +328,7 @@
             "content-type": "application/json; charset=utf-8",
             "cross-origin-opener-policy": "same-origin",
             "cross-origin-resource-policy": "same-origin",
-            "date": "Fri, 16 Oct 2026 03:18:33 GMT",
+            "date": "Wed, 14 Oct 2026 06:48:33 GMT",
             "etag": "W/\"d2-PTqrM/gUBInXzpF/SoZqmOsmZGs\"",
             "keep-alive": "timeout=5",
             "origin-agent-cluster": "?1",
@@ -340,13 +340,13 @@
             "x-download-options": "noopen",
             "x-frame-options": "SAMEORIGIN",
             "x-permitted-cross-domain-policies": "none",
-            "x-request-id": "840b36d8-20a4-4d04-a134-5f4283052640",
+            "x-request-id": "f15286a5-bb7b-4884-a63d-0643ab40c8ea",
             "x-xss-protection": "0"
           },
-          "time": "2026-10-16T03:18:33.215Z"
+          "time": "2026-10-14T06:48:33.608Z"
         }
       ],
-      "time": "2026-10-16T03:18:33.215Z"
+      "time": "2026-10-14T06:48:33.608Z"
     },
     {
       "id": "BM2",
@@ -356,11 +356,11 @@
         "payload": "<script>alert(1)</script><img src=x onerror=alert(1)>",
         "writeStatus": 200,
         "storedValue": "<script>alert(1)</script><img src=x onerror=alert(1)>",
-        "url": "http://127.0.0.1:52105/api/v1/profile/me",
+        "url": "http://127.0.0.1:51471/api/v1/profile/me",
         "role": "USER",
         "browserProof": "See buoi9/V5/evidence/Anh_17_XSS_plain_text.png"
       },
-      "time": "2026-10-16T03:18:33.540Z"
+      "time": "2026-10-14T06:48:33.936Z"
     },
     {
       "id": "BM3",
@@ -369,13 +369,13 @@
       "observations": [
         {
           "method": "POST",
-          "url": "http://127.0.0.1:52105/api/v1/auth/login",
+          "url": "http://127.0.0.1:51471/api/v1/auth/login",
           "role": "GUEST",
           "status": 403,
           "data": {
             "success": false,
             "message": "Yêu cầu bị từ chối do vi phạm chính sách bảo mật CSRF (Invalid Origin)",
-            "requestId": "74e99f16-8fbc-4d0b-ab95-e3afbb2cef28"
+            "requestId": "28135f45-cdb6-4244-a9a4-c03476290a0e"
           },
           "headers": {
             "connection": "keep-alive",
@@ -384,8 +384,8 @@
             "content-type": "application/json; charset=utf-8",
             "cross-origin-opener-policy": "same-origin",
             "cross-origin-resource-policy": "same-origin",
-            "date": "Fri, 16 Oct 2026 03:18:33 GMT",
-            "etag": "W/\"a8-gfIRSeuqPKqRs3SIfC6fptns3Lc\"",
+            "date": "Wed, 14 Oct 2026 06:48:33 GMT",
+            "etag": "W/\"a8-YXsmn52paxVG/ZhaWvg3PmcOyrg\"",
             "keep-alive": "timeout=5",
             "origin-agent-cluster": "?1",
             "referrer-policy": "no-referrer",
@@ -395,20 +395,20 @@
             "x-download-options": "noopen",
             "x-frame-options": "SAMEORIGIN",
             "x-permitted-cross-domain-policies": "none",
-            "x-request-id": "74e99f16-8fbc-4d0b-ab95-e3afbb2cef28",
+            "x-request-id": "28135f45-cdb6-4244-a9a4-c03476290a0e",
             "x-xss-protection": "0"
           },
-          "time": "2026-10-16T03:18:33.549Z"
+          "time": "2026-10-14T06:48:33.939Z"
         },
         {
           "method": "POST",
-          "url": "http://127.0.0.1:52105/api/v1/auth/login",
+          "url": "http://127.0.0.1:51471/api/v1/auth/login",
           "role": "GUEST",
           "status": 403,
           "data": {
             "success": false,
             "message": "Yêu cầu bị từ chối do vi phạm chính sách bảo mật CSRF (Invalid Origin)",
-            "requestId": "a21a66d4-ec04-40fb-9c4f-52249c5667e8"
+            "requestId": "aa31bfd6-8061-4085-9503-31431d555b7c"
           },
           "headers": {
             "connection": "keep-alive",
@@ -417,8 +417,8 @@
             "content-type": "application/json; charset=utf-8",
             "cross-origin-opener-policy": "same-origin",
             "cross-origin-resource-policy": "same-origin",
-            "date": "Fri, 16 Oct 2026 03:18:33 GMT",
-            "etag": "W/\"a8-nlgTMnFADgGO9rU5FmYk8xBxdd4\"",
+            "date": "Wed, 14 Oct 2026 06:48:33 GMT",
+            "etag": "W/\"a8-UUwWUkqNQRjmSfRjXoGLVycjDAg\"",
             "keep-alive": "timeout=5",
             "origin-agent-cluster": "?1",
             "referrer-policy": "no-referrer",
@@ -428,13 +428,13 @@
             "x-download-options": "noopen",
             "x-frame-options": "SAMEORIGIN",
             "x-permitted-cross-domain-policies": "none",
-            "x-request-id": "a21a66d4-ec04-40fb-9c4f-52249c5667e8",
+            "x-request-id": "aa31bfd6-8061-4085-9503-31431d555b7c",
             "x-xss-protection": "0"
           },
-          "time": "2026-10-16T03:18:33.556Z"
+          "time": "2026-10-14T06:48:33.942Z"
         }
       ],
-      "time": "2026-10-16T03:18:33.556Z"
+      "time": "2026-10-14T06:48:33.942Z"
     },
     {
       "id": "BM4",
@@ -443,7 +443,7 @@
       "observations": [
         {
           "method": "GET",
-          "url": "http://127.0.0.1:52105/api/v1/donations/159d474d-878c-4810-8af3-10c9910e6fc6",
+          "url": "http://127.0.0.1:51471/api/v1/donations/159d474d-878c-4810-8af3-10c9910e6fc6",
           "role": "USER",
           "status": 200,
           "data": {
@@ -458,7 +458,7 @@
             "content-type": "application/json; charset=utf-8",
             "cross-origin-opener-policy": "same-origin",
             "cross-origin-resource-policy": "same-origin",
-            "date": "Fri, 16 Oct 2026 03:18:33 GMT",
+            "date": "Wed, 14 Oct 2026 06:48:33 GMT",
             "etag": "W/\"575-cQcgOnW4/ou/jGGPhTVU27BnZJ4\"",
             "keep-alive": "timeout=5",
             "origin-agent-cluster": "?1",
@@ -470,20 +470,20 @@
             "x-download-options": "noopen",
             "x-frame-options": "SAMEORIGIN",
             "x-permitted-cross-domain-policies": "none",
-            "x-request-id": "ffdadebe-99e5-4b1d-a8e0-a69add1e6a65",
+            "x-request-id": "7b8a27de-230a-4b7c-aa04-c97e2d7b82ae",
             "x-xss-protection": "0"
           },
-          "time": "2026-10-16T03:18:33.572Z"
+          "time": "2026-10-14T06:48:33.953Z"
         },
         {
           "method": "GET",
-          "url": "http://127.0.0.1:52105/api/v1/donations/159d474d-878c-4810-8af3-10c9910e6fc6",
+          "url": "http://127.0.0.1:51471/api/v1/donations/159d474d-878c-4810-8af3-10c9910e6fc6",
           "role": "USER_B",
           "status": 403,
           "data": {
             "success": false,
             "message": "Bạn không sở hữu khoản đóng góp này",
-            "requestId": "b019eeca-d65e-4fa2-af2b-f56a8a2f58c8"
+            "requestId": "5d072eea-3090-4358-a570-46c55e82eb08"
           },
           "headers": {
             "access-control-allow-credentials": "true",
@@ -493,8 +493,8 @@
             "content-type": "application/json; charset=utf-8",
             "cross-origin-opener-policy": "same-origin",
             "cross-origin-resource-policy": "same-origin",
-            "date": "Fri, 16 Oct 2026 03:18:33 GMT",
-            "etag": "W/\"81-cR7b6bJxfUNIkoIjepjar3P6EhA\"",
+            "date": "Wed, 14 Oct 2026 06:48:34 GMT",
+            "etag": "W/\"81-3tww2W6HF0FlTNxOEUXOI4OF1iM\"",
             "keep-alive": "timeout=5",
             "origin-agent-cluster": "?1",
             "referrer-policy": "no-referrer",
@@ -505,13 +505,13 @@
             "x-download-options": "noopen",
             "x-frame-options": "SAMEORIGIN",
             "x-permitted-cross-domain-policies": "none",
-            "x-request-id": "b019eeca-d65e-4fa2-af2b-f56a8a2f58c8",
+            "x-request-id": "5d072eea-3090-4358-a570-46c55e82eb08",
             "x-xss-protection": "0"
           },
-          "time": "2026-10-16T03:18:33.703Z"
+          "time": "2026-10-14T06:48:34.101Z"
         }
       ],
-      "time": "2026-10-16T03:18:33.703Z"
+      "time": "2026-10-14T06:48:34.101Z"
     },
     {
       "id": "BM5",
@@ -523,7 +523,7 @@
         "matrixFile": "permission-matrix.json",
         "scope": "All role-denied cells for listed existing route groups; object ownership separately tested, not every business-state permutation"
       },
-      "time": "2026-10-16T03:18:34.027Z"
+      "time": "2026-10-14T06:48:34.487Z"
     },
     {
       "id": "BM6",
@@ -551,10 +551,10 @@
             "hashTail": "REDACTED"
           }
         ],
-        "time": "2026-10-16T03:18:34.419Z",
+        "time": "2026-10-14T06:48:34.863Z",
         "role": "LOCAL DB TEST OPERATOR"
       },
-      "time": "2026-10-16T03:18:34.419Z"
+      "time": "2026-10-14T06:48:34.863Z"
     },
     {
       "id": "BM7",
@@ -563,13 +563,13 @@
       "observations": {
         "access": {
           "method": "GET",
-          "url": "http://127.0.0.1:52105/api/v1/auth/me",
+          "url": "http://127.0.0.1:51471/api/v1/auth/me",
           "role": "SESSION",
           "status": 401,
           "data": {
             "success": false,
             "message": "Phiên đăng nhập không hợp lệ hoặc đã hết hạn",
-            "requestId": "e18dbc3f-11f1-4179-8d5e-9a3e00219972"
+            "requestId": "d7f2b023-cb54-464c-bb25-72baaea53390"
           },
           "headers": {
             "access-control-allow-credentials": "true",
@@ -579,8 +579,8 @@
             "content-type": "application/json; charset=utf-8",
             "cross-origin-opener-policy": "same-origin",
             "cross-origin-resource-policy": "same-origin",
-            "date": "Fri, 16 Oct 2026 03:18:34 GMT",
-            "etag": "W/\"8f-4qhh4DcXUmjJrFgvHiF54UyQXr0\"",
+            "date": "Wed, 14 Oct 2026 06:48:35 GMT",
+            "etag": "W/\"8f-mK87Wv+2SFFVqOo5774yCEWsO9U\"",
             "keep-alive": "timeout=5",
             "origin-agent-cluster": "?1",
             "referrer-policy": "no-referrer",
@@ -591,20 +591,20 @@
             "x-download-options": "noopen",
             "x-frame-options": "SAMEORIGIN",
             "x-permitted-cross-domain-policies": "none",
-            "x-request-id": "e18dbc3f-11f1-4179-8d5e-9a3e00219972",
+            "x-request-id": "d7f2b023-cb54-464c-bb25-72baaea53390",
             "x-xss-protection": "0"
           },
-          "time": "2026-10-16T03:18:34.603Z"
+          "time": "2026-10-14T06:48:35.060Z"
         },
         "refresh": {
           "method": "POST",
-          "url": "http://127.0.0.1:52105/api/v1/auth/refresh-token",
+          "url": "http://127.0.0.1:51471/api/v1/auth/refresh-token",
           "role": "GUEST",
           "status": 401,
           "data": {
             "success": false,
             "message": "Phiên đã kết thúc",
-            "requestId": "ff8c0639-e437-431e-9a1f-c124b52b7af2"
+            "requestId": "8b236ce9-a04b-4928-bc75-78f6268b37a4"
           },
           "headers": {
             "access-control-allow-credentials": "true",
@@ -615,8 +615,8 @@
             "content-type": "application/json; charset=utf-8",
             "cross-origin-opener-policy": "same-origin",
             "cross-origin-resource-policy": "same-origin",
-            "date": "Fri, 16 Oct 2026 03:18:34 GMT",
-            "etag": "W/\"68-OCQheo7e826N98L6yyiz2NVyxGY\"",
+            "date": "Wed, 14 Oct 2026 06:48:35 GMT",
+            "etag": "W/\"68-bx3mBDy53I1p1THOr+Hn9bxpwlc\"",
             "keep-alive": "timeout=5",
             "origin-agent-cluster": "?1",
             "referrer-policy": "no-referrer",
@@ -627,20 +627,20 @@
             "x-download-options": "noopen",
             "x-frame-options": "SAMEORIGIN",
             "x-permitted-cross-domain-policies": "none",
-            "x-request-id": "ff8c0639-e437-431e-9a1f-c124b52b7af2",
+            "x-request-id": "8b236ce9-a04b-4928-bc75-78f6268b37a4",
             "x-xss-protection": "0"
           },
-          "time": "2026-10-16T03:18:34.608Z"
+          "time": "2026-10-14T06:48:35.063Z"
         },
         "expired": {
           "method": "GET",
-          "url": "http://127.0.0.1:52105/api/v1/auth/me",
+          "url": "http://127.0.0.1:51471/api/v1/auth/me",
           "role": "EXPIRED",
           "status": 401,
           "data": {
             "success": false,
             "message": "Phiên đăng nhập không hợp lệ hoặc đã hết hạn",
-            "requestId": "6c0efc2f-a73a-4047-8af7-308ce5e775f9"
+            "requestId": "76f106f1-e18f-4d5b-b1c3-4129e27b6639"
           },
           "headers": {
             "access-control-allow-credentials": "true",
@@ -650,8 +650,8 @@
             "content-type": "application/json; charset=utf-8",
             "cross-origin-opener-policy": "same-origin",
             "cross-origin-resource-policy": "same-origin",
-            "date": "Fri, 16 Oct 2026 03:18:34 GMT",
-            "etag": "W/\"8f-5xFREzXqmFybyRVwLKCOnhCsRVc\"",
+            "date": "Wed, 14 Oct 2026 06:48:35 GMT",
+            "etag": "W/\"8f-V1hyWNiUuxJ2mFps8D3xG+49uiE\"",
             "keep-alive": "timeout=5",
             "origin-agent-cluster": "?1",
             "referrer-policy": "no-referrer",
@@ -662,10 +662,10 @@
             "x-download-options": "noopen",
             "x-frame-options": "SAMEORIGIN",
             "x-permitted-cross-domain-policies": "none",
-            "x-request-id": "6c0efc2f-a73a-4047-8af7-308ce5e775f9",
+            "x-request-id": "76f106f1-e18f-4d5b-b1c3-4129e27b6639",
             "x-xss-protection": "0"
           },
-          "time": "2026-10-16T03:18:34.611Z"
+          "time": "2026-10-14T06:48:35.065Z"
         },
         "cookieFlags": {
           "httpOnly": true,
@@ -675,37 +675,37 @@
         "cookieValue": "NOT_RECORDED",
         "nativeCookieProof": "Capture Application tab after production deployment"
       },
-      "time": "2026-10-16T03:18:34.611Z"
+      "time": "2026-10-14T06:48:35.065Z"
     },
     {
       "id": "BM8",
       "title": "Fake image rejected and private URL unauthenticated is blocked",
       "result": "PASS",
       "observations": {
-        "url": "http://127.0.0.1:52105/api/v1/uploads",
+        "url": "http://127.0.0.1:51471/api/v1/uploads",
         "role": "USER",
         "file": "anh-gia.jpg",
         "status": 415,
         "response": {
           "success": false,
           "message": "Chỉ nhận ảnh PNG/JPEG thật; nội dung, đuôi tệp và MIME phải khớp",
-          "requestId": "e030e37c-2615-4e0c-b85b-8fb03c201e10"
+          "requestId": "26f1b0f8-40b7-41a1-93ea-6891472edc5b"
         },
         "storedFile": {
-          "id": "2c5ff173-bcf8-4311-a87d-9de9cd366571",
+          "id": "7b228661-69ea-4779-83b8-ca60c466e6c8",
           "uploaded": 201,
           "ownerRead": 200,
           "visibility": "PRIVATE"
         },
         "blocked": {
           "method": "GET",
-          "url": "http://127.0.0.1:52105/api/v1/uploads/2c5ff173-bcf8-4311-a87d-9de9cd366571",
+          "url": "http://127.0.0.1:51471/api/v1/uploads/7b228661-69ea-4779-83b8-ca60c466e6c8",
           "role": "GUEST",
           "status": 401,
           "data": {
             "success": false,
             "message": "Yêu cầu đăng nhập để truy cập tài nguyên này",
-            "requestId": "7dee50e7-634f-478c-af6b-085ec24ebc50"
+            "requestId": "cf9598c4-4c0e-444d-ab3e-44896b080703"
           },
           "headers": {
             "access-control-allow-credentials": "true",
@@ -715,8 +715,8 @@
             "content-type": "application/json; charset=utf-8",
             "cross-origin-opener-policy": "same-origin",
             "cross-origin-resource-policy": "same-origin",
-            "date": "Fri, 16 Oct 2026 03:18:34 GMT",
-            "etag": "W/\"8c-9uv8x2txsOux61zeZ1uXWLmv6wc\"",
+            "date": "Wed, 14 Oct 2026 06:48:35 GMT",
+            "etag": "W/\"8c-I8nlsy2XcJThM0Vf9xOaCoHYmmo\"",
             "keep-alive": "timeout=5",
             "origin-agent-cluster": "?1",
             "referrer-policy": "no-referrer",
@@ -727,20 +727,20 @@
             "x-download-options": "noopen",
             "x-frame-options": "SAMEORIGIN",
             "x-permitted-cross-domain-policies": "none",
-            "x-request-id": "7dee50e7-634f-478c-af6b-085ec24ebc50",
+            "x-request-id": "cf9598c4-4c0e-444d-ab3e-44896b080703",
             "x-xss-protection": "0"
           },
-          "time": "2026-10-16T03:18:34.668Z"
+          "time": "2026-10-14T06:48:35.105Z"
         },
         "crossOwner": {
           "method": "GET",
-          "url": "http://127.0.0.1:52105/api/v1/uploads/2c5ff173-bcf8-4311-a87d-9de9cd366571",
+          "url": "http://127.0.0.1:51471/api/v1/uploads/7b228661-69ea-4779-83b8-ca60c466e6c8",
           "role": "USER_B",
           "status": 403,
           "data": {
             "success": false,
             "message": "Bạn không có quyền đọc tệp này",
-            "requestId": "59238fcd-0c6f-4d11-838a-69094c1d13b1"
+            "requestId": "daa732e4-a355-472a-bbd5-8bd634f070e9"
           },
           "headers": {
             "access-control-allow-credentials": "true",
@@ -750,8 +750,8 @@
             "content-type": "application/json; charset=utf-8",
             "cross-origin-opener-policy": "same-origin",
             "cross-origin-resource-policy": "same-origin",
-            "date": "Fri, 16 Oct 2026 03:18:34 GMT",
-            "etag": "W/\"7b-dVxFOJXKI4eWcCwtR6nf+xiFvMo\"",
+            "date": "Wed, 14 Oct 2026 06:48:35 GMT",
+            "etag": "W/\"7b-g3CPmmVNJ5IoW2wEs3j/TG+eiNM\"",
             "keep-alive": "timeout=5",
             "origin-agent-cluster": "?1",
             "referrer-policy": "no-referrer",
@@ -762,13 +762,13 @@
             "x-download-options": "noopen",
             "x-frame-options": "SAMEORIGIN",
             "x-permitted-cross-domain-policies": "none",
-            "x-request-id": "59238fcd-0c6f-4d11-838a-69094c1d13b1",
+            "x-request-id": "daa732e4-a355-472a-bbd5-8bd634f070e9",
             "x-xss-protection": "0"
           },
-          "time": "2026-10-16T03:18:34.674Z"
+          "time": "2026-10-14T06:48:35.108Z"
         }
       },
-      "time": "2026-10-16T03:18:34.677Z"
+      "time": "2026-10-14T06:48:35.110Z"
     },
     {
       "id": "BM9",
@@ -776,13 +776,13 @@
       "result": "PASS",
       "observations": {
         "method": "POST",
-        "url": "http://127.0.0.1:52105/api/v1/auth/login",
+        "url": "http://127.0.0.1:51471/api/v1/auth/login",
         "role": "GUEST",
         "status": 500,
         "data": {
           "success": false,
           "message": "Đã xảy ra lỗi hệ thống nội bộ. Vui lòng thử lại sau hoặc liên hệ ban quản trị.",
-          "requestId": "d67bd944-21b3-42a4-852c-6dd81781cebd"
+          "requestId": "76066a70-e711-45cf-a1c1-43cfddf3f8db"
         },
         "headers": {
           "access-control-allow-credentials": "true",
@@ -792,8 +792,8 @@
           "content-type": "application/json; charset=utf-8",
           "cross-origin-opener-policy": "same-origin",
           "cross-origin-resource-policy": "same-origin",
-          "date": "Fri, 16 Oct 2026 03:18:34 GMT",
-          "etag": "W/\"bb-59KrIQZ/NHDd0/ilztxJwfTpckg\"",
+          "date": "Wed, 14 Oct 2026 06:48:35 GMT",
+          "etag": "W/\"bb-7h7oMiNwDJ7e8CEcKwN5RG9alik\"",
           "keep-alive": "timeout=5",
           "origin-agent-cluster": "?1",
           "referrer-policy": "no-referrer",
@@ -804,20 +804,20 @@
           "x-download-options": "noopen",
           "x-frame-options": "SAMEORIGIN",
           "x-permitted-cross-domain-policies": "none",
-          "x-request-id": "d67bd944-21b3-42a4-852c-6dd81781cebd",
+          "x-request-id": "76066a70-e711-45cf-a1c1-43cfddf3f8db",
           "x-xss-protection": "0"
         },
-        "time": "2026-10-16T03:18:34.794Z",
+        "time": "2026-10-14T06:48:35.225Z",
         "scenario": "Production mode; deliberately injected repository failure, no DB mutation"
       },
-      "time": "2026-10-16T03:18:34.794Z"
+      "time": "2026-10-14T06:48:35.226Z"
     },
     {
       "id": "BM10",
       "title": "Six failures yield 429 and are recorded in audit log",
       "result": "PASS",
       "observations": {
-        "url": "http://127.0.0.1:52105/api/v1/auth/login",
+        "url": "http://127.0.0.1:51471/api/v1/auth/login",
         "role": "INVALID TEST ACCOUNT",
         "attempts": [
           {
@@ -826,7 +826,7 @@
             "response": {
               "success": false,
               "message": "Email hoặc mật khẩu không chính xác",
-              "requestId": "a0f6f5c7-bf9c-46c8-989d-121d33eba2a0"
+              "requestId": "f47c8654-95ef-44a8-a57d-138c244b8a48"
             }
           },
           {
@@ -835,7 +835,7 @@
             "response": {
               "success": false,
               "message": "Email hoặc mật khẩu không chính xác",
-              "requestId": "3868c0d5-3c01-4966-8f75-b2943872de52"
+              "requestId": "6b4ed77d-5648-474c-80ae-f435aa24af0f"
             }
           },
           {
@@ -844,7 +844,7 @@
             "response": {
               "success": false,
               "message": "Email hoặc mật khẩu không chính xác",
-              "requestId": "73635a7a-3a5e-4ada-ab24-f1ebd856da58"
+              "requestId": "ab01d544-b19c-4967-9ad9-25e4ce6871e8"
             }
           },
           {
@@ -853,7 +853,7 @@
             "response": {
               "success": false,
               "message": "Email hoặc mật khẩu không chính xác",
-              "requestId": "b08e954e-d4a0-4727-8905-1178e28e441f"
+              "requestId": "32b0e268-c1fa-4bdf-9bde-50f1ec0ccc41"
             }
           },
           {
@@ -862,7 +862,7 @@
             "response": {
               "success": false,
               "message": "Email hoặc mật khẩu không chính xác",
-              "requestId": "12f0ab4f-a2fc-44b4-958e-581a116ab8b6"
+              "requestId": "fb413dde-fd5a-4d2e-9ecf-462be887662a"
             }
           },
           {
@@ -871,58 +871,58 @@
             "response": {
               "success": false,
               "message": "Tài khoản đã bị tạm khóa đăng nhập trong 10 phút do nhập sai quá 5 lần liên tiếp. Vui lòng thử lại sau 10 phút.",
-              "requestId": "1e5065be-9e7e-46c3-ad97-8ccb1c4137bd"
+              "requestId": "609e6a74-a88f-47be-8b9d-3488b37d27af"
             }
           }
         ],
         "logs": [
           {
             "action": "LOGIN_FAILED",
-            "createdAt": "2026-10-16T03:18:34.807Z"
+            "createdAt": "2026-10-14T06:48:35.236Z"
           },
           {
             "action": "LOGIN_FAILED",
-            "createdAt": "2026-10-16T03:18:34.920Z"
+            "createdAt": "2026-10-14T06:48:35.356Z"
           },
           {
             "action": "LOGIN_FAILED",
-            "createdAt": "2026-10-16T03:18:35.042Z"
+            "createdAt": "2026-10-14T06:48:35.463Z"
           },
           {
             "action": "LOGIN_FAILED",
-            "createdAt": "2026-10-16T03:18:35.167Z"
+            "createdAt": "2026-10-14T06:48:35.597Z"
           },
           {
             "action": "LOGIN_FAILED",
-            "createdAt": "2026-10-16T03:18:35.274Z"
+            "createdAt": "2026-10-14T06:48:35.703Z"
           },
           {
             "action": "ACCOUNT_LOCKED_TEMPORARY",
-            "createdAt": "2026-10-16T03:18:35.378Z"
+            "createdAt": "2026-10-14T06:48:35.812Z"
           }
         ]
       },
-      "time": "2026-10-16T03:18:35.476Z"
+      "time": "2026-10-14T06:48:35.918Z"
     },
     {
       "id": "BM11",
       "title": "Secret scan of reachable Git history",
       "result": "PASS",
       "observations": {
-        "generatedAt": "2026-10-14T07:04:13.813Z",
+        "generatedAt": "2026-10-14T05:59:03.075Z",
         "scope": "All reachable git objects; four explicit detectors, not exhaustive secret assurance",
-        "scanned": 531,
+        "scanned": 512,
         "findings": []
       },
-      "time": "2026-10-16T03:18:35.477Z"
+      "time": "2026-10-14T06:48:35.919Z"
     },
     {
       "id": "BM12",
       "title": "Five headers on current running API",
       "result": "PASS",
       "observations": {
-        "url": "http://127.0.0.1:52105/api/v1/health",
-        "time": "2026-10-16T03:18:35.479Z",
+        "url": "http://127.0.0.1:51471/api/v1/health",
+        "time": "2026-10-14T06:48:35.920Z",
         "role": "GUEST",
         "status": 200,
         "headers": {
@@ -934,7 +934,7 @@
         },
         "https": "NOT VERIFIED: localhost HTTP"
       },
-      "time": "2026-10-16T03:18:35.479Z"
+      "time": "2026-10-14T06:48:35.920Z"
     }
   ]
 }
