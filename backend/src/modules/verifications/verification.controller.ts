@@ -1,3 +1,4 @@
+import { auditService } from "../../core/services/audit.service";
 import { Request, Response, NextFunction } from "express";
 import { verificationService, VerificationService } from "./verification.service";
 import { sendSuccess } from "../../core/utils/response.util";
@@ -9,6 +10,7 @@ export class VerificationController {
     try {
       const userId = req.user!.userId;
       const result = await this.service.submitVerification(userId, req.body);
+      await auditService.log({ req, action: "SUBMIT_KYC", entityName: "Verification", entityId: result.verification.id });
       return sendSuccess(res, 201, result.message, result.verification);
     } catch (error) {
       return next(error);
@@ -51,6 +53,7 @@ export class VerificationController {
       const adminId = req.user!.userId;
       const id = String(req.params.id);
       const result = await this.service.reviewVerification(adminId, id, req.body);
+      await auditService.log({ req, action: "REVIEW_KYC", entityName: "Verification", entityId: id });
       return sendSuccess(res, 200, result.message, result);
     } catch (error) {
       return next(error);

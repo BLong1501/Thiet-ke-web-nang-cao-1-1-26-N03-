@@ -1,3 +1,4 @@
+import { auditService } from "../../core/services/audit.service";
 import { userRepository, UserRepository } from "./user.repository";
 import { UserQueryInput, UpdateUserStatusInput } from "./user.validation";
 import { prisma } from "../../core/database/prisma";
@@ -66,19 +67,12 @@ export class UserService {
     const updatedUser = await this.repo.updateStatus(id, input.status);
 
     // Ghi AuditLog
-    await prisma.auditLog.create({
-      data: {
+    await auditService.log({
         userId: adminId,
         action: "UPDATE_USER_STATUS",
         entityName: "User",
         entityId: id,
-        details: {
-          previousStatus: user.status,
-          newStatus: input.status,
-          reason: input.reason,
-        },
-      },
-    });
+      });
 
     return {
       message: `Cập nhật trạng thái người dùng sang "${input.status}" thành công`,

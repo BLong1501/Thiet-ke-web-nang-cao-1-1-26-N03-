@@ -6,7 +6,9 @@ import { validateRequest } from "../../core/middleware/validate.middleware";
 import {
   activityLogQuerySchema,
   activityLogStatsQuerySchema,
-  createActivityLogSchema,
+  activityLogIdSchema,
+  activityLogUserSchema,
+  personalActivityLogQuerySchema,
 } from "./activity-log.validation";
 
 const router = Router();
@@ -15,7 +17,7 @@ const router = Router();
 router.use(authenticate);
 router.get(
   "/me",
-  validateRequest({ query: activityLogQuerySchema.omit({ userId: true }) }),
+  validateRequest({ query: personalActivityLogQuerySchema }),
   activityLogController.getMyLogs
 );
 
@@ -32,12 +34,12 @@ router.get(
 // 2. Lấy danh sách nhật ký của một người dùng cụ thể
 router.get(
   "/user/:userId",
-  validateRequest({ query: activityLogQuerySchema }),
+  validateRequest({ query: activityLogQuerySchema, params: activityLogUserSchema }),
   activityLogController.getUserLogs
 );
 
 // 3. Lấy chi tiết một bản ghi nhật ký
-router.get("/:id", activityLogController.getLogById);
+router.get("/:id", validateRequest({ params: activityLogIdSchema }), activityLogController.getLogById);
 
 // 4. Lấy danh sách toàn bộ nhật ký có phân trang, lọc và tìm kiếm
 router.get(
@@ -46,12 +48,6 @@ router.get(
   activityLogController.getLogs
 );
 
-// 5. Tạo mới nhật ký
-router.post(
-  "/",
-  validateRequest({ body: createActivityLogSchema }),
-  activityLogController.createLog
-);
 
 export default router;
 export { router as activityLogRouter };

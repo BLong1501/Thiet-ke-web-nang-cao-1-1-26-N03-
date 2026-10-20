@@ -1,3 +1,4 @@
+import { auditService } from "../../core/services/audit.service";
 import { Request, Response, NextFunction } from "express";
 import { campaignService } from "./campaign.service";
 import { sendSuccess, sendCreated } from "../../core/utils/response.util";
@@ -81,6 +82,7 @@ export class CampaignController {
       const { userId, role } = (req as any).user;
       const id = String(req.params.id);
       const updated = await campaignService.updateCampaign(userId, role, id, req.body);
+      await auditService.log({ req, action: "UPDATE_CAMPAIGN", entityName: "Campaign", entityId: updated.id });
       return sendSuccess(res, 200, "Cập nhật thông tin chiến dịch thành công", updated);
     } catch (error) {
       next(error);
@@ -129,6 +131,7 @@ export class CampaignController {
       const { userId, role } = (req as any).user;
       const id = String(req.params.id);
       const media = await campaignService.addMedia(userId, role, id, req.body);
+      await auditService.log({ req, action: "CREATE_MEDIA", entityName: "CampaignMedia", entityId: media.id });
       return sendCreated(res, "Thêm tài liệu minh chứng thành công", media);
     } catch (error) {
       next(error);
@@ -143,6 +146,7 @@ export class CampaignController {
       const { userId, role } = (req as any).user;
       const id = String(req.params.id);
       const update = await campaignService.addUpdate(userId, role, id, req.body);
+      await auditService.log({ req, action: "CREATE_UPDATE", entityName: "CampaignUpdate", entityId: update.id });
       return sendCreated(res, "Đăng nhật ký cập nhật tiến độ thành công", update);
     } catch (error) {
       next(error);
@@ -182,7 +186,7 @@ export class CampaignController {
    */
   async reviewDisbursement(req: Request, res: Response, next: NextFunction) {
     try {
-      const adminId = (req as any).user.id;
+      const adminId = req.user!.userId;
       const id = String(req.params.id);
       const updated = await campaignService.reviewDisbursement(adminId, id, req.body);
       const actionMsg = req.body.status === "APPROVED" ? "Phê duyệt hồ sơ giải ngân thành công" : "Từ chối hồ sơ giải ngân thành công";
@@ -217,6 +221,7 @@ export class CampaignController {
   async createCategory(req: Request, res: Response, next: NextFunction) {
     try {
       const category = await campaignService.createCategory(req.body);
+      await auditService.log({ req, action: "CREATE_CATEGORY", entityName: "Category", entityId: category.id });
       return sendCreated(res, "Tạo danh mục mới thành công", category);
     } catch (error) {
       next(error);
@@ -230,6 +235,7 @@ export class CampaignController {
     try {
       const id = String(req.params.id);
       const updated = await campaignService.updateCategory(id, req.body);
+      await auditService.log({ req, action: "UPDATE_CATEGORY", entityName: "Category", entityId: updated.id });
       return sendSuccess(res, 200, "Cập nhật danh mục thành công", updated);
     } catch (error) {
       next(error);
@@ -243,6 +249,7 @@ export class CampaignController {
     try {
       const id = String(req.params.id);
       const result = await campaignService.deleteCategory(id);
+      await auditService.log({ req, action: "DELETE_CATEGORY", entityName: "Category", entityId: id });
       return sendSuccess(res, 200, result.message);
     } catch (error) {
       next(error);

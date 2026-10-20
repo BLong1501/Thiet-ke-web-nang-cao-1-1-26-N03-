@@ -1,3 +1,4 @@
+import { auditService } from "../../core/services/audit.service";
 import { prisma } from "../../core/database/prisma";
 import { Prisma, PaymentStatus, Donation } from "@prisma/client";
 
@@ -191,7 +192,8 @@ export class DonationRepository {
    */
   async confirmPayment(
     donationId: string,
-    gatewayResponse?: any
+    gatewayResponse?: any,
+    actorId?: string
   ) {
     return this.transaction(async (tx) => {
       const donation = await this.lockDonation(tx, donationId);
@@ -272,20 +274,12 @@ export class DonationRepository {
       }
 
       // 6. Ghi AuditLog
-      await tx.auditLog.create({
-        data: {
-          userId: donation.donorId || undefined,
+      await auditService.write({
+          userId: actorId ?? null,
           action: "DONATION_RECEIVED",
           entityName: "Donation",
           entityId: donationId,
-          details: {
-            campaignId: campaign.id,
-            amount: donation.amount.toString(),
-            transactionCode: donation.transactionCode,
-            paymentMethod: donation.paymentMethod,
-          },
-        },
-      });
+        }, tx);
 
       return {
         donation: updatedDonation,

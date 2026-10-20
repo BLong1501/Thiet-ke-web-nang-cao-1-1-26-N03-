@@ -425,6 +425,9 @@ model AuditLog {
   @@index([action])
   @@index([entityName, entityId])
   @@index([createdAt])
+  @@index([createdAt, id], map: "idx_audit_created_id")
+  @@index([userId, createdAt, id], map: "idx_audit_user_created_id")
+  @@index([action, createdAt, id], map: "idx_audit_action_created_id")
   @@map("audit_logs")
 }
 

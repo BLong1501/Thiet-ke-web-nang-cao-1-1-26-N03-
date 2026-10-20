@@ -576,15 +576,14 @@ test("admin log navigation opens the system page, not the personal page", async 
   await setup(page, { loggedIn: true, role: "ADMIN" });
   await page.goto("/admin/activity-logs");
   await expect(
-    page.getByRole("heading", { name: "Nhật ký hệ thống — Admin" }),
+    page.getByRole("heading", { name: "Nhật kí hoạt động" }),
   ).toBeVisible();
   await expect(
     page.getByRole("navigation", { name: "Quản trị" }),
   ).toBeVisible();
-  const mainNav = page.getByRole("navigation", { name: "Điều hướng chính" });
-  await mainNav.getByRole("button", { name: /^Tài khoản/ }).click();
+  await page.getByRole("button", { name: /^Tài khoản/ }).click();
   await expect(
-    mainNav.locator('.dropdown-panel').getByRole("link", { name: "Nhật ký hệ thống" }),
+    page.locator('.dropdown-panel').getByRole("link", { name: "Nhật kí hoạt động" }),
   ).toHaveAttribute("href", "/admin/activity-logs");
 });
 

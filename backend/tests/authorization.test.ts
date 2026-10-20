@@ -25,6 +25,7 @@ const adminRoutes = [['get','/verifications/pending'],['get','/verifications/exi
 const hit = (method:string,url:string) => (request(app) as any)[method]('/api/v1'+url);
 before(async()=>{
   app=(await import('../src/app')).default;
+  replace((await import('../src/core/services/audit.service')).auditService, 'log', async () => {});
   const verificationModule=await import('../src/modules/verifications/verification.service');
   verificationService=verificationModule.verificationService; VerificationService=verificationModule.VerificationService;
   const authModule=await import('../src/modules/auth/auth.service');

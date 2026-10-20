@@ -116,30 +116,6 @@ export class ActivityLogRepository {
     };
   }
 
-  /**
-   * Ghi một bản ghi audit log mới
-   */
-  async create(data: {
-    userId?: string;
-    action: string;
-    entityName: string;
-    entityId: string;
-    details?: Record<string, any>;
-    ipAddress?: string;
-    userAgent?: string;
-  }) {
-    return prisma.auditLog.create({
-      data: {
-        userId: data.userId,
-        action: data.action,
-        entityName: data.entityName,
-        entityId: data.entityId,
-        details: data.details as Prisma.InputJsonValue | undefined,
-        ipAddress: data.ipAddress,
-        userAgent: data.userAgent,
-      },
-    });
-  }
 }
 
 export const activityLogRepository = new ActivityLogRepository();

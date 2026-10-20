@@ -115,7 +115,7 @@ export default function Navbar() {
         </NavLink>
         <NavLink to={isAdmin ? "/admin/activity-logs" : "/activity-logs"}>
           <LuHistory aria-hidden="true" />
-          {isAdmin ? "Nhật ký hệ thống" : "Nhật ký của tôi"}
+          {isAdmin ? "Nhật kí hoạt động" : "Nhật ký của tôi"}
         </NavLink>
         <div className="dropdown-separator" role="presentation" />
         <button
