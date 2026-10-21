@@ -82,8 +82,17 @@ export function httpStatus(error: unknown): number | undefined {
 }
 export function errorMessage(error: unknown): string {
   if (axios.isAxiosError(error)) {
-    const message = (error.response?.data as { message?: unknown } | undefined)
-      ?.message;
+    const data = error.response?.data as
+      | { message?: unknown; errors?: Array<{ field?: string; message?: string }> }
+      | undefined;
+    const message = data?.message;
+    if (data?.errors && Array.isArray(data.errors) && data.errors.length > 0) {
+      const details = data.errors
+        .map((e) => (e.field ? `${e.field}: ${e.message}` : e.message))
+        .filter(Boolean)
+        .join(", ");
+      return typeof message === "string" ? `${message} (${details})` : details;
+    }
     if (typeof message === "string" && message) return message;
     if (error.code === "ECONNABORTED")
       return "Máy chủ phản hồi quá lâu. Vui lòng thử lại.";

@@ -117,11 +117,31 @@ export default function DisbursementModal({
     }
 
     // Tổng hợp chứng từ
-    const manualProofs = proofInput
+    const manualLines = proofInput
       .split("\n")
       .map((s) => s.trim())
       .filter(Boolean);
-    const allProofs = Array.from(new Set([...proofList, ...manualProofs]));
+
+    const validUrls: string[] = [];
+    const invalidLines: string[] = [];
+
+    for (const line of manualLines) {
+      if (/^https?:\/\//i.test(line)) {
+        validUrls.push(line);
+      } else {
+        invalidLines.push(line);
+      }
+    }
+
+    if (invalidLines.length > 0 && proofList.length === 0) {
+      setError(
+        `Dòng "${invalidLines[0]}" trong ô link chứng từ không phải là URL hợp lệ. Link phải bắt đầu bằng http:// hoặc https:// (hoặc bạn có thể bấm "Tải ảnh hóa đơn từ máy tính" ở phía trên).`
+      );
+      return;
+    }
+
+    // Nếu đã có ảnh upload và có dòng text không phải URL, tự động bỏ qua dòng rác đó
+    const allProofs = Array.from(new Set([...proofList, ...validUrls]));
 
     if (allProofs.length === 0) {
       setError("Vui lòng tải lên hoặc dán tối thiểu 1 chứng từ hóa đơn / biên lai / dự toán chi tiêu.");
