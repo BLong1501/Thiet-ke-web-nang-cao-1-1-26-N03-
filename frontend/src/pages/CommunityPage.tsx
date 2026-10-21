@@ -5,6 +5,7 @@ import {
   errorMessage,
   listResult,
   payload,
+  safeUrl,
   type RecordData,
 } from "../services/platform";
 import { useRemote } from "../hooks/useRemote";
@@ -155,6 +156,7 @@ function GroupFeed({ id, group }: { id: string; group?: RecordData }) {
   const groupJoined = !!(groupData?.isJoined ?? group?.isJoined);
   const [joined, setJoined] = useState(groupJoined);
   const [images, setImages] = useState<string[]>([]);
+  const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -209,6 +211,8 @@ function GroupFeed({ id, group }: { id: string; group?: RecordData }) {
   async function handleImageUpload(e: ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
+    const blobUrl = URL.createObjectURL(file);
+    setImagePreviews((prev) => [...prev, blobUrl]);
     setUploadingImage(true);
     try {
       const res = await uploadApi.uploadPublicImage(file);
@@ -226,6 +230,7 @@ function GroupFeed({ id, group }: { id: string; group?: RecordData }) {
 
   function removeImage(index: number) {
     setImages((prev) => prev.filter((_, idx) => idx !== index));
+    setImagePreviews((prev) => prev.filter((_, idx) => idx !== index));
   }
 
   async function post(e: FormEvent<HTMLFormElement>) {
@@ -246,6 +251,7 @@ function GroupFeed({ id, group }: { id: string; group?: RecordData }) {
       });
       form.reset();
       setImages([]);
+      setImagePreviews([]);
       result.reload();
       toast.success("Đã đăng bài viết mới!");
     } catch (e) {
@@ -405,10 +411,11 @@ function GroupFeed({ id, group }: { id: string; group?: RecordData }) {
                     borderRadius: "8px",
                     overflow: "hidden",
                     border: "1px solid #cbd5e1",
+                    background: "#f8fafc",
                   }}
                 >
                   <img
-                    src={imgUrl}
+                    src={safeUrl(imagePreviews[idx] || imgUrl)}
                     alt="Đính kèm"
                     style={{
                       width: "100%",
@@ -580,7 +587,7 @@ function CommunityPost({
           {postImages.map((imgUrl, i) => (
             <a
               key={i}
-              href={imgUrl}
+              href={safeUrl(imgUrl)}
               target="_blank"
               rel="noreferrer"
               style={{
@@ -593,7 +600,7 @@ function CommunityPost({
               }}
             >
               <img
-                src={imgUrl}
+                src={safeUrl(imgUrl)}
                 alt="Ảnh bài đăng"
                 style={{
                   maxHeight: "300px",

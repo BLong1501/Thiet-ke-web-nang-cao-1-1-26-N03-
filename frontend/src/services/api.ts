@@ -125,7 +125,14 @@ export const uploadApi = {
     const res = await api.post("/uploads/public", formData, {
       headers: { "Content-Type": "multipart/form-data" },
     });
-    return res.data?.data || res.data;
+    const result = res.data?.data || res.data;
+    if (result && typeof result.url === "string") {
+      const apiOrigin = new URL(api.defaults.baseURL || window.location.origin).origin;
+      if (!apiOrigin.includes("localhost:5000") && result.url.includes("localhost:5000")) {
+        result.url = result.url.replace(/https?:\/\/localhost:5000/g, apiOrigin);
+      }
+    }
+    return result;
   },
 };
 

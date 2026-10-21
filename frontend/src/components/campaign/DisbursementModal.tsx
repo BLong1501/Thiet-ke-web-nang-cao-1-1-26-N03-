@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from "react";
 import { campaignApi, formatCurrency, uploadApi } from "../../services/api";
-import { errorMessage, type RecordData } from "../../services/platform";
+import { errorMessage, safeUrl, type RecordData } from "../../services/platform";
 import { Field, Modal, Notice } from "../ui/WorkspaceUI";
 import toast from "react-hot-toast";
 import { VIETNAM_BANKS } from "../../data/vietnamBanks";
@@ -39,10 +39,15 @@ export default function DisbursementModal({
   const [accName, setAccName] = useState(defaultAccName);
   const [amount, setAmount] = useState<number | "">("");
 
-  // Ảnh định danh
+  // Ảnh định danh (URL trên máy chủ)
   const [frontIdUrl, setFrontIdUrl] = useState("");
   const [backIdUrl, setBackIdUrl] = useState("");
   const [selfieIdUrl, setSelfieIdUrl] = useState("");
+
+  // Ảnh xem trước tức thì (Local Object URL để hiển thị ngay 0ms)
+  const [frontPreview, setFrontPreview] = useState("");
+  const [backPreview, setBackPreview] = useState("");
+  const [selfiePreview, setSelfiePreview] = useState("");
 
   // Uploading state
   const [uploadingFront, setUploadingFront] = useState(false);
@@ -52,6 +57,7 @@ export default function DisbursementModal({
 
   // Chứng từ hóa đơn
   const [proofList, setProofList] = useState<string[]>([]);
+  const [proofPreviews, setProofPreviews] = useState<string[]>([]);
   const [proofInput, setProofInput] = useState("");
 
   // Cam kết
@@ -68,10 +74,13 @@ export default function DisbursementModal({
   async function handleFileUpload(
     file: File | undefined,
     setUrl: (url: string) => void,
+    setPreview: (url: string) => void,
     setLoading: (l: boolean) => void,
     label: string
   ) {
     if (!file) return;
+    const blobUrl = URL.createObjectURL(file);
+    setPreview(blobUrl);
     setLoading(true);
     try {
       const res = await uploadApi.uploadPublicImage(file);
@@ -88,6 +97,8 @@ export default function DisbursementModal({
 
   async function handleAddProofFile(file: File | undefined) {
     if (!file) return;
+    const blobUrl = URL.createObjectURL(file);
+    setProofPreviews((prev) => [...prev, blobUrl]);
     setUploadingProof(true);
     try {
       const res = await uploadApi.uploadPublicImage(file);
@@ -100,6 +111,11 @@ export default function DisbursementModal({
     } finally {
       setUploadingProof(false);
     }
+  }
+
+  function removeProofItem(index: number) {
+    setProofList((list) => list.filter((_, i) => i !== index));
+    setProofPreviews((list) => list.filter((_, i) => i !== index));
   }
 
   async function submit(e: FormEvent<HTMLFormElement>) {
@@ -333,18 +349,38 @@ export default function DisbursementModal({
               {/* Mặt trước */}
               <div style={{ border: "1px dashed #94a3b8", borderRadius: "10px", padding: "10px", textAlign: "center", background: "#f8fafc" }}>
                 <span style={{ fontSize: "0.8rem", fontWeight: 600, color: "#475569" }}>CCCD Mặt trước *</span>
-                {frontIdUrl ? (
+                {frontPreview || frontIdUrl ? (
                   <div style={{ marginTop: "6px" }}>
-                    <img src={frontIdUrl} alt="CCCD Trước" style={{ width: "100%", maxHeight: "110px", objectFit: "contain", borderRadius: "6px" }} />
-                    <button type="button" className="button secondary" style={{ fontSize: "0.75rem", padding: "2px 8px", marginTop: "4px" }} onClick={() => setFrontIdUrl("")}>
-                      Đổi ảnh
-                    </button>
+                    <img
+                      src={safeUrl(frontPreview || frontIdUrl)}
+                      alt="CCCD Trước"
+                      style={{ width: "100%", maxHeight: "120px", objectFit: "contain", borderRadius: "6px", border: "1px solid #cbd5e1", background: "#ffffff" }}
+                    />
+                    <div style={{ marginTop: "4px" }}>
+                      <button
+                        type="button"
+                        className="button secondary"
+                        style={{ fontSize: "0.75rem", padding: "2px 8px" }}
+                        onClick={() => {
+                          setFrontIdUrl("");
+                          setFrontPreview("");
+                        }}
+                      >
+                        Đổi ảnh
+                      </button>
+                    </div>
                   </div>
                 ) : (
                   <div style={{ marginTop: "8px" }}>
                     <label className="button secondary" style={{ fontSize: "0.78rem", padding: "6px 12px", cursor: "pointer", display: "inline-flex", alignItems: "center", gap: "4px" }}>
                       <FiUploadCloud size={14} /> {uploadingFront ? "Đang tải..." : "Chọn ảnh trước"}
-                      <input type="file" accept="image/*" style={{ display: "none" }} disabled={uploadingFront} onChange={(e) => handleFileUpload(e.target.files?.[0], setFrontIdUrl, setUploadingFront, "CCCD mặt trước")} />
+                      <input
+                        type="file"
+                        accept="image/*"
+                        style={{ display: "none" }}
+                        disabled={uploadingFront}
+                        onChange={(e) => handleFileUpload(e.target.files?.[0], setFrontIdUrl, setFrontPreview, setUploadingFront, "CCCD mặt trước")}
+                      />
                     </label>
                   </div>
                 )}
@@ -353,18 +389,38 @@ export default function DisbursementModal({
               {/* Mặt sau */}
               <div style={{ border: "1px dashed #94a3b8", borderRadius: "10px", padding: "10px", textAlign: "center", background: "#f8fafc" }}>
                 <span style={{ fontSize: "0.8rem", fontWeight: 600, color: "#475569" }}>CCCD Mặt sau *</span>
-                {backIdUrl ? (
+                {backPreview || backIdUrl ? (
                   <div style={{ marginTop: "6px" }}>
-                    <img src={backIdUrl} alt="CCCD Sau" style={{ width: "100%", maxHeight: "110px", objectFit: "contain", borderRadius: "6px" }} />
-                    <button type="button" className="button secondary" style={{ fontSize: "0.75rem", padding: "2px 8px", marginTop: "4px" }} onClick={() => setBackIdUrl("")}>
-                      Đổi ảnh
-                    </button>
+                    <img
+                      src={safeUrl(backPreview || backIdUrl)}
+                      alt="CCCD Sau"
+                      style={{ width: "100%", maxHeight: "120px", objectFit: "contain", borderRadius: "6px", border: "1px solid #cbd5e1", background: "#ffffff" }}
+                    />
+                    <div style={{ marginTop: "4px" }}>
+                      <button
+                        type="button"
+                        className="button secondary"
+                        style={{ fontSize: "0.75rem", padding: "2px 8px" }}
+                        onClick={() => {
+                          setBackIdUrl("");
+                          setBackPreview("");
+                        }}
+                      >
+                        Đổi ảnh
+                      </button>
+                    </div>
                   </div>
                 ) : (
                   <div style={{ marginTop: "8px" }}>
                     <label className="button secondary" style={{ fontSize: "0.78rem", padding: "6px 12px", cursor: "pointer", display: "inline-flex", alignItems: "center", gap: "4px" }}>
                       <FiUploadCloud size={14} /> {uploadingBack ? "Đang tải..." : "Chọn ảnh sau"}
-                      <input type="file" accept="image/*" style={{ display: "none" }} disabled={uploadingBack} onChange={(e) => handleFileUpload(e.target.files?.[0], setBackIdUrl, setUploadingBack, "CCCD mặt sau")} />
+                      <input
+                        type="file"
+                        accept="image/*"
+                        style={{ display: "none" }}
+                        disabled={uploadingBack}
+                        onChange={(e) => handleFileUpload(e.target.files?.[0], setBackIdUrl, setBackPreview, setUploadingBack, "CCCD mặt sau")}
+                      />
                     </label>
                   </div>
                 )}
@@ -373,18 +429,38 @@ export default function DisbursementModal({
               {/* Chân dung cầm CCCD */}
               <div style={{ border: "1px dashed #94a3b8", borderRadius: "10px", padding: "10px", textAlign: "center", background: "#f8fafc" }}>
                 <span style={{ fontSize: "0.8rem", fontWeight: 600, color: "#475569" }}>Chân dung cầm CCCD (hoặc ủy quyền)</span>
-                {selfieIdUrl ? (
+                {selfiePreview || selfieIdUrl ? (
                   <div style={{ marginTop: "6px" }}>
-                    <img src={selfieIdUrl} alt="Chân dung" style={{ width: "100%", maxHeight: "110px", objectFit: "contain", borderRadius: "6px" }} />
-                    <button type="button" className="button secondary" style={{ fontSize: "0.75rem", padding: "2px 8px", marginTop: "4px" }} onClick={() => setSelfieIdUrl("")}>
-                      Đổi ảnh
-                    </button>
+                    <img
+                      src={safeUrl(selfiePreview || selfieIdUrl)}
+                      alt="Chân dung"
+                      style={{ width: "100%", maxHeight: "120px", objectFit: "contain", borderRadius: "6px", border: "1px solid #cbd5e1", background: "#ffffff" }}
+                    />
+                    <div style={{ marginTop: "4px" }}>
+                      <button
+                        type="button"
+                        className="button secondary"
+                        style={{ fontSize: "0.75rem", padding: "2px 8px" }}
+                        onClick={() => {
+                          setSelfieIdUrl("");
+                          setSelfiePreview("");
+                        }}
+                      >
+                        Đổi ảnh
+                      </button>
+                    </div>
                   </div>
                 ) : (
                   <div style={{ marginTop: "8px" }}>
                     <label className="button secondary" style={{ fontSize: "0.78rem", padding: "6px 12px", cursor: "pointer", display: "inline-flex", alignItems: "center", gap: "4px" }}>
                       <FiUploadCloud size={14} /> {uploadingSelfie ? "Đang tải..." : "Tải ảnh chân dung"}
-                      <input type="file" accept="image/*" style={{ display: "none" }} disabled={uploadingSelfie} onChange={(e) => handleFileUpload(e.target.files?.[0], setSelfieIdUrl, setUploadingSelfie, "ảnh chân dung")} />
+                      <input
+                        type="file"
+                        accept="image/*"
+                        style={{ display: "none" }}
+                        disabled={uploadingSelfie}
+                        onChange={(e) => handleFileUpload(e.target.files?.[0], setSelfieIdUrl, setSelfiePreview, setUploadingSelfie, "ảnh chân dung")}
+                      />
                     </label>
                   </div>
                 )}
@@ -542,11 +618,15 @@ export default function DisbursementModal({
             {proofList.length > 0 && (
               <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", marginBottom: "10px" }}>
                 {proofList.map((url, idx) => (
-                  <div key={url} style={{ position: "relative", width: "70px", height: "70px", border: "1px solid #cbd5e1", borderRadius: "8px", overflow: "hidden" }}>
-                    <img src={url} alt={`Hóa đơn ${idx + 1}`} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                  <div key={url + idx} style={{ position: "relative", width: "70px", height: "70px", border: "1px solid #cbd5e1", borderRadius: "8px", overflow: "hidden", background: "#f8fafc" }}>
+                    <img
+                      src={safeUrl(proofPreviews[idx] || url)}
+                      alt={`Hóa đơn ${idx + 1}`}
+                      style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                    />
                     <button
                       type="button"
-                      onClick={() => setProofList((list) => list.filter((_, i) => i !== idx))}
+                      onClick={() => removeProofItem(idx)}
                       style={{
                         position: "absolute",
                         top: "2px",
@@ -560,6 +640,7 @@ export default function DisbursementModal({
                         fontSize: "10px",
                         cursor: "pointer",
                       }}
+                      title="Xóa ảnh này"
                     >
                       ×
                     </button>
