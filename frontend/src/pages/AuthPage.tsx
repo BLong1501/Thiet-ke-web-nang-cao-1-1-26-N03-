@@ -67,22 +67,14 @@ export default function AuthPage({ mode }: { mode: Mode }) {
         setUser(nextUser, data.accessToken);
         navigate(postLoginPath(nextUser.role), { replace: true });
       } else if (mode === "register") {
-        const r = await authApi.register({
+        await authApi.register({
           fullName: name.trim(),
           email: cleanEmail,
           password,
         });
-        const d = payload(r);
-        if (d?.devOtp) {
-          sessionStorage.setItem("last_dev_otp", String(d.devOtp));
-        }
         navigate(`/verify-email?email=${encodeURIComponent(cleanEmail)}`);
       } else if (mode === "forgot") {
-        const r = await authApi.forgotPassword(cleanEmail);
-        const d = payload(r);
-        if (d?.devOtp) {
-          sessionStorage.setItem("last_dev_otp", String(d.devOtp));
-        }
+        await authApi.forgotPassword(cleanEmail);
         navigate(`/reset-password?email=${encodeURIComponent(cleanEmail)}`);
       } else {
         await authApi.resetPassword({
@@ -105,11 +97,7 @@ export default function AuthPage({ mode }: { mode: Mode }) {
     setBusy(true);
     setError("");
     try {
-      const r = await authApi.resendOtp(email.trim());
-      const d = payload(r);
-      if (d?.devOtp) {
-        sessionStorage.setItem("last_dev_otp", String(d.devOtp));
-      }
+      await authApi.resendOtp(email.trim());
       setMessage("Đã gửi lại mã xác minh. Vui lòng kiểm tra email.");
     } catch (e) {
       setError(errorMessage(e));
@@ -163,30 +151,16 @@ export default function AuthPage({ mode }: { mode: Mode }) {
               label="Mã OTP trong email"
               hint="Nhập 6 chữ số được gửi đến email của bạn."
             >
-              <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
-                <input
-                  required
-                  inputMode="numeric"
-                  autoComplete="one-time-code"
-                  pattern="[0-9]{6}"
-                  maxLength={6}
-                  value={otp}
-                  onChange={(e) => setOtp(e.target.value)}
-                />
-                {sessionStorage.getItem("last_dev_otp") && (
-                  <button
-                    type="button"
-                    className="button secondary"
-                    style={{ whiteSpace: "nowrap", padding: "8px 12px", fontSize: "13px" }}
-                    onClick={() => {
-                      const v = sessionStorage.getItem("last_dev_otp");
-                      if (v) setOtp(v);
-                    }}
-                  >
-                    Điền mã ({sessionStorage.getItem("last_dev_otp")})
-                  </button>
-                )}
-              </div>
+              <input
+                required
+                inputMode="numeric"
+                autoComplete="one-time-code"
+                pattern="[0-9]{6}"
+                maxLength={6}
+                placeholder="Ví dụ: 123456"
+                value={otp}
+                onChange={(e) => setOtp(e.target.value)}
+              />
             </Field>
           )}
           {["login", "register", "reset"].includes(mode) && (
