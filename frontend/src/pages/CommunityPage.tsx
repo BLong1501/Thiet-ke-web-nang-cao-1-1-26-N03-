@@ -1,6 +1,6 @@
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent, type ChangeEvent } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { communityApi } from "../services/api";
+import { communityApi, uploadApi } from "../services/api";
 import {
   errorMessage,
   listResult,
@@ -150,75 +150,347 @@ function GroupFeed({ id, group }: { id: string; group?: RecordData }) {
     [id, page],
     { keepPrevious: true },
   );
-  const groupId: unknown = group?.id;
-  const groupJoined = !!group?.isJoined;
+  const [groupData, setGroupData] = useState<RecordData | undefined>(group);
+  const groupId: unknown = groupData?.id || group?.id;
+  const groupJoined = !!(groupData?.isJoined ?? group?.isJoined);
   const [joined, setJoined] = useState(groupJoined);
-  // Đồng bộ lại khi chuyển sang nhóm khác hoặc dữ liệu nhóm được làm mới.
-  useEffect(() => {
-    if (groupId !== undefined) setJoined(groupJoined);
-  }, [groupId, groupJoined]);
+  const [images, setImages] = useState<string[]>([]);
+  const [uploadingImage, setUploadingImage] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const user = useAuthStore((s) => s.user);
+
+  // Tải thông tin cộng đồng nếu người dùng truy cập trực tiếp qua đường dẫn
+  useEffect(() => {
+    if (id) {
+      communityApi
+        .get(id)
+        .then((res) => {
+          const d = payload(res);
+          if (d) {
+            setGroupData(d);
+            if (typeof d.isJoined === "boolean") {
+              setJoined(d.isJoined);
+            }
+          }
+        })
+        .catch(() => {});
+    }
+  }, [id]);
+
+  useEffect(() => {
+    if (groupId !== undefined) setJoined(groupJoined);
+  }, [groupId, groupJoined]);
+
   async function join() {
     setBusy(true);
     setError("");
     try {
       const r = await communityApi.join(id);
       const data = payload(r);
-      setJoined(typeof data?.isJoined === "boolean" ? data.isJoined : !joined);
-      toast.success("Đã cập nhật tư cách thành viên.");
+      const isNowJoined =
+        typeof data?.isJoined === "boolean" ? data.isJoined : !joined;
+      setJoined(isNowJoined);
+      if (isNowJoined) {
+        toast.success(
+          `🎉 Bạn đã tham gia cộng đồng ${groupData?.name || group?.name || ""}!`,
+        );
+        result.reload();
+      } else {
+        toast.success("Đã rời khỏi nhóm.");
+      }
     } catch (e) {
       setError(errorMessage(e));
     } finally {
       setBusy(false);
     }
   }
+
+  async function handleImageUpload(e: ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingImage(true);
+    try {
+      const res = await uploadApi.uploadPublicImage(file);
+      if (res?.url) {
+        setImages((prev) => [...prev, res.url]);
+        toast.success("Đã tải ảnh lên thành công");
+      }
+    } catch (err) {
+      toast.error("Không thể tải ảnh: " + errorMessage(err));
+    } finally {
+      setUploadingImage(false);
+      e.target.value = "";
+    }
+  }
+
+  function removeImage(index: number) {
+    setImages((prev) => prev.filter((_, idx) => idx !== index));
+  }
+
   async function post(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const form = e.currentTarget;
     const f = new FormData(form);
+    const content = String(f.get("content")).trim();
+    if (!content && images.length === 0) {
+      setError("Vui lòng nhập nội dung bài viết hoặc đính kèm ảnh");
+      return;
+    }
     setBusy(true);
     setError("");
     try {
       await communityApi.createPost(id, {
-        content: String(f.get("content")).trim(),
+        content,
+        mediaUrls: images.length ? images : undefined,
       });
       form.reset();
+      setImages([]);
       result.reload();
+      toast.success("Đã đăng bài viết mới!");
     } catch (e) {
       setError(errorMessage(e));
     } finally {
       setBusy(false);
     }
   }
+
+  const groupName = groupData?.name || group?.name || "Cộng đồng chia sẻ";
+  const groupDesc =
+    groupData?.description ||
+    group?.description ||
+    "Tham gia nhóm cộng đồng để cùng thảo luận, chia sẻ hình ảnh và kết nối yêu thương.";
+  const memberCount =
+    groupData?.memberCount ??
+    group?.memberCount ??
+    group?._count?.members ??
+    1;
+  const isPrivate = !!(groupData?.isPrivate ?? group?.isPrivate);
+
   return (
     <section className="panel form-stack">
       <div className="section-heading">
-        <h2>{group?.name || "Bài viết trong cộng đồng"}</h2>
+        <div>
+          <h2>{groupName}</h2>
+          <small style={{ color: "#64748b" }}>
+            {memberCount} thành viên · {isPrivate ? "🔒 Nhóm riêng tư" : "🌐 Nhóm công khai"}
+          </small>
+        </div>
         {user && (
           <button className="button secondary" disabled={busy} onClick={join}>
             {joined ? "Rời nhóm" : "Tham gia nhóm"}
           </button>
         )}
       </div>
+
       {error && <Notice error>{error}</Notice>}
+
+      {/* Giao diện xem trước (Preview) khi người dùng mở liên kết mà chưa tham gia */}
+      {!joined && (
+        <div
+          className="community-preview-card"
+          style={{
+            padding: "32px 24px",
+            background: "linear-gradient(135deg, #f8fafc 0%, #edf2f7 100%)",
+            borderRadius: "16px",
+            border: "1px solid #e2e8f0",
+            textAlign: "center",
+            margin: "12px 0 20px",
+            boxShadow: "0 4px 16px -2px rgba(0, 0, 0, 0.05)",
+          }}
+        >
+          <div
+            style={{
+              width: "56px",
+              height: "56px",
+              background: "#eff6ff",
+              color: "#2563eb",
+              borderRadius: "50%",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              margin: "0 auto 14px",
+              fontSize: "26px",
+            }}
+          >
+            👥
+          </div>
+          <h3
+            style={{
+              fontSize: "22px",
+              fontWeight: "700",
+              color: "#0f172a",
+              marginBottom: "8px",
+            }}
+          >
+            {groupName}
+          </h3>
+          <p
+            style={{
+              maxWidth: "540px",
+              margin: "0 auto 20px",
+              color: "#475569",
+              fontSize: "15px",
+              lineHeight: "1.6",
+            }}
+          >
+            {groupDesc}
+          </p>
+          {user ? (
+            <button
+              className="button primary"
+              style={{
+                padding: "12px 32px",
+                fontSize: "15px",
+                fontWeight: "600",
+                borderRadius: "10px",
+                cursor: "pointer",
+                boxShadow: "0 4px 12px rgba(37,99,235,0.25)",
+              }}
+              disabled={busy}
+              onClick={join}
+            >
+              🚀 Tham gia cộng đồng ngay
+            </button>
+          ) : (
+            <Link
+              to={`/login?redirect=${encodeURIComponent(`/community?group=${id}`)}`}
+              className="button primary"
+              style={{
+                display: "inline-block",
+                padding: "12px 32px",
+                fontSize: "15px",
+                fontWeight: "600",
+                borderRadius: "10px",
+                textDecoration: "none",
+              }}
+            >
+              Đăng nhập để tham gia nhóm
+            </Link>
+          )}
+        </div>
+      )}
+
+      {/* Form đăng bài (khi đã là thành viên) kèm chức năng đính kèm ảnh */}
       {joined && user && (
         <form className="form-stack" onSubmit={post}>
           <Field label="Chia sẻ với cộng đồng">
             <textarea
               name="content"
-              required
+              placeholder="Bạn muốn chia sẻ điều gì cùng cộng đồng? Nhập nội dung hoặc đính kèm ảnh..."
+              required={images.length === 0}
               minLength={1}
               maxLength={5000}
-              rows={4}
+              rows={3}
             />
           </Field>
-          <button className="button" disabled={busy}>
-            Đăng bài
-          </button>
+
+          {/* Danh sách ảnh đã đính kèm xem trước */}
+          {images.length > 0 && (
+            <div
+              style={{
+                display: "flex",
+                gap: "10px",
+                flexWrap: "wrap",
+                marginBottom: "10px",
+              }}
+            >
+              {images.map((imgUrl, idx) => (
+                <div
+                  key={idx}
+                  style={{
+                    position: "relative",
+                    width: "88px",
+                    height: "88px",
+                    borderRadius: "8px",
+                    overflow: "hidden",
+                    border: "1px solid #cbd5e1",
+                  }}
+                >
+                  <img
+                    src={imgUrl}
+                    alt="Đính kèm"
+                    style={{
+                      width: "100%",
+                      height: "100%",
+                      objectFit: "cover",
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => removeImage(idx)}
+                    style={{
+                      position: "absolute",
+                      top: "4px",
+                      right: "4px",
+                      background: "rgba(0,0,0,0.65)",
+                      color: "#fff",
+                      border: "none",
+                      borderRadius: "50%",
+                      width: "20px",
+                      height: "20px",
+                      cursor: "pointer",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      fontSize: "11px",
+                      lineHeight: 1,
+                    }}
+                    title="Xóa ảnh"
+                  >
+                    ✕
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              flexWrap: "wrap",
+              gap: "8px",
+            }}
+          >
+            <label
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "6px",
+                padding: "8px 14px",
+                background: "#f1f5f9",
+                borderRadius: "8px",
+                cursor: uploadingImage ? "not-allowed" : "pointer",
+                fontSize: "13px",
+                color: "#334155",
+                fontWeight: "500",
+                border: "1px solid #e2e8f0",
+              }}
+            >
+              <span>📷 {uploadingImage ? "Đang tải ảnh..." : "Đính kèm ảnh"}</span>
+              <input
+                type="file"
+                accept="image/png,image/jpeg,image/webp,image/jpg"
+                disabled={uploadingImage || busy}
+                onChange={handleImageUpload}
+                style={{ display: "none" }}
+              />
+            </label>
+
+            <button
+              className="button primary"
+              disabled={busy || uploadingImage}
+              style={{ padding: "8px 20px" }}
+            >
+              {busy ? "Đang đăng..." : "Đăng bài"}
+            </button>
+          </div>
         </form>
       )}
+
+      {/* Danh sách bài viết */}
       <RemoteState {...result} />
       {result.data && (
         <>
@@ -249,6 +521,20 @@ function CommunityPost({
   const [showComments, setShowComments] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+
+  // Trích xuất mediaUrls an toàn (mảng hoặc chuỗi JSON)
+  let postImages: string[] = [];
+  if (post.mediaUrls) {
+    if (Array.isArray(post.mediaUrls)) {
+      postImages = post.mediaUrls as string[];
+    } else if (typeof post.mediaUrls === "string") {
+      try {
+        const parsed = JSON.parse(post.mediaUrls);
+        if (Array.isArray(parsed)) postImages = parsed;
+      } catch {}
+    }
+  }
+
   async function like() {
     setBusy(true);
     setError("");
@@ -262,22 +548,65 @@ function CommunityPost({
       setBusy(false);
     }
   }
+
   async function share() {
     try {
       await navigator.clipboard.writeText(
         `${window.location.origin}/community?group=${encodeURIComponent(groupId)}`,
       );
-      toast.success("Đã sao chép liên kết nhóm.");
+      toast.success("Đã sao chép liên kết nhóm cộng đồng.");
     } catch {
       toast.error("Không thể sao chép liên kết.");
     }
   }
+
   return (
     <article className="timeline-item">
       <strong>
         {post.author?.fullName || post.author?.name || post.user?.fullName}
       </strong>
       <p className="prose">{post.content}</p>
+
+      {/* Hiển thị ảnh đính kèm nếu có */}
+      {postImages.length > 0 && (
+        <div
+          style={{
+            display: "flex",
+            gap: "10px",
+            flexWrap: "wrap",
+            margin: "12px 0",
+          }}
+        >
+          {postImages.map((imgUrl, i) => (
+            <a
+              key={i}
+              href={imgUrl}
+              target="_blank"
+              rel="noreferrer"
+              style={{
+                display: "block",
+                borderRadius: "10px",
+                overflow: "hidden",
+                border: "1px solid #e2e8f0",
+                maxHeight: "300px",
+                backgroundColor: "#f8fafc",
+              }}
+            >
+              <img
+                src={imgUrl}
+                alt="Ảnh bài đăng"
+                style={{
+                  maxHeight: "300px",
+                  maxWidth: "100%",
+                  objectFit: "contain",
+                  display: "block",
+                }}
+              />
+            </a>
+          ))}
+        </div>
+      )}
+
       <small>{new Date(post.createdAt).toLocaleString("vi-VN")}</small>
       {error && <Notice error>{error}</Notice>}
       <div className="actions">
@@ -297,7 +626,7 @@ function CommunityPost({
           Bình luận
         </button>
         <button className="button secondary" onClick={share}>
-          Chia sẻ
+          Chia sẻ liên kết
         </button>
       </div>
       {showComments && <PostComments groupId={groupId} postId={post.id} />}

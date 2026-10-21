@@ -17,6 +17,12 @@ const list = validate({ query: communityListQuerySchema });
 // Công khai (nếu có token thì trả thêm isJoined/isLiked)
 router.get("/", optionalAuthenticate, list, communityController.list);
 router.get(
+  "/:id",
+  optionalAuthenticate,
+  validate({ params: communityParamsSchema }),
+  communityController.getDetail,
+);
+router.get(
   "/:id/posts",
   optionalAuthenticate,
   validate({ params: communityParamsSchema, query: communityListQuerySchema }),

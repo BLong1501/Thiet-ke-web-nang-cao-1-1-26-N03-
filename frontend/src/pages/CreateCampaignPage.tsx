@@ -90,14 +90,16 @@ function CampaignForm({
     "Chủ thể & tài khoản",
   ] as const;
 
-  // Dữ liệu thụ hưởng / MoMo hiện có nếu chỉnh sửa
+  // Dữ liệu thụ hưởng / MoMo / Cộng đồng hiện có nếu chỉnh sửa
   let existingMomoPhone = "";
   let existingMomoName = "";
+  let existingCommunityLink = "";
   try {
     if (c?.beneficiaryInfo) {
-      const parsed = JSON.parse(c.beneficiaryInfo);
+      const parsed = typeof c.beneficiaryInfo === "string" ? JSON.parse(c.beneficiaryInfo) : c.beneficiaryInfo;
       existingMomoPhone = parsed.momoPhone || "";
       existingMomoName = parsed.momoAccountName || "";
+      existingCommunityLink = parsed.communityLink || "";
     }
   } catch {
     // Không phải JSON
@@ -193,6 +195,20 @@ function CampaignForm({
       }
     }
 
+    let mergedBeneficiaryInfo = value("beneficiaryInfo");
+    if (value("communityLink")) {
+      try {
+        const obj = mergedBeneficiaryInfo ? JSON.parse(mergedBeneficiaryInfo) : {};
+        obj.communityLink = value("communityLink");
+        mergedBeneficiaryInfo = JSON.stringify(obj);
+      } catch {
+        mergedBeneficiaryInfo = JSON.stringify({
+          details: mergedBeneficiaryInfo,
+          communityLink: value("communityLink"),
+        });
+      }
+    }
+
     const body = {
       title: value("title"),
       categoryId: value("categoryId"),
@@ -205,7 +221,7 @@ function CampaignForm({
       bankName: selectedBank,
       bankAccountNumber: cleanStk,
       bankAccountName: organizer === "INDIVIDUAL" ? (user?.name || value("bankAccountName")) : value("bankAccountName"),
-      beneficiaryInfo: value("beneficiaryInfo"),
+      beneficiaryInfo: mergedBeneficiaryInfo,
       ...(enableMomo
         ? {
             momoPhone: momoPhone.trim(),
@@ -352,11 +368,16 @@ function CampaignForm({
             />
           </div>
         </Field>
-        {!c && (
-          <Field label="URL ảnh minh chứng (mỗi dòng một đường dẫn)">
-            <textarea name="media" rows={3} />
-          </Field>
-        )}
+        <Field
+          label="Liên kết nhóm cộng đồng (Tùy chọn)"
+          hint="Dán đường dẫn nhóm cộng đồng thảo luận (Ví dụ: /community?group=... hoặc nhóm trao đổi của dự án)"
+        >
+          <input
+            name="communityLink"
+            defaultValue={existingCommunityLink}
+            placeholder="Ví dụ: /community?group=... hoặc link nhóm cộng đồng"
+          />
+        </Field>
       </fieldset>
 
       <fieldset disabled={busy} hidden={step !== 1}>

@@ -322,13 +322,16 @@ export const reportApi = {
 export const communityApi = {
   list: (params?: Record<string, unknown>) =>
     api.get("/communities", { params }),
-  create: (data: { name: string; description: string }) =>
+  get: (id: string) => api.get(`/communities/${id}`),
+  create: (data: { name: string; description: string; isPrivate?: boolean }) =>
     api.post("/communities", data),
   join: (id: string) => api.post(`/communities/${id}/join`),
   listPosts: (id: string, params?: Record<string, unknown>) =>
     api.get(`/communities/${id}/posts`, { params }),
-  createPost: (id: string, data: { content: string }) =>
-    api.post(`/communities/${id}/posts`, data),
+  createPost: (
+    id: string,
+    data: { content: string; campaignId?: string; mediaUrls?: string[] },
+  ) => api.post(`/communities/${id}/posts`, data),
   listComments: (
     communityId: string,
     postId: string,

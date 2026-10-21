@@ -18,6 +18,8 @@ const communityDto = (c: Community, isJoined: boolean) => ({
   description: c.description,
   isPrivate: c.isPrivate,
   memberCount: c.memberCount,
+  avatarUrl: c.avatarUrl,
+  coverUrl: c.coverUrl,
   isJoined,
   createdAt: c.createdAt,
 });
@@ -101,6 +103,13 @@ export class CommunityService {
     });
   }
 
+  async getDetail(communityId: string, userId?: string) {
+    const community = await this.repo.findById(communityId);
+    if (!community) throw new AppError("Không tìm thấy cộng đồng", 404);
+    const isJoined = userId ? await this.repo.isMember(communityId, userId) : false;
+    return communityDto(community, isJoined);
+  }
+
   async listPosts(communityId: string, query: PaginationQuery, userId?: string) {
     await this.getReadable(communityId, userId);
     const { items, total } = await this.repo.listPosts(
@@ -117,6 +126,7 @@ export class CommunityService {
         author: p.author,
         content: p.content,
         campaignId: p.campaignId,
+        mediaUrls: p.mediaUrls,
         createdAt: p.createdAt,
         likeCount: p.likeCount,
         commentCount: p.commentCount,
@@ -146,12 +156,14 @@ export class CommunityService {
       authorId: userId,
       content: input.content,
       campaignId: input.campaignId ?? null,
+      mediaUrls: input.mediaUrls ?? undefined,
     });
     return {
       id: post.id,
       author: post.author,
       content: post.content,
       campaignId: post.campaignId,
+      mediaUrls: post.mediaUrls,
       createdAt: post.createdAt,
       likeCount: 0,
       commentCount: 0,
