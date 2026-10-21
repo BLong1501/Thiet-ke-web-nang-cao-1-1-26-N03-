@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { campaignApi, uploadApi } from "../services/api";
 import {
@@ -80,9 +80,18 @@ function CampaignForm({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [step, setStep] = useState(0);
+  const formRef = useRef<HTMLFormElement>(null);
   const [organizer, setOrganizer] = useState(c?.organizerType || "INDIVIDUAL");
   const [coverUrl, setCoverUrl] = useState<string>(c?.coverImageUrl || "");
+  const [localPreview, setLocalPreview] = useState("");
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [mediaText, setMediaText] = useState("");
+  const [mediaShots, setMediaShots] = useState<
+    { key: string; preview: string; url: string }[]
+  >([]);
+  const [uploadingMedia, setUploadingMedia] = useState(false);
+  const mediaShotsRef = useRef(mediaShots);
+  mediaShotsRef.current = mediaShots;
 
   const STEPS = [
     "Câu chuyện của bạn",
@@ -90,43 +99,153 @@ function CampaignForm({
     "Chủ thể & tài khoản",
   ] as const;
 
-  // Dữ liệu thụ hưởng / MoMo hiện có nếu chỉnh sửa
-  let existingMomoPhone = "";
-  let existingMomoName = "";
-  try {
-    if (c?.beneficiaryInfo) {
-      const parsed = JSON.parse(c.beneficiaryInfo);
-      existingMomoPhone = parsed.momoPhone || "";
-      existingMomoName = parsed.momoAccountName || "";
-    }
-  } catch {
-    // Không phải JSON
-  }
-
   const [selectedBank, setSelectedBank] = useState<string>(c?.bankName || VIETNAM_BANKS[0].name);
   const [accountNumber, setAccountNumber] = useState<string>(c?.bankAccountNumber || "");
-  const [enableMomo, setEnableMomo] = useState<boolean>(!!existingMomoPhone);
-  const [momoPhone, setMomoPhone] = useState<string>(existingMomoPhone);
-  const [momoName, setMomoName] = useState<string>(existingMomoName || user?.name || "");
+
+  useEffect(() => {
+    return () => {
+      if (localPreview.startsWith("blob:")) URL.revokeObjectURL(localPreview);
+    };
+  }, [localPreview]);
+
+  useEffect(() => {
+    return () => {
+      mediaShotsRef.current.forEach((shot) => {
+        if (shot.preview.startsWith("blob:")) URL.revokeObjectURL(shot.preview);
+      });
+    };
+  }, []);
 
   async function handleImageFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
+    e.target.value = "";
     if (!file) return;
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error("Ảnh không được vượt quá 5MB");
+    if (
+      !["image/png", "image/jpeg", "image/jpg"].includes(file.type) ||
+      file.size > 5 * 1024 * 1024
+    ) {
+      toast.error("Chọn ảnh PNG/JPEG tối đa 5MB.");
       return;
     }
+    if (localPreview.startsWith("blob:")) URL.revokeObjectURL(localPreview);
+    // Giữ blob để ảnh hiện ngay, kể cả khi URL máy chủ bị chặn cross-origin.
+    setLocalPreview(URL.createObjectURL(file));
     setUploadingImage(true);
     try {
       const res = await uploadApi.uploadPublicImage(file);
       setCoverUrl(res.url);
-      toast.success("Tải ảnh từ máy tính thành công!");
     } catch (err) {
       toast.error(errorMessage(err) || "Không thể tải ảnh lên máy chủ");
     } finally {
       setUploadingImage(false);
     }
   }
+
+  async function handleMediaFiles(list: FileList | null) {
+    const files = Array.from(list || []);
+    if (!files.length || uploadingMedia) return;
+    const accepted: { key: string; preview: string; file: File }[] = [];
+    for (const file of files) {
+      if (
+        !["image/png", "image/jpeg", "image/jpg"].includes(file.type) ||
+        file.size > 5 * 1024 * 1024
+      ) {
+        toast.error(`"${file.name}" không hợp lệ. Chọn ảnh PNG/JPEG tối đa 5MB.`);
+        continue;
+      }
+      accepted.push({
+        key: crypto.randomUUID(),
+        preview: URL.createObjectURL(file),
+        file,
+      });
+    }
+    if (!accepted.length) return;
+    setMediaShots((prev) => [
+      ...prev,
+      ...accepted.map(({ key, preview }) => ({ key, preview, url: "" })),
+    ]);
+    setUploadingMedia(true);
+    try {
+      for (const shot of accepted) {
+        try {
+          const res = await uploadApi.uploadPublicImage(shot.file);
+          if (!res?.url) throw new Error("Máy chủ chưa trả về đường dẫn ảnh.");
+          setMediaShots((prev) =>
+            prev.map((item) =>
+              item.key === shot.key ? { ...item, url: res.url } : item,
+            ),
+          );
+          setMediaText((prev) => {
+            const lines = prev
+              .split("\n")
+              .map((line) => line.trim())
+              .filter(Boolean);
+            if (lines.includes(res.url)) return prev;
+            return [...lines, res.url].join("\n");
+          });
+        } catch (err) {
+          toast.error(errorMessage(err) || "Không thể tải ảnh minh chứng");
+        }
+      }
+    } finally {
+      setUploadingMedia(false);
+    }
+  }
+
+  function removeMediaShot(key: string) {
+    const shot = mediaShots.find((item) => item.key === key);
+    if (!shot) return;
+    if (shot.preview.startsWith("blob:")) URL.revokeObjectURL(shot.preview);
+    setMediaShots((prev) => prev.filter((item) => item.key !== key));
+    if (shot.url) {
+      setMediaText((prev) =>
+        prev
+          .split("\n")
+          .map((line) => line.trim())
+          .filter((line) => line && line !== shot.url)
+          .join("\n"),
+      );
+    }
+  }
+
+  function goToStep(target: number) {
+    if (busy || target === step) return;
+    if (target < step) {
+      setStep(target);
+      return;
+    }
+    const form = formRef.current;
+    if (!form) return;
+    const panes = Array.from(
+      form.querySelectorAll("fieldset"),
+    ) as HTMLFieldSetElement[];
+    for (let i = 0; i < target; i++) {
+      const pane = panes[i];
+      pane.hidden = false;
+      const invalid = Array.from(pane.elements).find(
+        (el): el is HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement =>
+          (el instanceof HTMLInputElement ||
+            el instanceof HTMLSelectElement ||
+            el instanceof HTMLTextAreaElement) &&
+          !el.disabled &&
+          !el.validity.valid,
+      );
+      if (invalid) {
+        panes.forEach((fs, idx) => {
+          fs.hidden = idx !== i;
+        });
+        setStep(i);
+        invalid.focus();
+        invalid.reportValidity();
+        toast.error(
+          `Nhập đủ thông tin ở phần ${STEPS[i]} trước khi sang bước tiếp theo.`,
+        );
+        return;
+      }
+    }
+    setStep(target);
+  }
+
   async function submit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (busy) return;
@@ -169,6 +288,13 @@ function CampaignForm({
     }
     const submitter = (e.nativeEvent as SubmitEvent)
       .submitter as HTMLButtonElement;
+    if (mediaShots.some((shot) => !shot.url)) {
+      setStep(0);
+      setError(
+        "Ảnh minh chứng chưa tải xong. Đợi tải xong, hoặc xóa ảnh bị lỗi rồi gửi lại.",
+      );
+      return;
+    }
     const mediaUrls = value("media")
       .split("\n")
       .map((s) => s.trim())
@@ -186,13 +312,6 @@ function CampaignForm({
       return;
     }
 
-    if (enableMomo) {
-      if (!/^0[0-9]{9}$/.test(momoPhone.trim())) {
-        setError("Số điện thoại MoMo không hợp lệ (phải gồm đúng 10 chữ số, bắt đầu bằng số 0).");
-        return;
-      }
-    }
-
     const body = {
       title: value("title"),
       categoryId: value("categoryId"),
@@ -206,12 +325,6 @@ function CampaignForm({
       bankAccountNumber: cleanStk,
       bankAccountName: organizer === "INDIVIDUAL" ? (user?.name || value("bankAccountName")) : value("bankAccountName"),
       beneficiaryInfo: value("beneficiaryInfo"),
-      ...(enableMomo
-        ? {
-            momoPhone: momoPhone.trim(),
-            momoAccountName: organizer === "INDIVIDUAL" ? (user?.name || momoName.trim()) : momoName.trim(),
-          }
-        : {}),
       organizerType: organizer,
       charityCommitmentAccepted: f.get("commitment") === "on",
       ...(organizer === "ORGANIZATION"
@@ -244,7 +357,11 @@ function CampaignForm({
     }
   }
   return (
-    <form className="panel form-stack campaign-form" onSubmit={submit}>
+    <form
+      ref={formRef}
+      className="panel form-stack campaign-form"
+      onSubmit={submit}
+    >
       {error && <Notice error>{error}</Notice>}
 
       <ol className="wizard-progress" aria-label="Các bước tạo chiến dịch">
@@ -253,7 +370,7 @@ function CampaignForm({
             key={label}
             className={`${i === step ? "is-active" : ""} ${i < step ? "is-done" : ""}`}
           >
-            <button type="button" onClick={() => setStep(i)} disabled={busy}>
+            <button type="button" onClick={() => goToStep(i)} disabled={busy}>
               <span className="wizard-progress__n">{i + 1}</span>
               <span>{label}</span>
             </button>
@@ -312,9 +429,17 @@ function CampaignForm({
         </Field>
         <Field
           label="Ảnh bìa chiến dịch"
-          hint="Bạn có thể tải ảnh trực tiếp từ máy tính (PNG/JPEG tối đa 5MB) hoặc nhập URL công khai."
+          hint="Chọn ảnh PNG/JPEG tối đa 5MB — ảnh hiện ngay trên form — hoặc dán URL."
         >
           <div className="cover-upload">
+            {(localPreview || coverUrl) && (
+              <div className="cover-upload__preview">
+                <img
+                  src={localPreview || coverUrl}
+                  alt="Ảnh bìa chiến dịch"
+                />
+              </div>
+            )}
             <div className="cover-upload__actions">
               <label
                 className={`button secondary cover-upload__file ${uploadingImage || busy ? "is-disabled" : ""}`}
@@ -327,21 +452,22 @@ function CampaignForm({
                   onChange={handleImageFileChange}
                 />
               </label>
-              {coverUrl && (
+              {(coverUrl || localPreview) && (
                 <button
                   type="button"
                   className="cover-upload__remove"
-                  onClick={() => setCoverUrl("")}
+                  disabled={uploadingImage}
+                  onClick={() => {
+                    if (localPreview.startsWith("blob:"))
+                      URL.revokeObjectURL(localPreview);
+                    setLocalPreview("");
+                    setCoverUrl("");
+                  }}
                 >
-                  Xóa ảnh đã chọn
+                  Xóa ảnh
                 </button>
               )}
             </div>
-            {coverUrl && (
-              <div className="cover-upload__preview">
-                <img src={coverUrl} alt="Ảnh bìa xem trước" />
-              </div>
-            )}
             <input
               name="coverImageUrl"
               type="text"
@@ -353,8 +479,56 @@ function CampaignForm({
           </div>
         </Field>
         {!c && (
-          <Field label="URL ảnh minh chứng (mỗi dòng một đường dẫn)">
-            <textarea name="media" rows={3} />
+          <Field
+            label="URL ảnh minh chứng (mỗi dòng một đường dẫn)"
+            hint="Chọn ảnh PNG/JPEG tối đa 5MB — ảnh hiện ngay và đường dẫn được thêm vào ô bên dưới — hoặc dán URL, mỗi dòng một đường dẫn."
+          >
+            <div className="cover-upload">
+              {mediaShots.length > 0 && (
+                <div className="cover-upload__thumbs">
+                  {mediaShots.map((shot, idx) => (
+                    <div className="cover-upload__thumb" key={shot.key}>
+                      <img
+                        src={shot.preview || shot.url}
+                        alt={`Ảnh minh chứng ${idx + 1}`}
+                      />
+                      <button
+                        type="button"
+                        aria-label={`Xóa ảnh minh chứng ${idx + 1}`}
+                        disabled={uploadingMedia}
+                        onClick={() => removeMediaShot(shot.key)}
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <div className="cover-upload__actions">
+                <label
+                  className={`button secondary cover-upload__file ${uploadingMedia || busy ? "is-disabled" : ""}`}
+                >
+                  {uploadingMedia ? "Đang tải ảnh lên…" : "Chọn ảnh từ máy tính"}
+                  <input
+                    type="file"
+                    accept="image/png,image/jpeg,image/jpg"
+                    multiple
+                    disabled={uploadingMedia || busy}
+                    onChange={(e) => {
+                      handleMediaFiles(e.target.files);
+                      e.target.value = "";
+                    }}
+                  />
+                </label>
+              </div>
+              <textarea
+                name="media"
+                rows={3}
+                value={mediaText}
+                onChange={(e) => setMediaText(e.target.value)}
+                placeholder="https://... mỗi dòng một đường dẫn"
+              />
+            </div>
           </Field>
         )}
       </fieldset>
@@ -516,62 +690,6 @@ function CampaignForm({
           />
         </Field>
 
-        <div className="momo-opt-in">
-          <label className="check">
-            <input
-              type="checkbox"
-              checked={enableMomo}
-              onChange={(e) => setEnableMomo(e.target.checked)}
-            />
-            Bật tùy chọn nhận quyên góp qua Ví điện tử MoMo
-          </label>
-          <p>
-            Cho phép nhà hảo tâm chuyển tiền nhanh bằng App MoMo hoặc quét mã QR
-            MoMo P2P.
-          </p>
-          {enableMomo && (
-            <div className="form-grid">
-              <Field
-                label="Số điện thoại MoMo"
-                hint="Số điện thoại đăng ký ví MoMo (10 chữ số, bắt đầu bằng số 0)"
-              >
-                <input
-                  name="momoPhone"
-                  required={enableMomo}
-                  inputMode="numeric"
-                  pattern="^0[0-9]{9}$"
-                  maxLength={10}
-                  placeholder="Ví dụ: 0987654321"
-                  value={momoPhone}
-                  onChange={(e) =>
-                    setMomoPhone(e.target.value.replace(/[^0-9]/g, ""))
-                  }
-                />
-              </Field>
-              <Field
-                label="Tên chủ ví MoMo"
-                hint={
-                  organizer === "INDIVIDUAL"
-                    ? `Khóa theo tên KYC (${user?.name})`
-                    : "Tên chủ ví MoMo đại diện"
-                }
-              >
-                <input
-                  name="momoAccountName"
-                  required={enableMomo}
-                  readOnly={organizer === "INDIVIDUAL"}
-                  className={
-                    organizer === "INDIVIDUAL" ? "input-locked" : undefined
-                  }
-                  value={
-                    organizer === "INDIVIDUAL" ? user?.name || "" : momoName
-                  }
-                  onChange={(e) => setMomoName(e.target.value)}
-                />
-              </Field>
-            </div>
-          )}
-        </div>
         <label className="check">
           <input
             name="commitment"
@@ -602,7 +720,7 @@ function CampaignForm({
             type="button"
             className="button"
             disabled={busy}
-            onClick={() => setStep((s) => s + 1)}
+            onClick={() => goToStep(step + 1)}
           >
             Tiếp tục
           </button>

@@ -1,12 +1,12 @@
-import { useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import { campaignApi, formatCurrency, uploadApi } from "../../services/api";
 import { errorMessage, type RecordData } from "../../services/platform";
 import { Field, Modal, Notice } from "../ui/WorkspaceUI";
+import ImageFileField from "../ui/ImageFileField";
 import toast from "react-hot-toast";
 import { VIETNAM_BANKS } from "../../data/vietnamBanks";
 import {
   FiShield,
-  FiUploadCloud,
   FiCheckCircle,
   FiAlertTriangle,
   FiFileText,
@@ -44,15 +44,23 @@ export default function DisbursementModal({
   const [backIdUrl, setBackIdUrl] = useState("");
   const [selfieIdUrl, setSelfieIdUrl] = useState("");
 
-  // Uploading state
-  const [uploadingFront, setUploadingFront] = useState(false);
-  const [uploadingBack, setUploadingBack] = useState(false);
-  const [uploadingSelfie, setUploadingSelfie] = useState(false);
   const [uploadingProof, setUploadingProof] = useState(false);
 
-  // Chứng từ hóa đơn
-  const [proofList, setProofList] = useState<string[]>([]);
+  // Chứng từ hóa đơn. preview là blob để ảnh hiện ngay khi chọn file.
+  const [proofShots, setProofShots] = useState<
+    { key: string; preview: string; url: string }[]
+  >([]);
   const [proofInput, setProofInput] = useState("");
+
+  const proofShotsRef = useRef(proofShots);
+  proofShotsRef.current = proofShots;
+  useEffect(() => {
+    return () => {
+      proofShotsRef.current.forEach((shot) => {
+        if (shot.preview.startsWith("blob:")) URL.revokeObjectURL(shot.preview);
+      });
+    };
+  }, []);
 
   // Cam kết
   const [commit1, setCommit1] = useState(false);
@@ -65,37 +73,28 @@ export default function DisbursementModal({
     defaultAccNumber.replace(/\s+/g, "") !== accNumber.replace(/\s+/g, "")
   );
 
-  async function handleFileUpload(
-    file: File | undefined,
-    setUrl: (url: string) => void,
-    setLoading: (l: boolean) => void,
-    label: string
-  ) {
-    if (!file) return;
-    setLoading(true);
-    try {
-      const res = await uploadApi.uploadPublicImage(file);
-      if (res?.url) {
-        setUrl(res.url);
-        toast.success(`Đã tải lên ${label}!`);
-      }
-    } catch (err) {
-      toast.error(errorMessage(err) || `Lỗi tải ${label}`);
-    } finally {
-      setLoading(false);
-    }
-  }
-
   async function handleAddProofFile(file: File | undefined) {
-    if (!file) return;
+    if (!file || uploadingProof) return;
+    if (
+      !["image/png", "image/jpeg", "image/jpg"].includes(file.type) ||
+      file.size > 5 * 1024 * 1024
+    ) {
+      toast.error("Chọn ảnh PNG/JPEG tối đa 5MB.");
+      return;
+    }
+    const key = crypto.randomUUID();
+    const preview = URL.createObjectURL(file);
+    setProofShots((prev) => [...prev, { key, preview, url: "" }]);
     setUploadingProof(true);
     try {
       const res = await uploadApi.uploadPublicImage(file);
-      if (res?.url) {
-        setProofList((prev) => [...prev, res.url]);
-        toast.success("Đã tải lên chứng từ hóa đơn!");
-      }
+      if (!res?.url) throw new Error("Máy chủ chưa trả về đường dẫn ảnh.");
+      setProofShots((prev) =>
+        prev.map((shot) => (shot.key === key ? { ...shot, url: res.url } : shot)),
+      );
     } catch (err) {
+      URL.revokeObjectURL(preview);
+      setProofShots((prev) => prev.filter((shot) => shot.key !== key));
       toast.error(errorMessage(err) || "Lỗi tải chứng từ");
     } finally {
       setUploadingProof(false);
@@ -121,7 +120,14 @@ export default function DisbursementModal({
       .split("\n")
       .map((s) => s.trim())
       .filter(Boolean);
-    const allProofs = Array.from(new Set([...proofList, ...manualProofs]));
+    if (proofShots.some((shot) => !shot.url)) {
+      setError("Ảnh hóa đơn đang được tải lên. Đợi xong rồi gửi lại.");
+      return;
+    }
+
+    const allProofs = Array.from(
+      new Set([...proofShots.map((shot) => shot.url), ...manualProofs]),
+    );
 
     if (allProofs.length === 0) {
       setError("Vui lòng tải lên hoặc dán tối thiểu 1 chứng từ hóa đơn / biên lai / dự toán chi tiêu.");
@@ -304,72 +310,46 @@ export default function DisbursementModal({
           </div>
 
           {/* UPLOAD ẢNH CCCD 2 MẶT VÀ ẢNH CHÂN DUNG */}
-          <div style={{ marginTop: "12px" }}>
-            <span style={{ fontSize: "0.85rem", fontWeight: 600, color: "#334155", display: "block", marginBottom: "8px" }}>
-              Tải lên tài liệu định danh (Ảnh chụp rõ nét, không cắt góc, không lóa sáng):
-            </span>
-
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(210px, 1fr))", gap: "12px" }}>
-              {/* Mặt trước */}
-              <div style={{ border: "1px dashed #94a3b8", borderRadius: "10px", padding: "10px", textAlign: "center", background: "#f8fafc" }}>
-                <span style={{ fontSize: "0.8rem", fontWeight: 600, color: "#475569" }}>CCCD Mặt trước *</span>
-                {frontIdUrl ? (
-                  <div style={{ marginTop: "6px" }}>
-                    <img src={frontIdUrl} alt="CCCD Trước" style={{ width: "100%", maxHeight: "110px", objectFit: "contain", borderRadius: "6px" }} />
-                    <button type="button" className="button secondary" style={{ fontSize: "0.75rem", padding: "2px 8px", marginTop: "4px" }} onClick={() => setFrontIdUrl("")}>
-                      Đổi ảnh
-                    </button>
-                  </div>
-                ) : (
-                  <div style={{ marginTop: "8px" }}>
-                    <label className="button secondary" style={{ fontSize: "0.78rem", padding: "6px 12px", cursor: "pointer", display: "inline-flex", alignItems: "center", gap: "4px" }}>
-                      <FiUploadCloud size={14} /> {uploadingFront ? "Đang tải..." : "Chọn ảnh trước"}
-                      <input type="file" accept="image/*" style={{ display: "none" }} disabled={uploadingFront} onChange={(e) => handleFileUpload(e.target.files?.[0], setFrontIdUrl, setUploadingFront, "CCCD mặt trước")} />
-                    </label>
-                  </div>
-                )}
-              </div>
-
-              {/* Mặt sau */}
-              <div style={{ border: "1px dashed #94a3b8", borderRadius: "10px", padding: "10px", textAlign: "center", background: "#f8fafc" }}>
-                <span style={{ fontSize: "0.8rem", fontWeight: 600, color: "#475569" }}>CCCD Mặt sau *</span>
-                {backIdUrl ? (
-                  <div style={{ marginTop: "6px" }}>
-                    <img src={backIdUrl} alt="CCCD Sau" style={{ width: "100%", maxHeight: "110px", objectFit: "contain", borderRadius: "6px" }} />
-                    <button type="button" className="button secondary" style={{ fontSize: "0.75rem", padding: "2px 8px", marginTop: "4px" }} onClick={() => setBackIdUrl("")}>
-                      Đổi ảnh
-                    </button>
-                  </div>
-                ) : (
-                  <div style={{ marginTop: "8px" }}>
-                    <label className="button secondary" style={{ fontSize: "0.78rem", padding: "6px 12px", cursor: "pointer", display: "inline-flex", alignItems: "center", gap: "4px" }}>
-                      <FiUploadCloud size={14} /> {uploadingBack ? "Đang tải..." : "Chọn ảnh sau"}
-                      <input type="file" accept="image/*" style={{ display: "none" }} disabled={uploadingBack} onChange={(e) => handleFileUpload(e.target.files?.[0], setBackIdUrl, setUploadingBack, "CCCD mặt sau")} />
-                    </label>
-                  </div>
-                )}
-              </div>
-
-              {/* Chân dung cầm CCCD */}
-              <div style={{ border: "1px dashed #94a3b8", borderRadius: "10px", padding: "10px", textAlign: "center", background: "#f8fafc" }}>
-                <span style={{ fontSize: "0.8rem", fontWeight: 600, color: "#475569" }}>Chân dung cầm CCCD (hoặc ủy quyền)</span>
-                {selfieIdUrl ? (
-                  <div style={{ marginTop: "6px" }}>
-                    <img src={selfieIdUrl} alt="Chân dung" style={{ width: "100%", maxHeight: "110px", objectFit: "contain", borderRadius: "6px" }} />
-                    <button type="button" className="button secondary" style={{ fontSize: "0.75rem", padding: "2px 8px", marginTop: "4px" }} onClick={() => setSelfieIdUrl("")}>
-                      Đổi ảnh
-                    </button>
-                  </div>
-                ) : (
-                  <div style={{ marginTop: "8px" }}>
-                    <label className="button secondary" style={{ fontSize: "0.78rem", padding: "6px 12px", cursor: "pointer", display: "inline-flex", alignItems: "center", gap: "4px" }}>
-                      <FiUploadCloud size={14} /> {uploadingSelfie ? "Đang tải..." : "Tải ảnh chân dung"}
-                      <input type="file" accept="image/*" style={{ display: "none" }} disabled={uploadingSelfie} onChange={(e) => handleFileUpload(e.target.files?.[0], setSelfieIdUrl, setUploadingSelfie, "ảnh chân dung")} />
-                    </label>
-                  </div>
-                )}
-              </div>
-            </div>
+          <div className="form-grid">
+            <Field
+              label="CCCD mặt trước"
+              hint="PNG/JPEG tối đa 5MB. Ảnh hiện ngay khi chọn."
+            >
+              <ImageFileField
+                alt="CCCD mặt trước"
+                value={frontIdUrl}
+                onChange={setFrontIdUrl}
+                allowUrl={false}
+                previewClassName="cover-upload__preview--doc"
+                disabled={busy}
+              />
+            </Field>
+            <Field
+              label="CCCD mặt sau"
+              hint="PNG/JPEG tối đa 5MB. Ảnh hiện ngay khi chọn."
+            >
+              <ImageFileField
+                alt="CCCD mặt sau"
+                value={backIdUrl}
+                onChange={setBackIdUrl}
+                allowUrl={false}
+                previewClassName="cover-upload__preview--doc"
+                disabled={busy}
+              />
+            </Field>
+            <Field
+              label="Chân dung cầm CCCD"
+              hint="PNG/JPEG tối đa 5MB. Ảnh hiện ngay khi chọn."
+            >
+              <ImageFileField
+                alt="Chân dung cầm CCCD"
+                value={selfieIdUrl}
+                onChange={setSelfieIdUrl}
+                allowUrl={false}
+                previewClassName="cover-upload__preview--doc"
+                disabled={busy}
+              />
+            </Field>
           </div>
         </fieldset>
 
@@ -493,60 +473,49 @@ export default function DisbursementModal({
               Hóa đơn đỏ (VAT), Giấy báo viện phí, Phiếu thu, Báo giá hoặc Dự toán chi tiêu *:
             </span>
 
-            <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "8px" }}>
-              <label
-                className="button secondary"
-                style={{
-                  fontSize: "0.82rem",
-                  padding: "6px 14px",
-                  cursor: "pointer",
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: "6px",
-                }}
-              >
-                <FiUploadCloud size={16} /> {uploadingProof ? "Đang tải ảnh lên..." : "Tải ảnh hóa đơn từ máy tính"}
-                <input
-                  type="file"
-                  accept="image/*"
-                  style={{ display: "none" }}
-                  disabled={uploadingProof}
-                  onChange={(e) => handleAddProofFile(e.target.files?.[0])}
-                />
-              </label>
-              <span style={{ fontSize: "0.8rem", color: "#64748b" }}>
-                Đã có {proofList.length} ảnh hóa đơn đính kèm
-              </span>
-            </div>
-
-            {proofList.length > 0 && (
-              <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", marginBottom: "10px" }}>
-                {proofList.map((url, idx) => (
-                  <div key={url} style={{ position: "relative", width: "70px", height: "70px", border: "1px solid #cbd5e1", borderRadius: "8px", overflow: "hidden" }}>
-                    <img src={url} alt={`Hóa đơn ${idx + 1}`} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                    <button
-                      type="button"
-                      onClick={() => setProofList((list) => list.filter((_, i) => i !== idx))}
-                      style={{
-                        position: "absolute",
-                        top: "2px",
-                        right: "2px",
-                        background: "rgba(0,0,0,0.6)",
-                        color: "#fff",
-                        border: "none",
-                        borderRadius: "50%",
-                        width: "18px",
-                        height: "18px",
-                        fontSize: "10px",
-                        cursor: "pointer",
-                      }}
-                    >
-                      ×
-                    </button>
-                  </div>
-                ))}
+            <div className="cover-upload">
+              {proofShots.length > 0 && (
+                <div className="cover-upload__thumbs">
+                  {proofShots.map((shot, idx) => (
+                    <div className="cover-upload__thumb" key={shot.key}>
+                      <img src={shot.preview || shot.url} alt={`Hóa đơn ${idx + 1}`} />
+                      <button
+                        type="button"
+                        aria-label={`Xóa hóa đơn ${idx + 1}`}
+                        onClick={() => {
+                          if (shot.preview.startsWith("blob:"))
+                            URL.revokeObjectURL(shot.preview);
+                          setProofShots((list) =>
+                            list.filter((item) => item.key !== shot.key),
+                          );
+                        }}
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <div className="cover-upload__actions">
+                <label
+                  className={`button secondary cover-upload__file ${uploadingProof || busy ? "is-disabled" : ""}`}
+                >
+                  {uploadingProof ? "Đang tải ảnh lên…" : "Chọn ảnh từ máy tính"}
+                  <input
+                    type="file"
+                    accept="image/png,image/jpeg,image/jpg"
+                    disabled={uploadingProof || busy}
+                    onChange={(e) => {
+                      handleAddProofFile(e.target.files?.[0]);
+                      e.target.value = "";
+                    }}
+                  />
+                </label>
+                <span>
+                  {proofShots.length} ảnh hóa đơn. PNG/JPEG tối đa 5MB, hiện ngay khi chọn.
+                </span>
               </div>
-            )}
+            </div>
 
             <Field label="Hoặc dán link chứng từ online (mỗi dòng một link)">
               <textarea

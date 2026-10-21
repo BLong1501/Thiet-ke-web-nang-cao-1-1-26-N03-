@@ -54,6 +54,8 @@ export function createUploadRouter(root = process.env.PRIVATE_UPLOAD_DIR || defa
         'Content-Type': 'image/png',
         'Cache-Control': 'public, max-age=86400',
         'X-Content-Type-Options': 'nosniff',
+        // Trang FE (cổng 5173) cần nhúng ảnh từ API (cổng 5000).
+        'Cross-Origin-Resource-Policy': 'cross-origin',
       }).send(image);
     } catch (error: any) {
       if (error.code === 'ENOENT') {
