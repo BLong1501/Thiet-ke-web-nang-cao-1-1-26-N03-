@@ -19,6 +19,22 @@ import {
   Pager,
   RemoteState,
 } from "../components/ui/WorkspaceUI";
+import {
+  FiUsers,
+  FiUserPlus,
+  FiUserCheck,
+  FiLock,
+  FiGlobe,
+  FiPlus,
+  FiImage,
+  FiX,
+  FiSend,
+  FiHeart,
+  FiMessageSquare,
+  FiShare2,
+  FiLogIn,
+  FiLoader,
+} from "react-icons/fi";
 import toast from "react-hot-toast";
 export default function CommunityPage() {
   const [params, setParams] = useSearchParams();
@@ -63,12 +79,19 @@ export default function CommunityPage() {
             className="button"
             disabled={!!groups.error}
             onClick={() => setCreating(true)}
+            style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}
           >
-            Tạo cộng đồng
+            <FiPlus size={16} />
+            <span>Tạo cộng đồng</span>
           </button>
         ) : (
-          <Link className="button" to="/login">
-            Đăng nhập để tham gia
+          <Link
+            className="button"
+            to="/login"
+            style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}
+          >
+            <FiLogIn size={16} />
+            <span>Đăng nhập để tham gia</span>
           </Link>
         )
       }
@@ -96,8 +119,9 @@ export default function CommunityPage() {
                 >
                   <h2>{g.name}</h2>
                   <p>{g.description}</p>
-                  <small>
-                    {g.memberCount ?? g._count?.members ?? 0} thành viên
+                  <small style={{ display: "inline-flex", alignItems: "center", gap: "5px" }}>
+                    <FiUsers size={13} color="#64748b" />
+                    <span>{g.memberCount ?? g._count?.members ?? 0} thành viên</span>
                   </small>
                 </button>
               ))}
@@ -278,13 +302,54 @@ function GroupFeed({ id, group }: { id: string; group?: RecordData }) {
       <div className="section-heading">
         <div>
           <h2>{groupName}</h2>
-          <small style={{ color: "#64748b" }}>
-            {memberCount} thành viên · {isPrivate ? "🔒 Nhóm riêng tư" : "🌐 Nhóm công khai"}
+          <small
+            style={{
+              color: "#64748b",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "8px",
+              flexWrap: "wrap",
+              marginTop: "4px",
+            }}
+          >
+            <span style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}>
+              <FiUsers size={14} color="#0d9488" />
+              <span>{memberCount} thành viên</span>
+            </span>
+            <span>·</span>
+            <span style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}>
+              {isPrivate ? (
+                <>
+                  <FiLock size={13} color="#e11d48" />
+                  <span>Nhóm riêng tư</span>
+                </>
+              ) : (
+                <>
+                  <FiGlobe size={13} color="#2563eb" />
+                  <span>Nhóm công khai</span>
+                </>
+              )}
+            </span>
           </small>
         </div>
         {user && (
-          <button className="button secondary" disabled={busy} onClick={join}>
-            {joined ? "Rời nhóm" : "Tham gia nhóm"}
+          <button
+            className="button secondary"
+            disabled={busy}
+            onClick={join}
+            style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}
+          >
+            {joined ? (
+              <>
+                <FiUserCheck size={16} color="#16a34a" />
+                <span>Rời nhóm</span>
+              </>
+            ) : (
+              <>
+                <FiUserPlus size={16} color="#2563eb" />
+                <span>Tham gia nhóm</span>
+              </>
+            )}
           </button>
         )}
       </div>
@@ -307,19 +372,18 @@ function GroupFeed({ id, group }: { id: string; group?: RecordData }) {
         >
           <div
             style={{
-              width: "56px",
-              height: "56px",
+              width: "60px",
+              height: "60px",
               background: "#eff6ff",
               color: "#2563eb",
               borderRadius: "50%",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              margin: "0 auto 14px",
-              fontSize: "26px",
+              margin: "0 auto 16px",
             }}
           >
-            👥
+            <FiUsers size={28} />
           </div>
           <h3
             style={{
@@ -352,18 +416,26 @@ function GroupFeed({ id, group }: { id: string; group?: RecordData }) {
                 borderRadius: "10px",
                 cursor: "pointer",
                 boxShadow: "0 4px 12px rgba(37,99,235,0.25)",
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: "8px",
               }}
               disabled={busy}
               onClick={join}
             >
-              🚀 Tham gia cộng đồng ngay
+              <FiUserPlus size={18} />
+              <span>Tham gia cộng đồng ngay</span>
             </button>
           ) : (
             <Link
               to={`/login?redirect=${encodeURIComponent(`/community?group=${id}`)}`}
               className="button primary"
               style={{
-                display: "inline-block",
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: "8px",
                 padding: "12px 32px",
                 fontSize: "15px",
                 fontWeight: "600",
@@ -371,7 +443,8 @@ function GroupFeed({ id, group }: { id: string; group?: RecordData }) {
                 textDecoration: "none",
               }}
             >
-              Đăng nhập để tham gia nhóm
+              <FiLogIn size={18} />
+              <span>Đăng nhập để tham gia nhóm</span>
             </Link>
           )}
         </div>
@@ -440,12 +513,11 @@ function GroupFeed({ id, group }: { id: string; group?: RecordData }) {
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
-                      fontSize: "11px",
                       lineHeight: 1,
                     }}
                     title="Xóa ảnh"
                   >
-                    ✕
+                    <FiX size={12} />
                   </button>
                 </div>
               ))}
@@ -465,7 +537,7 @@ function GroupFeed({ id, group }: { id: string; group?: RecordData }) {
               style={{
                 display: "inline-flex",
                 alignItems: "center",
-                gap: "6px",
+                gap: "8px",
                 padding: "8px 14px",
                 background: "#f1f5f9",
                 borderRadius: "8px",
@@ -476,7 +548,12 @@ function GroupFeed({ id, group }: { id: string; group?: RecordData }) {
                 border: "1px solid #e2e8f0",
               }}
             >
-              <span>📷 {uploadingImage ? "Đang tải ảnh..." : "Đính kèm ảnh"}</span>
+              {uploadingImage ? (
+                <FiLoader size={16} className="spin" />
+              ) : (
+                <FiImage size={16} color="#2563eb" />
+              )}
+              <span>{uploadingImage ? "Đang tải ảnh..." : "Đính kèm ảnh"}</span>
               <input
                 type="file"
                 accept="image/png,image/jpeg,image/webp,image/jpg"
@@ -489,9 +566,15 @@ function GroupFeed({ id, group }: { id: string; group?: RecordData }) {
             <button
               className="button primary"
               disabled={busy || uploadingImage}
-              style={{ padding: "8px 20px" }}
+              style={{
+                padding: "8px 20px",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "6px",
+              }}
             >
-              {busy ? "Đang đăng..." : "Đăng bài"}
+              <FiSend size={15} />
+              <span>{busy ? "Đang đăng..." : "Đăng bài"}</span>
             </button>
           </div>
         </form>
@@ -622,18 +705,33 @@ function CommunityPost({
           aria-pressed={liked}
           disabled={!user || busy}
           onClick={like}
+          style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}
         >
-          {liked ? "Đã thích" : "Thích"} · {likes}
+          <FiHeart
+            size={15}
+            fill={liked ? "#ef4444" : "none"}
+            color={liked ? "#ef4444" : "currentColor"}
+          />
+          <span>{liked ? "Đã thích" : "Thích"}</span>
+          <span>·</span>
+          <strong>{likes}</strong>
         </button>
         <button
           className="button secondary"
           aria-expanded={showComments}
           onClick={() => setShowComments((v) => !v)}
+          style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}
         >
-          Bình luận
+          <FiMessageSquare size={15} />
+          <span>Bình luận</span>
         </button>
-        <button className="button secondary" onClick={share}>
-          Chia sẻ liên kết
+        <button
+          className="button secondary"
+          onClick={share}
+          style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}
+        >
+          <FiShare2 size={15} />
+          <span>Chia sẻ liên kết</span>
         </button>
       </div>
       {showComments && <PostComments groupId={groupId} postId={post.id} />}
@@ -700,8 +798,13 @@ function PostComments({
           <Field label="Bình luận của bạn">
             <textarea name="content" required maxLength={2000} />
           </Field>
-          <button className="button" disabled={busy}>
-            Gửi bình luận
+          <button
+            className="button"
+            disabled={busy}
+            style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}
+          >
+            <FiSend size={14} />
+            <span>Gửi bình luận</span>
           </button>
         </form>
       )}
