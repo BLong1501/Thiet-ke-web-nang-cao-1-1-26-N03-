@@ -135,7 +135,13 @@ export function createUploadRouter(root = process.env.PRIVATE_UPLOAD_DIR || defa
           throw fsErr;
         }
       }
-      const hostUrl = (process.env.APP_URL || `${req.protocol}://${req.get('host')}`).replace(/\/+$/, '');
+      const forwardedProto = (req.headers['x-forwarded-proto'] as string) || req.protocol;
+      const reqHost = req.get('host') || '';
+      let hostUrl = process.env.APP_URL;
+      if (!hostUrl || (hostUrl.includes('localhost') && reqHost && !reqHost.includes('localhost'))) {
+        hostUrl = `${forwardedProto}://${reqHost}`;
+      }
+      hostUrl = hostUrl.replace(/\/+$/, '');
       const url = `${hostUrl}/api/v1/uploads/public/${id}.png`;
       sendSuccess(res, 201, 'Tải ảnh công khai thành công', {
         id,

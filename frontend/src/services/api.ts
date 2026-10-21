@@ -125,7 +125,14 @@ export const uploadApi = {
     const res = await api.post("/uploads/public", formData, {
       headers: { "Content-Type": "multipart/form-data" },
     });
-    return res.data?.data || res.data;
+    const result = res.data?.data || res.data;
+    if (result && typeof result.url === "string") {
+      const apiOrigin = new URL(api.defaults.baseURL || window.location.origin).origin;
+      if (!apiOrigin.includes("localhost:5000") && result.url.includes("localhost:5000")) {
+        result.url = result.url.replace(/https?:\/\/localhost:5000/g, apiOrigin);
+      }
+    }
+    return result;
   },
 };
 
@@ -322,13 +329,16 @@ export const reportApi = {
 export const communityApi = {
   list: (params?: Record<string, unknown>) =>
     api.get("/communities", { params }),
-  create: (data: { name: string; description: string }) =>
+  get: (id: string) => api.get(`/communities/${id}`),
+  create: (data: { name: string; description: string; isPrivate?: boolean }) =>
     api.post("/communities", data),
   join: (id: string) => api.post(`/communities/${id}/join`),
   listPosts: (id: string, params?: Record<string, unknown>) =>
     api.get(`/communities/${id}/posts`, { params }),
-  createPost: (id: string, data: { content: string }) =>
-    api.post(`/communities/${id}/posts`, data),
+  createPost: (
+    id: string,
+    data: { content: string; campaignId?: string; mediaUrls?: string[] },
+  ) => api.post(`/communities/${id}/posts`, data),
   listComments: (
     communityId: string,
     postId: string,

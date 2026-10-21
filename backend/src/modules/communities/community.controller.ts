@@ -19,6 +19,15 @@ export class CommunityController {
     }
   };
 
+  getDetail = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const data = await this.service.getDetail(param(req, "id"), req.user?.userId);
+      return sendSuccess(res, 200, "Lấy thông tin cộng đồng thành công", data);
+    } catch (e) {
+      return next(e);
+    }
+  };
+
   create = async (req: Request, res: Response, next: NextFunction) => {
     try {
       const community = await this.service.create(req.user!.userId, req.body);

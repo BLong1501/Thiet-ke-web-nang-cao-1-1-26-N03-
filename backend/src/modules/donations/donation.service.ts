@@ -16,6 +16,7 @@ import {
 import { assertAnyObjectAccess, assertObjectAccess, type Actor } from "../../core/auth/object-access";
 import { findBank } from "../../core/constants/banks.constant";
 import { mailService } from "../../core/services/mail.service";
+import { PayOS } from "@payos/node";
 
 export const DONATION_EXPIRATION_MS = 10 * 60 * 1000; // 10 phút hiệu lực
 
@@ -118,7 +119,7 @@ export class DonationService {
           replayed: true,
           message: "Yêu cầu quyên góp đã được khởi tạo từ trước (Idempotent Replay)",
           donation: existing,
-          paymentInstructions: this.buildPaymentInstructions(campaign, existing.amount, existing.transactionCode, existing.id, existing.createdAt),
+          paymentInstructions: await this.buildPaymentInstructions(campaign, existing.amount, existing.transactionCode, existing.id, existing.createdAt),
         };
       }
     }
@@ -165,8 +166,8 @@ export class DonationService {
       paymentGatewayResponse: input.requestKey ? { requestKey: input.requestKey } : undefined,
     });
 
-    // 6. Tạo hướng dẫn thanh toán chi tiết (VietQR hoặc MoMo) kèm thời gian hết hạn
-    const paymentInstructions = this.buildPaymentInstructions(campaign, input.amount, transactionCode, donation.id, donation.createdAt);
+    // 6. Tạo hướng dẫn thanh toán chi tiết (tích hợp PayOS VietQR Pro) kèm thời gian hết hạn
+    const paymentInstructions = await this.buildPaymentInstructions(campaign, input.amount, transactionCode, donation.id, donation.createdAt);
 
     return {
       replayed: false,
@@ -177,21 +178,72 @@ export class DonationService {
   }
 
   /**
-   * Tạo chi tiết hướng dẫn thanh toán: VietQR Ngân hàng & Mã QR Ví MoMo kèm thông tin hết hạn
+   * Tạo chi tiết hướng dẫn thanh toán: Tích hợp PayOS VietQR Pro & Mã QR Ví MoMo kèm thông tin hết hạn
    */
-  private buildPaymentInstructions(campaign: any, amount: number | Prisma.Decimal, transactionCode: string, donationId: string, createdAt?: Date | string) {
+  private async buildPaymentInstructions(campaign: any, amount: number | Prisma.Decimal, transactionCode: string, donationId: string, createdAt?: Date | string) {
     const numericAmount = Number(amount);
-    // 1. Tài khoản Quỹ trung tâm FundTrust (Ký quỹ trung gian tiếp nhận tiền ủng hộ qua PayOS VietQR Pro MBBank)
-    const bankName = process.env.BANK_NAME || "Ngân hàng Quân Đội (MB Bank)";
-    const bankAccountNumber = process.env.BANK_ACCOUNT_NUMBER || "0344907168";
-    const bankAccountName = process.env.BANK_ACCOUNT_NAME || "TRAN BAO LONG";
+    // Cấu hình ngân hàng mặc định
+    let bankName = process.env.BANK_NAME || "Ngân hàng Quân Đội (MB Bank)";
+    let bankAccountNumber = process.env.BANK_ACCOUNT_NUMBER || "0344907168";
+    let bankAccountName = process.env.BANK_ACCOUNT_NAME || "TRAN BAO LONG";
+    let vietQrContent = transactionCode;
+    let vietQrUrl = "";
+    let payosCheckoutUrl = "";
 
     // Tìm mã BIN ngân hàng chuẩn Napas 247 (MB: 970422)
     const foundBank = findBank(bankName);
-    const bankIdentifier = foundBank?.bin || "970422";
+    let bankIdentifier = foundBank?.bin || "970422";
 
-    // 1. VietQR ngân hàng chuẩn Napas 247 (Tích hợp PayOS VietQR Pro)
-    const vietQrUrl = `https://img.vietqr.io/image/${encodeURIComponent(bankIdentifier)}-${encodeURIComponent(bankAccountNumber)}-compact2.png?amount=${numericAmount}&addInfo=${encodeURIComponent(transactionCode)}&accountName=${encodeURIComponent(bankAccountName)}`;
+    // 1. TẠO PAYMENT REQUEST QUA PAYOS API
+    // Giúp PayOS ghi nhận đơn hàng trên Dashboard và tự động kích hoạt Webhook khi có tiền vào MBBank
+    const clientId = (process.env.PAYOS_CLIENT_ID || "").trim();
+    const apiKey = (process.env.PAYOS_API_KEY || "").trim();
+    const checksumKey = (process.env.PAYOS_CHECKSUM_KEY || "").trim();
+
+    if (clientId && apiKey && checksumKey) {
+      try {
+        const payos = new PayOS({ clientId, apiKey, checksumKey });
+        // PayOS orderCode: số nguyên dương duy nhất (6 chữ số cuối timestamp + 3 số ngẫu nhiên)
+        const orderCode = Number(String(Date.now()).slice(-6) + Math.floor(100 + Math.random() * 900));
+        const cleanDesc = `FT ${transactionCode.replace(/[^a-zA-Z0-9]/g, "")}`.slice(0, 25);
+        const clientUrl = (process.env.CLIENT_URL || "https://thiet-ke-web-nang-cao-1-1-26-n03.vercel.app").trim();
+
+        const payosLink = await payos.paymentRequests.create({
+          orderCode,
+          amount: numericAmount,
+          description: cleanDesc,
+          cancelUrl: `${clientUrl}/campaigns/${campaign.slug || campaign.id}?cancel=true`,
+          returnUrl: `${clientUrl}/campaigns/${campaign.slug || campaign.id}?success=true`,
+        });
+
+        if (payosLink) {
+          console.log(`✓ [PAYOS PAYMENT LINK] Tạo thành công đơn hàng PayOS #${orderCode} cho ${transactionCode}`);
+          bankAccountNumber = payosLink.accountNumber || bankAccountNumber;
+          bankAccountName = payosLink.accountName || bankAccountName;
+          bankIdentifier = payosLink.bin || bankIdentifier;
+          vietQrContent = payosLink.description || cleanDesc;
+          payosCheckoutUrl = payosLink.checkoutUrl || "";
+
+          // Cập nhật thông tin PayOS vào CSDL để Webhook dễ dàng đối soát theo orderCode
+          await prisma.donation.update({
+            where: { id: donationId },
+            data: {
+              paymentGatewayResponse: {
+                orderCode,
+                paymentLinkId: payosLink.paymentLinkId,
+                payosDescription: payosLink.description,
+                payosAccount: payosLink.accountNumber,
+              },
+            },
+          }).catch((err) => console.warn("Lỗi lưu paymentGatewayResponse:", err));
+        }
+      } catch (payosErr: any) {
+        console.warn("⚠️ [PAYOS CREATE LINK ERROR] Không thể tạo Payment Link trên PayOS (dùng VietQR fallback):", payosErr?.message || payosErr);
+      }
+    }
+
+    // Sinh ảnh VietQR Napas 247 tương ứng
+    vietQrUrl = `https://img.vietqr.io/image/${encodeURIComponent(bankIdentifier)}-${encodeURIComponent(bankAccountNumber)}-compact2.png?amount=${numericAmount}&addInfo=${encodeURIComponent(vietQrContent)}&accountName=${encodeURIComponent(bankAccountName)}`;
 
     // 2. Ví MoMo
     let legalMeta: any = null;
@@ -217,14 +269,15 @@ export class DonationService {
       expiresAt,
       expiresInSeconds: Math.max(0, Math.floor((new Date(expiresAt).getTime() - Date.now()) / 1000)),
       bankTransfer: {
-        methodName: "Chuyển khoản Ngân hàng (VietQR Napas 247)",
+        methodName: "Chuyển khoản Ngân hàng (VietQR Napas 247 - MBBank)",
         bankName,
         accountNumber: bankAccountNumber,
         accountName: bankAccountName,
         amount: numericAmount,
-        content: transactionCode,
+        content: vietQrContent,
         qrCodeUrl: vietQrUrl,
-        instructions: `Mở ứng dụng Mobile Banking của bạn, chọn 'Quét mã QR' và quét mã trên, hoặc chuyển khoản đến STK ${bankAccountNumber} (${bankName}) với nội dung: ${transactionCode}`,
+        checkoutUrl: payosCheckoutUrl,
+        instructions: `Mở ứng dụng Mobile Banking của bạn, chọn 'Quét mã QR' và quét mã trên, hoặc chuyển khoản đến STK ${bankAccountNumber} (${bankName}) với nội dung: ${vietQrContent}`,
       },
       momo: {
         methodName: "Ví điện tử MoMo",
@@ -793,38 +846,77 @@ export class DonationService {
       }
     }
 
-    // 4. Trích xuất mã giao dịch từ nội dung chuyển khoản
-    const uuidMatch = content.match(/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i);
-    const donMatch = content.match(/(DON[- ]?[0-9]{6}[- ]?[A-Z0-9]+)/i) || content.match(/(DON[- ]?[A-Z0-9-]+)/i);
-    const transactionCode = uuidMatch ? uuidMatch[1] : donMatch ? donMatch[1] : content.trim();
+    // 4. Tìm kiếm khoản đóng góp:
+    let donation: any = null;
 
-    if (!transactionCode) {
-      return { success: false, message: "Không tìm thấy mã giao dịch trong nội dung chuyển khoản" };
+    // 4.1 Ưu tiên tìm theo orderCode của PayOS (nếu có)
+    const orderCode = Number(data.orderCode || payload.orderCode || 0);
+    if (orderCode > 0) {
+      try {
+        donation = await prisma.donation.findFirst({
+          where: {
+            paymentGatewayResponse: {
+              path: "$.orderCode",
+              equals: orderCode,
+            },
+          },
+          include: { campaign: true },
+        });
+      } catch {
+        donation = null;
+      }
+      if (donation) {
+        console.log(`✓ [PAYOS WEBHOOK] Khớp thành công khoản đóng góp qua orderCode #${orderCode}: ${donation.transactionCode}`);
+      }
     }
 
-    // Tìm kiếm khoản đóng góp (hỗ trợ cả dạng đầy đủ, chuẩn hóa, hoặc tìm trực tiếp trong content)
-    let donation = await this.repo.findByTransactionCode(transactionCode);
-    if (!donation && content !== transactionCode) {
-      donation = await this.repo.findByTransactionCode(content);
+    // 4.2 Nếu chưa tìm thấy theo orderCode, trích xuất mã giao dịch từ nội dung chuyển khoản
+    if (!donation) {
+      const cleanNoFT = content.replace(/^FT\s*/i, "").trim();
+      const uuidMatch = cleanNoFT.match(/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i);
+      const donMatch = cleanNoFT.match(/(DON[- ]?[0-9]{6}[- ]?[A-Z0-9]+)/i) || cleanNoFT.match(/(DON[- ]?[A-Z0-9-]+)/i);
+      const transactionCode = uuidMatch ? uuidMatch[1] : donMatch ? donMatch[1] : cleanNoFT;
+
+      if (transactionCode) {
+        donation = await this.repo.findByTransactionCode(transactionCode);
+        if (!donation && content !== transactionCode) {
+          donation = await this.repo.findByTransactionCode(content);
+        }
+      }
+    }
+
+    // 4.3 Fallback quét 50 giao dịch gần nhất để khớp theo orderCode hoặc tiền tố mã giao dịch
+    if (!donation) {
+      const recentDonations = await prisma.donation.findMany({
+        where: {
+          createdAt: { gte: new Date(Date.now() - 48 * 60 * 60 * 1000) },
+        },
+        include: { campaign: true },
+        orderBy: { createdAt: "desc" },
+        take: 50,
+      });
+
+      donation = recentDonations.find((d) => {
+        const gw = (d.paymentGatewayResponse as any) || {};
+        if (orderCode > 0 && (Number(gw.orderCode) === orderCode || String(gw.orderCode) === String(orderCode))) return true;
+        const normDb = d.transactionCode.replace(/[^A-Za-z0-9]/g, "").toUpperCase();
+        const cleanContent = content.replace(/^FT\s*/i, "").replace(/[^A-Za-z0-9]/g, "").toUpperCase();
+        if (cleanContent.length >= 6 && (normDb.includes(cleanContent) || cleanContent.includes(normDb))) return true;
+        return false;
+      }) || null;
+
+      if (donation) {
+        console.log(`✓ [PAYOS WEBHOOK] Khớp thành công khoản đóng góp qua quét danh sách gần nhất: ${donation.transactionCode}`);
+      }
     }
 
     if (!donation) {
-      return { success: false, message: `Không tìm thấy khoản quyên góp với mã: ${transactionCode}` };
+      return { success: false, message: `Không tìm thấy khoản quyên góp với mã: ${content}` };
     }
 
     // Nếu giao dịch đã được thanh toán thành công trước đó (Idempotent response)
     if (donation.paymentStatus === PaymentStatus.SUCCESS) {
       return { success: true, message: "Giao dịch đã được thanh toán thành công trước đó", donation };
-    }
-
-    // Kiểm tra hết hạn phiên giao dịch
-    donation = await this.checkAndExpireDonation(donation);
-    if (donation.paymentStatus === PaymentStatus.FAILED) {
-      return {
-        success: false,
-        message: `Giao dịch ${donation.transactionCode} đã hết hạn (quá 10 phút), phiên giao dịch đã bị khóa`,
-        donation,
-      };
     }
 
     // 5. KIỂM TRA NHẬN ĐÚNG TIỀN TỪ MÃ QR:
@@ -844,6 +936,9 @@ export class DonationService {
         donation,
       };
     }
+
+    // Nếu tiền thực tế đã vào tài khoản ngân hàng, hệ thống chấp nhận hoàn tất giao dịch
+    // (kể cả khi quá 10 phút, nhằm bảo vệ tiền và quyền lợi của nhà hảo tâm)
 
     // 6. Xác nhận thanh toán thành công vào hệ thống
     const result = await this.repo.confirmPayment(donation.id, {

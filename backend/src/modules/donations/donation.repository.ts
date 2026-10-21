@@ -168,9 +168,10 @@ export class DonationRepository {
     });
     if (byIdOrKey) return byIdOrKey;
 
-    // 3. Tìm kiếm chuẩn hóa: nhiều ngân hàng tự xóa dấu gạch nối "-" hoặc khoảng trắng
-    // Ví dụ: mã DON-261021-AB12 khi ngân hàng gửi về có thể thành DON261021AB12
-    const normalizedInput = cleanCode.replace(/[^A-Za-z0-9]/g, "").toUpperCase();
+    // 3. Tìm kiếm chuẩn hóa: loại bỏ tiền tố "FT ", dấu gạch nối "-" hoặc khoảng trắng
+    // Ví dụ: mã FT 9dff916e2d214badb53f40 khớp với UUID hoặc mã DON-261021-AB12
+    const cleanNoFT = cleanCode.replace(/^FT\s*/i, "");
+    const normalizedInput = cleanNoFT.replace(/[^A-Za-z0-9]/g, "").toUpperCase();
     if (normalizedInput.length >= 6) {
       const recentDonations = await prisma.donation.findMany({
         where: {
@@ -182,6 +183,8 @@ export class DonationRepository {
       });
 
       const matched = recentDonations.find((d) => {
+        const gw = (d.paymentGatewayResponse as any) || {};
+        if (cleanCode && (String(gw.orderCode) === cleanCode || String(gw.orderCode) === normalizedInput)) return true;
         const normalizedDb = d.transactionCode.replace(/[^A-Za-z0-9]/g, "").toUpperCase();
         return normalizedInput.includes(normalizedDb) || normalizedDb.includes(normalizedInput);
       });

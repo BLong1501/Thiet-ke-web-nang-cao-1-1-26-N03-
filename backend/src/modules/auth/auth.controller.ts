@@ -12,7 +12,6 @@ export class AuthController {
       const result = await this.service.register(req.body);
       return sendSuccess(res, 201, result.message, {
         email: req.body.email,
-        devOtp: result.otp,
       });
     } catch (error) {
       return next(error);
@@ -42,7 +41,6 @@ export class AuthController {
       const result = await this.service.resendVerificationOtp(req.body);
       return sendSuccess(res, 200, result.message, {
         email: req.body.email,
-        devOtp: result.otp,
       });
     } catch (error) {
       return next(error);
@@ -54,7 +52,6 @@ export class AuthController {
       const result = await this.service.forgotPassword(req.body);
       return sendSuccess(res, 200, result.message, {
         email: req.body.email,
-        devOtp: result.otp,
       });
     } catch (error) {
       return next(error);

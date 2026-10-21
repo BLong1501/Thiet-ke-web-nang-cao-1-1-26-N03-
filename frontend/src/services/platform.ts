@@ -82,8 +82,17 @@ export function httpStatus(error: unknown): number | undefined {
 }
 export function errorMessage(error: unknown): string {
   if (axios.isAxiosError(error)) {
-    const message = (error.response?.data as { message?: unknown } | undefined)
-      ?.message;
+    const data = error.response?.data as
+      | { message?: unknown; errors?: Array<{ field?: string; message?: string }> }
+      | undefined;
+    const message = data?.message;
+    if (data?.errors && Array.isArray(data.errors) && data.errors.length > 0) {
+      const details = data.errors
+        .map((e) => (e.field ? `${e.field}: ${e.message}` : e.message))
+        .filter(Boolean)
+        .join(", ");
+      return typeof message === "string" ? `${message} (${details})` : details;
+    }
     if (typeof message === "string" && message) return message;
     if (error.code === "ECONNABORTED")
       return "Máy chủ phản hồi quá lâu. Vui lòng thử lại.";
@@ -96,8 +105,22 @@ export function errorMessage(error: unknown): string {
 export function safeUrl(value: unknown): string {
   if (typeof value !== "string" || !value) return "";
   try {
-    const url = new URL(value, window.location.origin);
-    return ["http:", "https:"].includes(url.protocol) ? url.href : "";
+    let raw = value.trim();
+    if (raw.startsWith("blob:")) return raw;
+
+    const apiBase = api.defaults.baseURL || "";
+    if (apiBase.startsWith("http")) {
+      const backendOrigin = new URL(apiBase).origin;
+      if (!backendOrigin.includes("localhost:5000") && raw.includes("localhost:5000")) {
+        raw = raw.replace(/https?:\/\/localhost:5000/g, backendOrigin);
+      }
+      if (raw.startsWith("/api/v1/")) {
+        raw = `${backendOrigin}${raw}`;
+      }
+    }
+
+    const url = new URL(raw, window.location.origin);
+    return ["http:", "https:", "blob:"].includes(url.protocol) ? url.href : "";
   } catch {
     return "";
   }

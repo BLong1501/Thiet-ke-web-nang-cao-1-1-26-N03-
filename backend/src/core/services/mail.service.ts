@@ -22,9 +22,9 @@ export class MailService {
         port,
         secure: port === 465,
         auth: { user, pass },
-        connectionTimeout: 3500,
-        greetingTimeout: 3500,
-        socketTimeout: 3500,
+        connectionTimeout: 10000,
+        greetingTimeout: 10000,
+        socketTimeout: 15000,
       });
     }
   }
@@ -175,14 +175,41 @@ export class MailService {
     console.log(`💰 Số tiền: ${formattedAmount} - Mã GD: ${params.transactionCode}`);
     console.log(`======================================================\n`);
 
-    // 1. Nếu có cấu hình Resend API (HTTP Port 443 - không bao giờ bị Render chặn)
+    // 1. Gửi qua Brevo REST API (HTTPS Port 443 - không bao giờ bị Render chặn)
+    if (process.env.BREVO_API_KEY) {
+      try {
+        const senderEmail = (process.env.BREVO_SENDER_EMAIL || process.env.SMTP_USER || "tranbaolong5b@gmail.com").trim();
+        const res = await fetch("https://api.brevo.com/v3/smtp/email", {
+          method: "POST",
+          headers: {
+            "api-key": process.env.BREVO_API_KEY.trim(),
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+          },
+          body: JSON.stringify({
+            sender: { name: "Crowdfunding Platform", email: senderEmail },
+            to: [{ email: params.to.trim(), name: params.donorName }],
+            subject,
+            htmlContent,
+          }),
+        });
+        if (res.ok) {
+          console.log(`✅ [BREVO API] Đã gửi biên nhận thành công tới: ${params.to}\n`);
+          return true;
+        }
+      } catch (err) {
+        console.warn("⚠️ [BREVO API] Gửi biên nhận qua Brevo lỗi:", err);
+      }
+    }
+
+    // 2. Nếu có cấu hình Resend API (HTTP Port 443)
     if (process.env.RESEND_API_KEY) {
       try {
         const fromAddress = (process.env.RESEND_FROM || "onboarding@resend.dev").trim();
         const res = await fetch("https://api.resend.com/emails", {
           method: "POST",
           headers: {
-            Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
+            Authorization: `Bearer ${process.env.RESEND_API_KEY.trim()}`,
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
@@ -201,7 +228,7 @@ export class MailService {
       }
     }
 
-    // 2. Fallback SMTP với timeout 4s
+    // 3. Fallback SMTP (Gmail) với timeout 10s
     const transporter = this.getTransporter();
     if (transporter) {
       try {
@@ -213,7 +240,7 @@ export class MailService {
           html: htmlContent,
         });
         const timeoutPromise = new Promise((_, reject) =>
-          setTimeout(() => reject(new Error("SMTP_CONNECTION_TIMEOUT")), 4000)
+          setTimeout(() => reject(new Error("SMTP_CONNECTION_TIMEOUT")), 10000)
         );
         const info = (await Promise.race([sendPromise, timeoutPromise])) as any;
         console.log(`✅ [GMAIL SMTP] Đã gửi biên nhận đóng góp thành công tới: ${params.to} (MessageId: ${info?.messageId})\n`);
@@ -240,14 +267,44 @@ export class MailService {
     console.log(`🔑 MÃ OTP: >>> ${otp} <<< (Hạn 10 phút)`);
     console.log(`======================================================\n`);
 
-    // 1. Thử gửi qua Resend API nếu có cấu hình (Cực kỳ tối ưu cho Render Free Tier vì dùng HTTPS Port 443)
+    // 1. Thử gửi qua Brevo REST API (HTTPS Port 443 - Miễn phí 300 mail/ngày, gửi được tới mọi hòm thư)
+    if (process.env.BREVO_API_KEY) {
+      try {
+        const senderEmail = (process.env.BREVO_SENDER_EMAIL || process.env.SMTP_USER || "tranbaolong5b@gmail.com").trim();
+        const res = await fetch("https://api.brevo.com/v3/smtp/email", {
+          method: "POST",
+          headers: {
+            "api-key": process.env.BREVO_API_KEY.trim(),
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+          },
+          body: JSON.stringify({
+            sender: { name: "Crowdfunding Platform", email: senderEmail },
+            to: [{ email: to.trim() }],
+            subject,
+            htmlContent: html,
+          }),
+        });
+        if (res.ok) {
+          console.log(`✅ [BREVO REST API] Đã gửi mã OTP thực tế thành công tới: ${to}\n`);
+          return true;
+        } else {
+          const errData = await res.text();
+          console.warn(`⚠️ [BREVO API] Phản hồi lỗi:`, errData);
+        }
+      } catch (err) {
+        console.warn(`⚠️ [BREVO API] Lỗi kết nối Brevo:`, err);
+      }
+    }
+
+    // 2. Thử gửi qua Resend API nếu có cấu hình (HTTPS Port 443)
     if (process.env.RESEND_API_KEY) {
       try {
         const fromAddress = (process.env.RESEND_FROM || "onboarding@resend.dev").trim();
         const res = await fetch("https://api.resend.com/emails", {
           method: "POST",
           headers: {
-            Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
+            Authorization: `Bearer ${process.env.RESEND_API_KEY.trim()}`,
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
@@ -269,8 +326,24 @@ export class MailService {
       }
     }
 
-    // 2. Thử gửi qua SMTP (Gmail) kèm cơ chế ngắt Timeout 4 giây
-    // Tránh việc Render Free Tier bóp/chặn các port 25/465/587 làm treo HTTP request
+    // 3. Thử gửi qua Custom Webhook Relay (Google Apps Script / HTTP Relay qua Port 443)
+    if (process.env.MAIL_WEBHOOK_URL) {
+      try {
+        const res = await fetch(process.env.MAIL_WEBHOOK_URL.trim(), {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ to: to.trim(), subject, html, otp }),
+        });
+        if (res.ok) {
+          console.log(`✅ [WEBHOOK RELAY] Đã gửi mã OTP thực tế thành công tới: ${to}\n`);
+          return true;
+        }
+      } catch (err) {
+        console.warn("⚠️ [WEBHOOK RELAY] Gửi mail qua Webhook lỗi:", err);
+      }
+    }
+
+    // 4. Thử gửi qua SMTP (Gmail) với timeout 10 giây
     const transporter = this.getTransporter();
     if (transporter) {
       try {
@@ -282,14 +355,14 @@ export class MailService {
           html,
         });
         const timeoutPromise = new Promise((_, reject) =>
-          setTimeout(() => reject(new Error("SMTP_CONNECTION_TIMEOUT")), 4000)
+          setTimeout(() => reject(new Error("SMTP_CONNECTION_TIMEOUT")), 10000)
         );
         const info = (await Promise.race([sendPromise, timeoutPromise])) as any;
         console.log(`✅ [GMAIL SMTP] Đã gửi email thực tế thành công tới: ${to} (MessageId: ${info?.messageId})\n`);
         return true;
       } catch (error: any) {
         console.warn(`⚠️ [GMAIL SMTP BỊ CHẶN] Không gửi được qua cổng 587/465 (${error?.message || error}).`);
-        console.warn(`💡 Render Free tier chặn kết nối gửi thư SMTP ra ngoài (port 25, 465, 587) để tránh spam.`);
+        console.warn(`💡 Lưu ý: Render Free Tier chặn kết nối gửi thư SMTP ra ngoài (port 25, 465, 587).`);
         console.warn(`🔑 MÃ OTP CỦA ${to} LÀ: >>> ${otp} <<< (Xem trực tiếp tại Render Logs)`);
         return false;
       }

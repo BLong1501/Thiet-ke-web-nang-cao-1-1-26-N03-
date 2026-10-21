@@ -10,6 +10,7 @@ export const createCommunitySchema = z.object({
 export const createPostSchema = z.object({
   content: z.string().trim().min(1).max(5000),
   campaignId: z.string().trim().min(1).max(36).optional(),
+  mediaUrls: z.array(z.string().trim().max(1000)).max(10).optional(),
 });
 
 export const createCommentSchema = z.object({

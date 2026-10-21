@@ -215,6 +215,72 @@ export default function CampaignDetailPage() {
                   <div className="cd-story">
                     <h2>Câu chuyện chiến dịch</h2>
                     <p className="prose">{c.story}</p>
+
+                    {/* Khối liên kết Nhóm cộng đồng thảo luận */}
+                    <div
+                      style={{
+                        margin: "24px 0",
+                        padding: "18px 22px",
+                        background: "linear-gradient(135deg, #f0fdf4 0%, #e0f2fe 100%)",
+                        border: "1px solid #bfdbfe",
+                        borderRadius: "14px",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        flexWrap: "wrap",
+                        gap: "14px",
+                        boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
+                      }}
+                    >
+                      <div>
+                        <div
+                          style={{
+                            fontWeight: 700,
+                            color: "#1e3a8a",
+                            fontSize: "16px",
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "8px",
+                          }}
+                        >
+                          <span>💬 Nhóm Cộng Đồng Chiến Dịch</span>
+                        </div>
+                        <p
+                          style={{
+                            margin: "4px 0 0",
+                            color: "#334155",
+                            fontSize: "14px",
+                            lineHeight: "1.5",
+                          }}
+                        >
+                          Tham gia giao lưu, xem chia sẻ hình ảnh và theo dõi thông tin trực tiếp cùng người gây quỹ.
+                        </p>
+                      </div>
+                      <Link
+                        to={(() => {
+                          let link = "/community";
+                          try {
+                            if (c.beneficiaryInfo) {
+                              const parsed = typeof c.beneficiaryInfo === "string" ? JSON.parse(c.beneficiaryInfo) : c.beneficiaryInfo;
+                              if (parsed?.communityLink) link = parsed.communityLink;
+                            }
+                          } catch {}
+                          return link;
+                        })()}
+                        className="button primary"
+                        style={{
+                          textDecoration: "none",
+                          padding: "10px 22px",
+                          borderRadius: "10px",
+                          fontWeight: 600,
+                          fontSize: "14px",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        Vào nhóm cộng đồng →
+                      </Link>
+                    </div>
+
                     {c.beneficiaryDetails && (
                       <>
                         <h3>Người thụ hưởng</h3>
