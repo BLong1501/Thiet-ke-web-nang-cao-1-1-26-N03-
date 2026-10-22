@@ -14,6 +14,7 @@ import {
 } from "../components/ui/WorkspaceUI";
 import Tabs from "../components/ui/Tabs";
 import DonationHistory from "../components/DonationHistory";
+import MyRefundRequests from "../components/MyRefundRequests";
 import DisbursementModal from "../components/campaign/DisbursementModal";
 export default function DashboardPage() {
   const user = useAuthStore((s) => s.user);
@@ -52,15 +53,14 @@ export default function DashboardPage() {
             ? [{ id: "campaigns", label: "Chiến dịch của tôi" }]
             : []),
           { id: "donations", label: "Đóng góp của tôi" },
+          { id: "refunds", label: "Yêu cầu hoàn tiền" },
         ]}
-        value={tab === "campaigns" && fundraiser ? "campaigns" : "donations"}
+        value={tab}
         onChange={setTab}
       >
-        {tab === "campaigns" && fundraiser ? (
-          <MyCampaigns />
-        ) : (
-          <DonationHistory />
-        )}
+        {tab === "campaigns" && fundraiser && <MyCampaigns />}
+        {tab === "donations" && <DonationHistory />}
+        {tab === "refunds" && <MyRefundRequests />}
       </Tabs>
     </Page>
   );

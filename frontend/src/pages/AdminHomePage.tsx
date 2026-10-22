@@ -32,6 +32,9 @@ import {
   Empty,
 } from "../components/ui/WorkspaceUI";
 import DonationHistory from "../components/DonationHistory";
+import Tabs from "../components/ui/Tabs";
+import AdminRefundRequestsTab from "../components/admin/AdminRefundRequestsTab";
+import AdminRefundLogsTab from "../components/admin/AdminRefundLogsTab";
 
 type Row = {
   id: string;
@@ -394,9 +397,29 @@ export default function AdminHomePage() {
 }
 
 export function AdminDonationsPage() {
+  const [activeTab, setActiveTab] = useState<
+    "refunds" | "refund_logs" | "donations"
+  >("refunds");
+
   return (
-    <Page title="Quản lý giao dịch">
-      <DonationHistory admin />
+    <Page
+      title="Quản lý giao dịch & Hoàn tiền"
+      intro="Phê duyệt các yêu cầu hoàn tiền từ nhà hảo tâm, theo dõi nhật ký đối soát và lịch sử toàn bộ các khoản quyên góp."
+    >
+      <Tabs
+        label="Quản lý giao dịch và hoàn tiền"
+        tabs={[
+          { id: "refunds", label: "Duyệt đơn hoàn tiền" },
+          { id: "refund_logs", label: "Nhật ký duyệt hoàn tiền" },
+          { id: "donations", label: "Tất cả giao dịch quyên góp" },
+        ]}
+        value={activeTab}
+        onChange={(t) => setActiveTab(t as any)}
+      >
+        {activeTab === "refunds" && <AdminRefundRequestsTab />}
+        {activeTab === "refund_logs" && <AdminRefundLogsTab />}
+        {activeTab === "donations" && <DonationHistory admin />}
+      </Tabs>
     </Page>
   );
 }

@@ -80,6 +80,11 @@ export class CampaignService {
       }
     }
 
+    const isEdited = Boolean(
+      legalMetadata?.isEdited ||
+      (campaign.updatedAt && campaign.createdAt && new Date(campaign.updatedAt).getTime() - new Date(campaign.createdAt).getTime() > 10000)
+    );
+
     const includeSensitive = options.includeSensitive === true;
     return {
       ...campaign,
@@ -88,6 +93,8 @@ export class CampaignService {
       progressPercentage,
       daysLeft,
       isEnded,
+      isEdited,
+      lastEditedAt: legalMetadata?.lastEditedAt || (isEdited ? campaign.updatedAt : null),
       organizerType: legalMetadata?.organizerType || "INDIVIDUAL",
       organizationName: legalMetadata?.organizationName || null,
       taxCode: includeSensitive ? legalMetadata?.taxCode || null : null,
@@ -475,9 +482,22 @@ export class CampaignService {
 
     // Thực hiện trong Prisma Transaction: Cập nhật status + Ghi AuditLog + Tạo Notification
     const result = await prisma.$transaction(async (tx) => {
+      let existingMetadata: any = {};
+      if (campaign.beneficiaryInfo) {
+        try {
+          existingMetadata = JSON.parse(campaign.beneficiaryInfo);
+        } catch {
+          existingMetadata = { details: campaign.beneficiaryInfo };
+        }
+      }
+      existingMetadata.isEdited = false;
+
       const updatedCampaign = await tx.campaign.update({
         where: { id: campaignId },
-        data: { status: input.status },
+        data: {
+          status: input.status,
+          beneficiaryInfo: JSON.stringify(existingMetadata),
+        },
       });
 
       // Ghi vết kiểm toán (AuditLog)

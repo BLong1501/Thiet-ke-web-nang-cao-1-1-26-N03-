@@ -287,37 +287,30 @@ export class CampaignRepository {
    * Cập nhật chiến dịch
    */
   async update(id: string, input: UpdateCampaignInput) {
-    let serializedBeneficiaryInfo: string | undefined = undefined;
-    if (
-      input.beneficiaryInfo !== undefined ||
-      input.organizerType !== undefined ||
-      input.organizationName !== undefined ||
-      input.taxCode !== undefined ||
-      input.representativeRole !== undefined
-    ) {
-      const existing = await prisma.campaign.findUnique({
-        where: { id },
-        select: { beneficiaryInfo: true },
-      });
-      let existingMetadata: any = {};
-      if (existing?.beneficiaryInfo) {
-        try {
-          existingMetadata = JSON.parse(existing.beneficiaryInfo);
-        } catch {
-          existingMetadata = { details: existing.beneficiaryInfo };
-        }
+    const existing = await prisma.campaign.findUnique({
+      where: { id },
+      select: { beneficiaryInfo: true },
+    });
+    let existingMetadata: any = {};
+    if (existing?.beneficiaryInfo) {
+      try {
+        existingMetadata = JSON.parse(existing.beneficiaryInfo);
+      } catch {
+        existingMetadata = { details: existing.beneficiaryInfo };
       }
-      serializedBeneficiaryInfo = JSON.stringify({
-        ...existingMetadata,
-        ...(input.organizerType !== undefined && { organizerType: input.organizerType }),
-        ...(input.organizationName !== undefined && { organizationName: input.organizationName }),
-        ...(input.taxCode !== undefined && { taxCode: input.taxCode }),
-        ...(input.representativeRole !== undefined && { representativeRole: input.representativeRole }),
-        ...(input.beneficiaryInfo !== undefined && { details: input.beneficiaryInfo }),
-        ...((input as any).momoPhone !== undefined && { momoPhone: (input as any).momoPhone }),
-        ...((input as any).momoAccountName !== undefined && { momoAccountName: (input as any).momoAccountName }),
-      });
     }
+    const serializedBeneficiaryInfo = JSON.stringify({
+      ...existingMetadata,
+      ...(input.organizerType !== undefined && { organizerType: input.organizerType }),
+      ...(input.organizationName !== undefined && { organizationName: input.organizationName }),
+      ...(input.taxCode !== undefined && { taxCode: input.taxCode }),
+      ...(input.representativeRole !== undefined && { representativeRole: input.representativeRole }),
+      ...(input.beneficiaryInfo !== undefined && { details: input.beneficiaryInfo }),
+      ...((input as any).momoPhone !== undefined && { momoPhone: (input as any).momoPhone }),
+      ...((input as any).momoAccountName !== undefined && { momoAccountName: (input as any).momoAccountName }),
+      isEdited: true,
+      lastEditedAt: new Date().toISOString(),
+    });
 
     const data: Prisma.CampaignUpdateInput = {
       ...(input.title && { title: input.title }),

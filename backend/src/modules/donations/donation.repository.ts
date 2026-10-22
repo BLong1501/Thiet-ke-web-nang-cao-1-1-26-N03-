@@ -481,6 +481,123 @@ export class DonationRepository {
   async countAll(where: Prisma.DonationWhereInput): Promise<number> {
     return prisma.donation.count({ where });
   }
+
+  /**
+   * Danh sách đơn yêu cầu hoàn tiền của người dùng
+   */
+  async findUserRefundRequests(userId: string, skip: number, take: number) {
+    return prisma.donation.findMany({
+      where: {
+        donorId: userId,
+        OR: [
+          { paymentStatus: PaymentStatus.REFUNDED },
+          {
+            paymentGatewayResponse: {
+              path: "$.refundRequest",
+              not: Prisma.JsonNull,
+            },
+          },
+        ],
+      },
+      skip,
+      take,
+      orderBy: { updatedAt: "desc" },
+      include: {
+        campaign: {
+          select: {
+            id: true,
+            title: true,
+            slug: true,
+            coverImageUrl: true,
+          },
+        },
+      },
+    });
+  }
+
+  async countUserRefundRequests(userId: string): Promise<number> {
+    return prisma.donation.count({
+      where: {
+        donorId: userId,
+        OR: [
+          { paymentStatus: PaymentStatus.REFUNDED },
+          {
+            paymentGatewayResponse: {
+              path: "$.refundRequest",
+              not: Prisma.JsonNull,
+            },
+          },
+        ],
+      },
+    });
+  }
+
+  /**
+   * Danh sách toàn bộ đơn yêu cầu hoàn tiền (Dành cho Admin)
+   */
+  async findAdminRefundRequests(skip: number, take: number, status?: string) {
+    let whereCondition: Prisma.DonationWhereInput = {
+      OR: [
+        { paymentStatus: PaymentStatus.REFUNDED },
+        {
+          paymentGatewayResponse: {
+            path: "$.refundRequest",
+            not: Prisma.JsonNull,
+          },
+        },
+      ],
+    };
+
+    if (status === "PENDING") {
+      whereCondition = {
+        paymentStatus: PaymentStatus.SUCCESS,
+        paymentGatewayResponse: {
+          path: "$.refundRequest.status",
+          equals: "PENDING",
+        },
+      };
+    } else if (status === "APPROVED" || status === "REFUNDED") {
+      whereCondition = {
+        paymentStatus: PaymentStatus.REFUNDED,
+      };
+    } else if (status === "REJECTED") {
+      whereCondition = {
+        paymentGatewayResponse: {
+          path: "$.refundRequest.status",
+          equals: "REJECTED",
+        },
+      };
+    }
+
+    const [items, total] = await Promise.all([
+      prisma.donation.findMany({
+        where: whereCondition,
+        skip,
+        take,
+        orderBy: { updatedAt: "desc" },
+        include: {
+          campaign: {
+            select: {
+              id: true,
+              title: true,
+              slug: true,
+            },
+          },
+          donor: {
+            select: {
+              id: true,
+              fullName: true,
+              email: true,
+              phoneNumber: true,
+            },
+          },
+        },
+      }),
+      prisma.donation.count({ where: whereCondition }),
+    ]);
+
+    return { items, total };
+  }
 }
 
 export const donationRepository = new DonationRepository();

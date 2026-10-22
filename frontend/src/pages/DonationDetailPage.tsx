@@ -518,33 +518,65 @@ export default function DonationDetailPage() {
                 </button>
               </div>
             )}
-          {owner && d.paymentStatus === "SUCCESS" && (
-            <form
-              className="form-stack no-print"
-              onSubmit={(e: FormEvent<HTMLFormElement>) => {
-                e.preventDefault();
-                const f = new FormData(e.currentTarget);
-                act(`/donations/${id}/refund`, { reason: f.get("reason") });
-              }}
-            >
-              <h3>Yêu cầu hoàn tiền</h3>
-              <p>
-                Máy chủ chỉ chấp nhận khi chiến dịch đáp ứng điều kiện hoàn
-                tiền. Quy trình hiện tại là mô phỏng.
-              </p>
-              <Field label="Lý do">
-                <textarea
-                  required
-                  name="reason"
-                  minLength={3}
-                  maxLength={500}
-                />
-              </Field>
-              <button className="button secondary" disabled={busy}>
-                Gửi yêu cầu hoàn tiền
-              </button>
-            </form>
-          )}
+          {owner && (() => {
+            const refundReq = d.paymentGatewayResponse?.refundRequest;
+            const isPending = refundReq?.status === "PENDING";
+            const isApproved = d.paymentStatus === "REFUNDED" || refundReq?.status === "APPROVED";
+            const isRejected = refundReq?.status === "REJECTED";
+
+            if (isPending) {
+              return (
+                <div className="no-print" style={{ marginTop: "24px", padding: "16px", background: "#fef3c7", border: "1px solid #fde68a", borderRadius: "10px" }}>
+                  <h4 style={{ margin: "0 0 6px", color: "#92400e" }}>🕒 Đơn yêu cầu hoàn tiền đang chờ duyệt</h4>
+                  <p style={{ margin: 0, fontSize: "14px", color: "#78350f" }}>
+                    Bạn đã gửi yêu cầu hoàn tiền cho khoản ủng hộ này. Lý do: <em>"{refundReq.reason}"</em>. Ban Quản trị đang tiến hành xem xét và đối soát.
+                  </p>
+                </div>
+              );
+            }
+
+            if (isApproved) {
+              return (
+                <div className="no-print" style={{ marginTop: "24px", padding: "16px", background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: "10px" }}>
+                  <h4 style={{ margin: "0 0 6px", color: "#166534" }}>✅ Đã hoàn tiền thành công</h4>
+                  <p style={{ margin: 0, fontSize: "14px", color: "#14532d" }}>
+                    Khoản đóng góp này đã được hoàn trả thành công theo chính sách của hệ thống.
+                  </p>
+                </div>
+              );
+            }
+
+            return (
+              <form
+                className="form-stack no-print"
+                style={{ marginTop: "24px" }}
+                onSubmit={(e: FormEvent<HTMLFormElement>) => {
+                  e.preventDefault();
+                  const f = new FormData(e.currentTarget);
+                  act(`/donations/${id}/request-refund`, { reason: f.get("reason") });
+                }}
+              >
+                <h3>Yêu cầu hoàn tiền</h3>
+                {isRejected && (
+                  <Notice error>
+                    Yêu cầu trước đó bị từ chối: {refundReq.rejectionReason || "Không đủ điều kiện"}. Bạn có thể gửi lại yêu cầu với lý do bổ sung.
+                  </Notice>
+                )}
+                <Field label="Lý do yêu cầu hoàn tiền">
+                  <textarea
+                    required
+                    name="reason"
+                    minLength={3}
+                    maxLength={500}
+                    placeholder="Nhập lý do chi tiết bạn mong muốn hoàn trả khoản đóng góp này..."
+                  />
+                </Field>
+                <button className="button secondary" disabled={busy}>
+                  Gửi yêu cầu hoàn tiền
+                </button>
+              </form>
+            );
+          })()}
         </div>
       )}
     </Page>

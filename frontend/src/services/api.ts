@@ -247,6 +247,16 @@ export const donationApi = {
       headers: { "Cache-Control": "no-cache", Pragma: "no-cache" },
     }),
   simulateSuccess: (id: string) => api.post(`/donations/${id}/simulate-success`),
+  requestRefund: (id: string, data: { reason: string }) =>
+    api.post(`/donations/${id}/request-refund`, data),
+  getMyRefundRequests: (params?: Record<string, unknown>) =>
+    api.get("/donations/my/refund-requests", { params }),
+  getAdminRefundRequests: (params?: Record<string, unknown>) =>
+    api.get("/donations/admin/refund-requests", { params }),
+  reviewRefund: (
+    id: string,
+    data: { decision: "APPROVE" | "REJECT"; rejectionReason?: string },
+  ) => api.post(`/donations/${id}/review-refund`, data),
 };
 
 // --- Verification APIs (KYC) ---

@@ -21,6 +21,9 @@ const actionNames: Record<string, string> = {
   CREATE_CAMPAIGN: "Tạo chiến dịch",
   UPDATE_CAMPAIGN: "Cập nhật chiến dịch",
   CREATE_DONATION: "Tạo khoản đóng góp",
+  REFUND_REQUESTED: "Gửi yêu cầu hoàn tiền",
+  REFUND_APPROVED: "Được duyệt hoàn tiền",
+  REFUND_REJECTED: "Yêu cầu hoàn tiền bị từ chối",
   UNAUTHORIZED_ACCESS_ATTEMPT: "Truy cập khu vực không có quyền",
 };
 export default function UserActivityLogsPage() {

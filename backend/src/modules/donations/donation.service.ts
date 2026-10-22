@@ -506,6 +506,288 @@ export class DonationService {
   }
 
   /**
+   * Nhà hảo tâm gửi đơn yêu cầu hoàn tiền cho khoản đóng góp
+   */
+  async requestRefund(actor: { userId: string; role: string }, donationId: string, reason: string) {
+    return this.repo.transaction(async (tx) => {
+      const user = await tx.user.findUnique({ where: { id: actor.userId } });
+      if (!user || user.status !== "ACTIVE" || !user.isEmailVerified) {
+        throw new AppError("Tài khoản chưa được kích hoạt hoặc chưa xác thực email", 403);
+      }
+
+      const donation = await this.repo.lockDonation(tx, donationId);
+      if (!donation) throw new AppError("Không tìm thấy khoản đóng góp", 404);
+
+      await assertObjectAccess({
+        actor: { userId: user.id, role: user.role },
+        ownerId: donation.donorId,
+        entityName: "Donation",
+        entityId: donationId,
+        message: "Bạn không có quyền sở hữu khoản đóng góp này",
+      });
+
+      if (donation.paymentStatus !== PaymentStatus.SUCCESS) {
+        throw new AppError("Chỉ có thể yêu cầu hoàn tiền cho khoản đóng góp đã thành công", 422);
+      }
+
+      const currentResp = (donation.paymentGatewayResponse as any) || {};
+      if (currentResp.refundRequest?.status === "PENDING") {
+        throw new AppError("Bạn đã gửi đơn yêu cầu hoàn tiền cho khoản này, vui lòng đợi Admin duyệt", 409);
+      }
+
+      const campaign = await tx.campaign.findUnique({ where: { id: donation.campaignId } });
+      if (!campaign) throw new AppError("Không tìm thấy chiến dịch", 404);
+
+      currentResp.refundRequest = {
+        status: "PENDING",
+        reason: reason.trim(),
+        requestedAt: new Date().toISOString(),
+      };
+
+      const updated = await tx.donation.update({
+        where: { id: donation.id },
+        data: { paymentGatewayResponse: currentResp },
+      });
+
+      // Ghi AuditLog cho User
+      await auditService.write({
+        userId: actor.userId,
+        action: "REFUND_REQUESTED",
+        entityName: "Donation",
+        entityId: donation.id,
+      }, tx);
+
+      // Gửi Notification cho Admin
+      const admins = await tx.user.findMany({ where: { role: UserRole.ADMIN, status: "ACTIVE" } });
+      for (const adm of admins) {
+        await tx.notification.create({
+          data: {
+            userId: adm.id,
+            title: "Yêu cầu hoàn tiền mới cần duyệt",
+            message: `Nhà hảo tâm ${donation.donorName || "N/A"} vừa gửi đơn hoàn tiền ${Number(donation.amount).toLocaleString("vi-VN")} VNĐ cho chiến dịch "${campaign.title}". Lý do: ${reason}`,
+            type: "REFUND_REQUESTED",
+            linkUrl: `/admin/donations?tab=refunds`,
+          },
+        });
+      }
+
+      return updated;
+    });
+  }
+
+  /**
+   * Admin duyệt đơn hoàn tiền ("APPROVE" = Đã hoàn, "REJECT" = Từ chối hoàn kèm lý do)
+   */
+  async reviewRefund(
+    actor: { userId: string; role: string },
+    donationId: string,
+    decision: "APPROVE" | "REJECT",
+    rejectionReason?: string
+  ) {
+    return this.repo.transaction(async (tx) => {
+      const user = await tx.user.findUnique({ where: { id: actor.userId } });
+      if (!user || user.role !== UserRole.ADMIN) {
+        throw new AppError("Chỉ Quản trị viên mới có quyền phê duyệt hoàn tiền", 403);
+      }
+
+      const donationMeta = await tx.donation.findUnique({
+        where: { id: donationId },
+        select: { campaignId: true },
+      });
+      if (!donationMeta) throw new AppError("Không tìm thấy khoản đóng góp", 404);
+
+      const campaign = await this.repo.lockCampaign(tx, donationMeta.campaignId);
+      if (!campaign) throw new AppError("Không tìm thấy chiến dịch", 404);
+
+      const donation = await this.repo.lockDonation(tx, donationId);
+      if (!donation) throw new AppError("Không tìm thấy khoản đóng góp", 404);
+
+      const currentResp = (donation.paymentGatewayResponse as any) || {};
+
+      if (decision === "APPROVE") {
+        if (donation.paymentStatus === PaymentStatus.REFUNDED) {
+          throw new AppError("Khoản đóng góp này đã được hoàn tiền trước đó", 422);
+        }
+
+        // 1. Ghi bút toán REFUND vào Sổ cái
+        await (tx as any).ledgerEntry.create({
+          data: {
+            donationId: donation.id,
+            kind: "REFUND",
+            amount: donation.amount,
+          },
+        });
+
+        // 2. Đổi trạng thái donation -> REFUNDED
+        currentResp.refundRequest = {
+          ...(currentResp.refundRequest || {}),
+          status: "APPROVED",
+          reviewedAt: new Date().toISOString(),
+          reviewedBy: actor.userId,
+        };
+
+        const updatedDonation = await tx.donation.update({
+          where: { id: donation.id },
+          data: {
+            paymentStatus: PaymentStatus.REFUNDED,
+            paymentGatewayResponse: currentResp,
+          },
+        });
+
+        // 3. Trừ quỹ chiến dịch
+        await this.repo.refreshCampaign(tx, campaign.id);
+
+        // 4. Ghi AuditLog
+        await auditService.write({
+          userId: actor.userId,
+          action: "REFUND_APPROVED",
+          entityName: "Donation",
+          entityId: donation.id,
+        }, tx);
+
+        // 5. Gửi thông báo cho nhà hảo tâm
+        if (donation.donorId) {
+          await tx.notification.create({
+            data: {
+              userId: donation.donorId,
+              title: "Yêu cầu hoàn tiền đã được duyệt",
+              message: `Yêu cầu hoàn tiền ${Number(donation.amount).toLocaleString("vi-VN")} VNĐ cho chiến dịch "${campaign.title}" đã được duyệt thành công (Đã hoàn tiền).`,
+              type: "REFUND_APPROVED",
+              linkUrl: `/donations/${donation.id}`,
+            },
+          });
+        }
+
+        return updatedDonation;
+      } else {
+        // REJECT
+        currentResp.refundRequest = {
+          ...(currentResp.refundRequest || {}),
+          status: "REJECTED",
+          reviewedAt: new Date().toISOString(),
+          reviewedBy: actor.userId,
+          rejectionReason: rejectionReason?.trim() || "Yêu cầu không đáp ứng điều kiện hoàn tiền",
+        };
+
+        const updatedDonation = await tx.donation.update({
+          where: { id: donation.id },
+          data: {
+            paymentGatewayResponse: currentResp,
+          },
+        });
+
+        // Ghi AuditLog
+        await auditService.write({
+          userId: actor.userId,
+          action: "REFUND_REJECTED",
+          entityName: "Donation",
+          entityId: donation.id,
+        }, tx);
+
+        // Gửi thông báo cho nhà hảo tâm kèm lý do
+        if (donation.donorId) {
+          await tx.notification.create({
+            data: {
+              userId: donation.donorId,
+              title: "Yêu cầu hoàn tiền bị từ chối",
+              message: `Yêu cầu hoàn tiền ${Number(donation.amount).toLocaleString("vi-VN")} VNĐ cho chiến dịch "${campaign.title}" đã bị từ chối. Lý do: ${rejectionReason || "Không đủ điều kiện"}.`,
+              type: "REFUND_REJECTED",
+              linkUrl: `/donations/${donation.id}`,
+            },
+          });
+        }
+
+        return updatedDonation;
+      }
+    }).then(async (result) => {
+      await invalidatePublicCampaignCache();
+      return result;
+    });
+  }
+
+  /**
+   * Lấy danh sách yêu cầu hoàn tiền của người dùng hiện tại
+   */
+  async getMyRefundRequests(userId: string, page = 1, limit = 10) {
+    const skip = (page - 1) * limit;
+    const [items, total] = await Promise.all([
+      this.repo.findUserRefundRequests(userId, skip, limit),
+      this.repo.countUserRefundRequests(userId),
+    ]);
+
+    const formatted = items.map((d) => {
+      const resp = (d.paymentGatewayResponse as any) || {};
+      const req = resp.refundRequest || {};
+      let refundStatus = "PENDING";
+      if (d.paymentStatus === PaymentStatus.REFUNDED || req.status === "APPROVED") {
+        refundStatus = "APPROVED";
+      } else if (req.status === "REJECTED") {
+        refundStatus = "REJECTED";
+      }
+
+      return {
+        id: d.id,
+        transactionCode: d.transactionCode,
+        amount: d.amount,
+        campaign: d.campaign,
+        requestedAt: req.requestedAt || d.updatedAt,
+        reason: req.reason || d.message || "Yêu cầu hoàn tiền",
+        refundStatus,
+        reviewedAt: req.reviewedAt || null,
+        rejectionReason: req.rejectionReason || null,
+        createdAt: d.createdAt,
+      };
+    });
+
+    return {
+      items: formatted,
+      meta: { page, limit, total, totalPages: Math.ceil(total / limit) },
+    };
+  }
+
+  /**
+   * Lấy danh sách đơn hoàn tiền dành cho Admin
+   */
+  async getAdminRefundRequests(page = 1, limit = 10, status?: string) {
+    const skip = (page - 1) * limit;
+    const { items, total } = await this.repo.findAdminRefundRequests(skip, limit, status);
+
+    const formatted = items.map((d) => {
+      const resp = (d.paymentGatewayResponse as any) || {};
+      const req = resp.refundRequest || {};
+      let refundStatus = "PENDING";
+      if (d.paymentStatus === PaymentStatus.REFUNDED || req.status === "APPROVED") {
+        refundStatus = "APPROVED";
+      } else if (req.status === "REJECTED") {
+        refundStatus = "REJECTED";
+      }
+
+      return {
+        id: d.id,
+        transactionCode: d.transactionCode,
+        amount: d.amount,
+        campaign: d.campaign,
+        donor: d.donor,
+        donorName: d.donorName,
+        donorEmail: d.donorEmail,
+        donorPhone: d.donorPhone,
+        requestedAt: req.requestedAt || d.updatedAt,
+        reason: req.reason || d.message || "Yêu cầu hoàn tiền",
+        refundStatus,
+        reviewedAt: req.reviewedAt || null,
+        rejectionReason: req.rejectionReason || null,
+        paymentStatus: d.paymentStatus,
+        createdAt: d.createdAt,
+      };
+    });
+
+    return {
+      items: formatted,
+      meta: { page, limit, total, totalPages: Math.ceil(total / limit) },
+    };
+  }
+
+  /**
    * Hủy chiến dịch (Dành cho Admin)
    */
   async cancelCampaign(actor: { userId: string; role: string }, campaignId: string, reason?: string) {

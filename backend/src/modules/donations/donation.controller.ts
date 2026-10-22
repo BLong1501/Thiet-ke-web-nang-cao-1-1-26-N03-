@@ -1,7 +1,7 @@
 import { auditService } from "../../core/services/audit.service";
 import { Request, Response, NextFunction } from "express";
 import { donationService, DonationService } from "./donation.service";
-import { sendCreated, sendSuccess } from "../../core/utils/response.util";
+import { sendCreated, sendSuccess, sendError } from "../../core/utils/response.util";
 import { PaymentStatus } from "@prisma/client";
 import { applyPublicCacheHeaders, CampaignCacheTTL } from "../../core/cache/campaign-cache";
 
@@ -63,6 +63,75 @@ export class DonationController {
       const reason = req.body?.reason;
       const result = await this.service.refund(req.user!, id, reason);
       return sendSuccess(res, 200, "Hoàn tiền mô phỏng thành công", result);
+    } catch (error) {
+      return next(error);
+    }
+  };
+
+  /**
+   * Nhà hảo tâm gửi đơn yêu cầu hoàn tiền
+   */
+  requestRefund = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const id = String(req.params.id);
+      const reason = req.body?.reason;
+      if (!reason || !String(reason).trim()) {
+        return sendError(res, 400, "Vui lòng nhập lý do yêu cầu hoàn tiền");
+      }
+      const result = await this.service.requestRefund(req.user!, id, String(reason));
+      return sendSuccess(res, 200, "Gửi đơn yêu cầu hoàn tiền thành công", result);
+    } catch (error) {
+      return next(error);
+    }
+  };
+
+  /**
+   * Admin duyệt đơn hoàn tiền ("APPROVE" / "REJECT")
+   */
+  reviewRefund = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const id = String(req.params.id);
+      const { decision, rejectionReason } = req.body;
+      if (!["APPROVE", "REJECT"].includes(decision)) {
+        return sendError(res, 400, "Quyết định phê duyệt không hợp lệ");
+      }
+      const result = await this.service.reviewRefund(
+        req.user!,
+        id,
+        decision as "APPROVE" | "REJECT",
+        rejectionReason
+      );
+      const msg = decision === "APPROVE" ? "Đã duyệt hoàn tiền thành công" : "Đã từ chối đơn hoàn tiền";
+      return sendSuccess(res, 200, msg, result);
+    } catch (error) {
+      return next(error);
+    }
+  };
+
+  /**
+   * Lấy danh sách yêu cầu hoàn tiền của tôi
+   */
+  getMyRefundRequests = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const page = Number(req.query.page) || 1;
+      const limit = Number(req.query.limit) || 10;
+      const result = await this.service.getMyRefundRequests(req.user!.userId, page, limit);
+      return sendSuccess(res, 200, "Danh sách yêu cầu hoàn tiền của bạn", result);
+    } catch (error) {
+      return next(error);
+    }
+  };
+
+  /**
+   * Lấy danh sách đơn hoàn tiền dành cho Admin
+   */
+  getAdminRefundRequests = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const page = Number(req.query.page) || 1;
+      const limit = Number(req.query.limit) || 10;
+      const status = req.query.status ? String(req.query.status) : undefined;
+      const result = await this.service.getAdminRefundRequests(page, limit, status);
+      return sendSuccess(res, 200, "Danh sách đơn hoàn tiền", result);
     } catch (error) {
       return next(error);
     }

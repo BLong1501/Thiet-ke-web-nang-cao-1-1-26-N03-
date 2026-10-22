@@ -60,6 +60,9 @@ router.get(
 // Lịch sử các khoản quyên góp của tôi
 router.get("/my/history", authenticate, donationController.getMyDonations);
 
+// Danh sách các đơn yêu cầu hoàn tiền của tôi
+router.get("/my/refund-requests", authenticate, donationController.getMyRefundRequests);
+
 // Yêu cầu hoàn tiền khi chiến dịch bị hủy hoặc không đạt mục tiêu
 router.post(
   "/:id/refund",
@@ -68,16 +71,39 @@ router.post(
   donationController.refund
 );
 
+// Nhà hảo tâm gửi đơn yêu cầu hoàn tiền
+router.post(
+  "/:id/request-refund",
+  authenticate,
+  validate(reasonSchema),
+  donationController.requestRefund
+);
+
 // ==========================================
 // 3. ADMIN ROUTES (Quản trị & Kiểm thử Buổi 6)
 // ==========================================
+
+// Danh sách tất cả các đơn yêu cầu hoàn tiền dành cho Admin
+router.get(
+  "/admin/refund-requests",
+  authenticate,
+  authorize(UserRole.ADMIN),
+  donationController.getAdminRefundRequests
+);
+
+// Admin duyệt hoặc từ chối đơn yêu cầu hoàn tiền
+router.post(
+  "/:id/review-refund",
+  authenticate,
+  authorize(UserRole.ADMIN),
+  donationController.reviewRefund
+);
 
 // Admin xác nhận thanh toán mô phỏng (Dành cho kịch bản kiểm thử)
 router.post(
   "/:id/confirm-demo",
   authenticate,
   authorize(UserRole.ADMIN),
-  validate(emptyActionSchema),
   donationController.confirmDemo
 );
 
