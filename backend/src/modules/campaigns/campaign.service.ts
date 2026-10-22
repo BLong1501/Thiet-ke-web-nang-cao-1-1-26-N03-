@@ -99,6 +99,7 @@ export class CampaignService {
             statement: legalMetadata.charityCommitmentStatement,
           }
         : null,
+      communityLink: legalMetadata?.communityLink || null,
       beneficiaryDetails: legalMetadata?.details || campaign.beneficiaryInfo,
       bankAccountNumber: campaign.bankAccountNumber,
       bankName: campaign.bankName,
