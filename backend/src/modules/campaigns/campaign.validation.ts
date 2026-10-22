@@ -156,8 +156,21 @@ export const createCampaignSchema = baseCampaignSchema.superRefine((data, ctx) =
   }
 });
 
-// Schema cập nhật chiến dịch (khi đang DRAFT hoặc PENDING_APPROVAL)
-export const updateCampaignSchema = baseCampaignSchema.partial();
+// Schema cập nhật chiến dịch
+export const updateCampaignSchema = baseCampaignSchema
+  .extend({
+    coverImageUrl: z.string().trim().min(1, "Ảnh bìa không được để trống").optional(),
+    media: z
+      .array(
+        z.object({
+          mediaType: z.enum(["IMAGE", "VIDEO", "DOCUMENT"]).default("IMAGE"),
+          url: z.string().trim().min(1, "Đường dẫn media không được để trống"),
+          caption: z.string().trim().max(255).optional(),
+        })
+      )
+      .optional(),
+  })
+  .partial();
 
 // Schema lọc danh sách chiến dịch
 export const campaignQuerySchema = z.object({

@@ -44,7 +44,7 @@ export default function CreateCampaignPage() {
   const canEdit =
     !result.data?.campaign ||
     (result.data.campaign.fundraiserId === user?.id &&
-      ["DRAFT", "PENDING_APPROVAL"].includes(result.data.campaign.status));
+      !["COMPLETED", "CANCELLED"].includes(result.data.campaign.status));
   return (
     <Page
       title={id ? "Chỉnh sửa chiến dịch" : "Bắt đầu một điều tốt đẹp"}
@@ -61,8 +61,8 @@ export default function CreateCampaignPage() {
           />
         ) : (
           <Notice error>
-            Bạn không có quyền chỉnh sửa chiến dịch này hoặc trạng thái không
-            cho phép chỉnh sửa.
+            Bạn không có quyền chỉnh sửa chiến dịch này hoặc chiến dịch đã kết
+            thúc/bị hủy.
           </Notice>
         ))}
     </Page>
@@ -85,10 +85,17 @@ function CampaignForm({
   const [coverUrl, setCoverUrl] = useState<string>(c?.coverImageUrl || "");
   const [localPreview, setLocalPreview] = useState("");
   const [uploadingImage, setUploadingImage] = useState(false);
-  const [mediaText, setMediaText] = useState("");
+  const initialMedia = (c?.media || []).map((m: any, idx: number) => ({
+    key: `existing-${idx}-${m.id || idx}`,
+    preview: m.url,
+    url: m.url,
+  }));
+  const [mediaText, setMediaText] = useState(
+    (c?.media || []).map((m: any) => m.url).join("\n")
+  );
   const [mediaShots, setMediaShots] = useState<
     { key: string; preview: string; url: string }[]
-  >([]);
+  >(initialMedia);
   const [uploadingMedia, setUploadingMedia] = useState(false);
   const mediaShotsRef = useRef(mediaShots);
   mediaShotsRef.current = mediaShots;
@@ -188,10 +195,10 @@ function CampaignForm({
               item.key === shot.key ? { ...item, url: res.url } : item,
             ),
           );
-          setMediaText((prev) => {
+          setMediaText((prev: string) => {
             const lines = prev
               .split("\n")
-              .map((line) => line.trim())
+              .map((line: string) => line.trim())
               .filter(Boolean);
             if (lines.includes(res.url)) return prev;
             return [...lines, res.url].join("\n");
@@ -211,11 +218,11 @@ function CampaignForm({
     if (shot.preview.startsWith("blob:")) URL.revokeObjectURL(shot.preview);
     setMediaShots((prev) => prev.filter((item) => item.key !== key));
     if (shot.url) {
-      setMediaText((prev) =>
+      setMediaText((prev: string) =>
         prev
           .split("\n")
-          .map((line) => line.trim())
-          .filter((line) => line && line !== shot.url)
+          .map((line: string) => line.trim())
+          .filter((line: string) => line && line !== shot.url)
           .join("\n"),
       );
     }
@@ -362,20 +369,25 @@ function CampaignForm({
           }
         : {}),
       status: submitter?.value || "PENDING_APPROVAL",
-      ...(!c
-        ? { media: mediaUrls.map((url) => ({ mediaType: "IMAGE", url })) }
-        : {}),
+      media: mediaUrls.map((url) => ({ mediaType: "IMAGE", url })),
     };
     setBusy(true);
     try {
       const r = c
         ? await campaignApi.update(c.id, body)
         : await campaignApi.create(body);
-      toast.success(
-        body.status === "DRAFT"
-          ? "Đã lưu bản nháp trên máy chủ."
-          : "Đã gửi chiến dịch chờ duyệt.",
-      );
+      if (c) {
+        toast.success(
+          "Cập nhật chiến dịch thành công! Thông tin mới đã được gửi lên máy chủ và chuyển sang trạng thái Chờ duyệt để Admin kiểm tra.",
+          { duration: 6000 }
+        );
+      } else {
+        toast.success(
+          body.status === "DRAFT"
+            ? "Đã lưu bản nháp trên máy chủ."
+            : "Đã gửi chiến dịch chờ duyệt.",
+        );
+      }
       navigate(campaignPath(payload(r)));
     } catch (e) {
       setError(errorMessage(e));
@@ -389,6 +401,25 @@ function CampaignForm({
       className="panel form-stack campaign-form"
       onSubmit={submit}
     >
+      {c && (
+        <div
+          style={{
+            background: "#fffbeb",
+            border: "1px solid #fde68a",
+            padding: "12px 16px",
+            borderRadius: "10px",
+            color: "#92400e",
+            fontSize: "0.9rem",
+            lineHeight: 1.5,
+          }}
+        >
+          <strong>⚠️ Quy trình kiểm duyệt minh bạch:</strong> Bạn đang chỉnh sửa
+          chiến dịch. Sau khi bạn bấm Lưu thay đổi, chiến dịch sẽ được gửi lên
+          máy chủ và tự động chuyển về trạng thái <strong>Chờ duyệt</strong> để
+          Ban Quản trị kiểm tra đối soát nội dung & hình ảnh trước khi kích hoạt
+          trở lại.
+        </div>
+      )}
       {error && <Notice error>{error}</Notice>}
 
       <ol className="wizard-progress" aria-label="Các bước tạo chiến dịch">

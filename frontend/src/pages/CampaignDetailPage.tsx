@@ -168,7 +168,25 @@ export default function CampaignDetailPage() {
                   <div style={{ fontSize: "14px", color: "#166534", fontWeight: 600 }}>
                     Khu vực Quản trị & Giải ngân cho Chiến dịch của bạn
                   </div>
-                  <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+                  <div style={{ display: "flex", gap: "8px", alignItems: "center", flexWrap: "wrap" }}>
+                    <Link
+                      to={`/campaigns/${c.id}/edit`}
+                      className="button secondary"
+                      style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: "6px",
+                        fontSize: "13px",
+                        padding: "6px 14px",
+                        textDecoration: "none",
+                        color: "#0f766e",
+                        borderColor: "#99f6e4",
+                        background: "#fff",
+                        fontWeight: 600,
+                      }}
+                    >
+                      ✏️ Chỉnh sửa thông tin
+                    </Link>
                     <button
                       type="button"
                       className="button secondary"

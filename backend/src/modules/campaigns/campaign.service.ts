@@ -372,16 +372,21 @@ export class CampaignService {
       message: "Bạn không có quyền chỉnh sửa chiến dịch này",
     });
 
-    // Chỉ cho phép sửa khi chiến dịch đang ở trạng thái DRAFT hoặc PENDING_APPROVAL
+    // Không cho phép sửa nếu chiến dịch đã hoàn thành hoặc đã bị hủy
     if (
       userRole !== UserRole.ADMIN &&
-      campaign.status !== CampaignStatus.DRAFT &&
-      campaign.status !== CampaignStatus.PENDING_APPROVAL
+      (campaign.status === CampaignStatus.COMPLETED ||
+        campaign.status === CampaignStatus.CANCELLED)
     ) {
       throw new AppError(
-        "Không thể chỉnh sửa chiến dịch đã được kích hoạt hoặc đã kết thúc. Vui lòng liên hệ ban quản trị.",
+        "Không thể chỉnh sửa chiến dịch đã hoàn tất hoặc đã bị hủy.",
         400
       );
+    }
+
+    // Nếu người sửa là chủ chiến dịch (Fundraiser), tự động chuyển trạng thái về PENDING_APPROVAL để Admin duyệt lại
+    if (userRole !== UserRole.ADMIN) {
+      input.status = CampaignStatus.PENDING_APPROVAL;
     }
 
     // Nếu có đổi danh mục, kiểm tra danh mục mới
@@ -393,6 +398,38 @@ export class CampaignService {
     }
 
     const updated = await this.repo.update(campaignId, input);
+
+    // Ghi AuditLog
+    await auditService.log({
+      userId,
+      action: "UPDATE_CAMPAIGN",
+      entityName: "Campaign",
+      entityId: campaignId,
+    });
+
+    // Thông báo cho ban quản trị biết chiến dịch cần duyệt lại
+    if (userRole !== UserRole.ADMIN) {
+      try {
+        const admins = await prisma.user.findMany({
+          where: { role: UserRole.ADMIN, status: "ACTIVE" },
+          select: { id: true },
+        });
+        for (const admin of admins) {
+          await prisma.notification.create({
+            data: {
+              userId: admin.id,
+              title: "Chiến dịch cần duyệt lại thông tin",
+              message: `Chủ chiến dịch "${campaign.title}" vừa chỉnh sửa nội dung/hình ảnh và gửi yêu cầu phê duyệt lại.`,
+              type: "CAMPAIGN",
+              linkUrl: `/admin/campaigns`,
+            },
+          });
+        }
+      } catch (err) {
+        console.warn("[UPDATE_CAMPAIGN_NOTIFICATION_WARN]:", err);
+      }
+    }
+
     await invalidatePublicCampaignCache();
     return this.hydrateCampaign(updated, { includeSensitive: true });
   }

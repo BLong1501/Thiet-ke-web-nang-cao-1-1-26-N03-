@@ -337,6 +337,24 @@ export class CampaignRepository {
       }),
     };
 
+    // Nếu có danh sách media cập nhật kèm theo
+    if (Array.isArray(input.media)) {
+      await prisma.$transaction(async (tx) => {
+        await tx.campaignMedia.deleteMany({ where: { campaignId: id } });
+        if (input.media && input.media.length > 0) {
+          await tx.campaignMedia.createMany({
+            data: input.media.map((m: any, idx: number) => ({
+              campaignId: id,
+              mediaType: m.mediaType || "IMAGE",
+              url: m.url,
+              caption: m.caption || null,
+              sortOrder: idx + 1,
+            })),
+          });
+        }
+      });
+    }
+
     return prisma.campaign.update({
       where: { id },
       data,

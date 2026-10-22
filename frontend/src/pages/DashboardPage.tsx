@@ -135,10 +135,18 @@ function MyCampaigns() {
                           >
                             Tạo hồ sơ giải ngân
                           </button>
-                          {["DRAFT", "PENDING_APPROVAL"].includes(c.status) && (
+                          {!["COMPLETED", "CANCELLED"].includes(c.status) && (
                             <>
                               <span style={{ color: "#94a3b8" }}>·</span>
-                              <Link to={`${campaignPath(c)}/edit`}>Sửa</Link>
+                              <Link
+                                to={`${campaignPath(c)}/edit`}
+                                style={{
+                                  color: "#2563eb",
+                                  fontWeight: 500,
+                                }}
+                              >
+                                Sửa chiến dịch
+                              </Link>
                             </>
                           )}
                         </div>
