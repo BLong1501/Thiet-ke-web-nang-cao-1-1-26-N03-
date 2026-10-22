@@ -13,6 +13,7 @@ import {
 import { generateAccessToken, generateRefreshToken, verifyRefreshToken } from "../../core/utils/jwt.util";
 import { redisService } from "../../core/database/redis";
 import { mailService } from "../../core/services/mail.service";
+import { auditService } from "../../core/services/audit.service";
 import { prisma } from "../../core/database/prisma";
 import { OAuth2Client } from "google-auth-library";
 
@@ -80,6 +81,7 @@ export class AuthService {
         passwordHash,
         fullName: input.fullName,
         phoneNumber: input.phoneNumber || null,
+        idCardNumber: input.idCardNumber || null,
         otp,
       },
       600
@@ -109,7 +111,7 @@ export class AuthService {
     }
 
     // 2. Lấy thông tin đăng ký tạm từ Redis
-    const pending = await redisService.getPendingRegistration(input.email);
+    const pending = (await redisService.getPendingRegistration(input.email)) as any;
     if (!pending) {
       const error: any = new Error(
         "Yêu cầu đăng ký đã hết hạn (quá 10 phút) hoặc không tồn tại. Vui lòng thực hiện đăng ký lại từ đầu."
@@ -135,6 +137,69 @@ export class AuthService {
       isEmailVerified: true,
       emailVerifiedAt: new Date(),
     });
+
+    // 4.1. Tự động kiểm tra và liên kết các khoản đóng góp của khách vãng lai trước đây vào tài khoản mới
+    try {
+      const guestConditions: any[] = [];
+      if (newUser.email) {
+        guestConditions.push({ donorEmail: newUser.email });
+      }
+      if (pending.idCardNumber) {
+        guestConditions.push({
+          paymentGatewayResponse: {
+            path: "$.donorIdCard",
+            equals: pending.idCardNumber,
+          },
+        });
+      }
+
+      if (guestConditions.length > 0) {
+        const claimed = await prisma.donation.updateMany({
+          where: {
+            donorId: null,
+            OR: guestConditions,
+          },
+          data: {
+            donorId: newUser.id,
+          },
+        });
+
+        if (claimed.count > 0) {
+          console.log(`🔗 Đã tự động liên kết ${claimed.count} khoản đóng góp của khách vãng lai vào tài khoản User ${newUser.id}`);
+          await auditService.log({
+            userId: newUser.id,
+            action: "SYNC_GUEST_DONATIONS",
+            entityName: "User",
+            entityId: newUser.id,
+            details: {
+              claimedCount: claimed.count,
+              idCardNumber: pending.idCardNumber,
+              email: newUser.email,
+            },
+          });
+        }
+      }
+
+      // Khởi tạo hồ sơ xác minh định danh nếu có cung cấp CCCD
+      if (pending.idCardNumber) {
+        await prisma.verification.upsert({
+          where: { userId: newUser.id },
+          create: {
+            userId: newUser.id,
+            idCardNumber: pending.idCardNumber,
+            frontCardImage: "",
+            backCardImage: "",
+            portraitImage: "",
+            status: "PENDING",
+          },
+          update: {
+            idCardNumber: pending.idCardNumber,
+          },
+        }).catch(() => {});
+      }
+    } catch (linkErr) {
+      console.warn("[CLAIM_GUEST_DONATIONS_WARN]:", linkErr);
+    }
 
     // 5. Xóa thông tin đăng ký tạm khỏi Redis
     await redisService.deletePendingRegistration(input.email);

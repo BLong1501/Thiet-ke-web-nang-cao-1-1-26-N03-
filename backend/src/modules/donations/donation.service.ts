@@ -3,7 +3,7 @@ import crypto from "crypto";
 import { donationRepository, DonationRepository } from "./donation.repository";
 import { prisma } from "../../core/database/prisma";
 import { CampaignStatus, PaymentMethod, PaymentStatus, UserRole, Prisma } from "@prisma/client";
-import { CreateDonationInput, ConfirmDonationInput, DonationQueryInput } from "./donation.validation";
+import { CreateDonationInput, ConfirmDonationInput, DonationQueryInput, RequestRefundInput } from "./donation.validation";
 import { AppError } from "../../core/errors/app.error";
 import {
   campaignCacheKeys,
@@ -163,7 +163,10 @@ export class DonationService {
       isAnonymous: input.isAnonymous || false,
       paymentMethod: input.paymentMethod || PaymentMethod.BANK_TRANSFER,
       paymentStatus: PaymentStatus.PENDING,
-      paymentGatewayResponse: input.requestKey ? { requestKey: input.requestKey } : undefined,
+      paymentGatewayResponse: {
+        ...(input.requestKey ? { requestKey: input.requestKey } : {}),
+        ...(input.donorIdCard ? { donorIdCard: input.donorIdCard.trim() } : {}),
+      },
     });
 
     // 6. Tạo hướng dẫn thanh toán chi tiết (tích hợp PayOS VietQR Pro) kèm thời gian hết hạn
@@ -506,9 +509,13 @@ export class DonationService {
   }
 
   /**
-   * Nhà hảo tâm gửi đơn yêu cầu hoàn tiền cho khoản đóng góp
+   * Nhà hảo tâm gửi đơn yêu cầu hoàn tiền cho khoản đóng góp (Kèm CCCD và Tài khoản ngân hàng)
    */
-  async requestRefund(actor: { userId: string; role: string }, donationId: string, reason: string) {
+  async requestRefund(
+    actor: { userId: string; role: string },
+    donationId: string,
+    input: RequestRefundInput
+  ) {
     return this.repo.transaction(async (tx) => {
       const user = await tx.user.findUnique({ where: { id: actor.userId } });
       if (!user || user.status !== "ACTIVE" || !user.isEmailVerified) {
@@ -540,7 +547,12 @@ export class DonationService {
 
       currentResp.refundRequest = {
         status: "PENDING",
-        reason: reason.trim(),
+        reason: input.reason.trim(),
+        idCardNumber: input.idCardNumber.trim(),
+        idCardName: input.idCardName.trim(),
+        bankName: input.bankName.trim(),
+        bankAccountNumber: input.bankAccountNumber.trim(),
+        bankAccountName: input.bankAccountName.trim().toUpperCase(),
         requestedAt: new Date().toISOString(),
       };
 
@@ -555,6 +567,13 @@ export class DonationService {
         action: "REFUND_REQUESTED",
         entityName: "Donation",
         entityId: donation.id,
+        details: {
+          reason: input.reason,
+          idCardNumber: input.idCardNumber,
+          bankName: input.bankName,
+          bankAccountNumber: input.bankAccountNumber,
+          bankAccountName: input.bankAccountName,
+        },
       }, tx);
 
       // Gửi Notification cho Admin
@@ -564,7 +583,7 @@ export class DonationService {
           data: {
             userId: adm.id,
             title: "Yêu cầu hoàn tiền mới cần duyệt",
-            message: `Nhà hảo tâm ${donation.donorName || "N/A"} vừa gửi đơn hoàn tiền ${Number(donation.amount).toLocaleString("vi-VN")} VNĐ cho chiến dịch "${campaign.title}". Lý do: ${reason}`,
+            message: `Nhà hảo tâm ${donation.donorName || "N/A"} vừa gửi đơn hoàn tiền ${Number(donation.amount).toLocaleString("vi-VN")} VNĐ cho chiến dịch "${campaign.title}". CCCD: ${input.idCardNumber} - NH: ${input.bankName} (${input.bankAccountNumber}). Lý do: ${input.reason}`,
             type: "REFUND_REQUESTED",
             linkUrl: `/admin/donations?tab=refunds`,
           },
@@ -771,6 +790,13 @@ export class DonationService {
         donorName: d.donorName,
         donorEmail: d.donorEmail,
         donorPhone: d.donorPhone,
+        idCardNumber: req.idCardNumber || resp.donorIdCard || null,
+        idCardName: req.idCardName || d.donorName || null,
+        bankName: req.bankName || null,
+        bankAccountNumber: req.bankAccountNumber || null,
+        bankAccountName: req.bankAccountName || null,
+        refundRequest: req,
+        paymentGatewayResponse: resp,
         requestedAt: req.requestedAt || d.updatedAt,
         reason: req.reason || d.message || "Yêu cầu hoàn tiền",
         refundStatus,
@@ -914,6 +940,9 @@ export class DonationService {
   /**
    * Tra cứu chi tiết một giao dịch quyên góp
    */
+  /**
+   * Tra cứu chi tiết một giao dịch quyên góp
+   */
   async getDonationDetail(donationId: string, currentUserId?: string, userRole?: UserRole) {
     let donation = await this.repo.findById(donationId);
     if (!donation) {
@@ -922,13 +951,21 @@ export class DonationService {
 
     donation = await this.checkAndExpireDonation(donation);
 
-    await assertAnyObjectAccess({
-      actor: currentUserId ? { userId: currentUserId, role: userRole || UserRole.USER } : null,
-      ownerIds: [donation.donorId, (donation as any).campaign?.fundraiserId],
-      entityName: "Donation",
-      entityId: donationId,
-      message: "Bạn không sở hữu khoản đóng góp này",
-    });
+    const isOwner = currentUserId && donation.donorId === currentUserId;
+    const isAdmin = userRole === UserRole.ADMIN;
+    const isFundraiser = currentUserId && (donation as any).campaign?.fundraiserId === currentUserId;
+    const isGuest = donation.donorId === null;
+    const isPending = donation.paymentStatus === PaymentStatus.PENDING;
+
+    if (!isOwner && !isAdmin && !isFundraiser && !isGuest && !isPending) {
+      await assertAnyObjectAccess({
+        actor: currentUserId ? { userId: currentUserId, role: userRole || UserRole.USER } : null,
+        ownerIds: [donation.donorId, (donation as any).campaign?.fundraiserId],
+        entityName: "Donation",
+        entityId: donationId,
+        message: "Bạn không sở hữu khoản đóng góp này",
+      });
+    }
 
     return donation;
   }

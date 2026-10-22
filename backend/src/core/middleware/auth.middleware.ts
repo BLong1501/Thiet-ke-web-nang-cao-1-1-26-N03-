@@ -24,6 +24,9 @@ export const authenticate = async (req: Request, res: Response, next: NextFuncti
   } else if (req.cookies && req.cookies.accessToken) {
     // Hoặc lấy từ HttpOnly cookie
     token = req.cookies.accessToken;
+  } else if (typeof req.query.token === "string" && req.query.token) {
+    // Hoặc lấy từ query param khi nhúng ảnh / xem ảnh trực tiếp
+    token = req.query.token;
   }
 
   if (!token) {

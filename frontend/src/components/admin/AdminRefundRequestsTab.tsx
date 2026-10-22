@@ -17,6 +17,7 @@ import toast from "react-hot-toast";
 export default function AdminRefundRequestsTab() {
   const [page, setPage] = useState(1);
   const [statusFilter, setStatusFilter] = useState<string>("PENDING");
+  const [receiptDonation, setReceiptDonation] = useState<RecordData | null>(null);
   const [reviewing, setReviewing] = useState<{
     donation: RecordData;
     decision: "APPROVE" | "REJECT";
@@ -269,19 +270,19 @@ export default function AdminRefundRequestsTab() {
                               justifyContent: "flex-end",
                             }}
                           >
-                            <Link
-                              to={`/donations/${donation.id}`}
-                              target="_blank"
+                            <button
+                              type="button"
                               className="button secondary sm"
                               style={{
                                 display: "inline-flex",
                                 alignItems: "center",
                                 gap: 4,
                               }}
-                              title="Xem chi tiết giao dịch"
+                              title="Xem biên lai hoàn tiền & hồ sơ đối soát"
+                              onClick={() => setReceiptDonation(donation)}
                             >
                               <LuEye size={14} /> Chi tiết
-                            </Link>
+                            </button>
 
                             {reqStatus === "PENDING" && (
                               <>
@@ -447,6 +448,149 @@ export default function AdminRefundRequestsTab() {
               </button>
             </div>
           </form>
+        </Modal>
+      )}
+
+      {receiptDonation && (
+        <Modal
+          title={`Biên lai Hoàn tiền & Hồ sơ Đối soát #${receiptDonation.transactionCode || receiptDonation.id}`}
+          onClose={() => setReceiptDonation(null)}
+        >
+          <div className="form-stack" style={{ fontSize: "0.95rem" }}>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                background: "var(--color-surface, #f8fafc)",
+                padding: "12px 16px",
+                borderRadius: "8px",
+                border: "1px solid var(--color-border, #e2e8f0)",
+              }}
+            >
+              <div>
+                <div style={{ fontSize: "0.85rem", color: "var(--color-muted, #64748b)" }}>Số tiền yêu cầu hoàn</div>
+                <div style={{ fontSize: "1.4rem", fontWeight: 700, color: "#dc2626" }}>
+                  {formatCurrency(Number(receiptDonation.amount))}
+                </div>
+              </div>
+              <div style={{ textAlign: "right" }}>
+                <div style={{ fontSize: "0.85rem", color: "var(--color-muted, #64748b)" }}>Trạng thái</div>
+                <div>
+                  {receiptDonation.refundStatus === "PENDING" && (
+                    <span style={{ backgroundColor: "#fef3c7", color: "#92400e", padding: "4px 10px", borderRadius: "6px", fontSize: "0.85rem", fontWeight: 600 }}>
+                      Chờ duyệt
+                    </span>
+                  )}
+                  {receiptDonation.refundStatus === "APPROVED" && (
+                    <span style={{ backgroundColor: "#dcfce7", color: "#166534", padding: "4px 10px", borderRadius: "6px", fontSize: "0.85rem", fontWeight: 600 }}>
+                      Đã hoàn tiền
+                    </span>
+                  )}
+                  {receiptDonation.refundStatus === "REJECTED" && (
+                    <span style={{ backgroundColor: "#fee2e2", color: "#991b1b", padding: "4px 10px", borderRadius: "6px", fontSize: "0.85rem", fontWeight: 600 }}>
+                      Đã từ chối
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <div style={{ border: "1px solid var(--color-border, #e2e8f0)", borderRadius: "8px", padding: "14px" }}>
+              <h4 style={{ margin: "0 0 10px", fontSize: "0.95rem", color: "var(--color-primary, #2563eb)", borderBottom: "1px solid var(--color-border, #e2e8f0)", paddingBottom: "6px" }}>
+                1. Thông tin Chiến dịch & Giao dịch gốc
+              </h4>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px", fontSize: "0.9rem" }}>
+                <div><strong>Mã giao dịch:</strong> {receiptDonation.transactionCode || receiptDonation.id}</div>
+                <div><strong>Ngày ủng hộ:</strong> {formatDate(receiptDonation.createdAt)}</div>
+                <div style={{ gridColumn: "1 / -1" }}><strong>Chiến dịch:</strong> {receiptDonation.campaign?.title || "N/A"}</div>
+              </div>
+            </div>
+
+            <div style={{ border: "1px solid var(--color-border, #e2e8f0)", borderRadius: "8px", padding: "14px" }}>
+              <h4 style={{ margin: "0 0 10px", fontSize: "0.95rem", color: "var(--color-primary, #2563eb)", borderBottom: "1px solid var(--color-border, #e2e8f0)", paddingBottom: "6px" }}>
+                2. Hồ sơ Định danh & Người yêu cầu
+              </h4>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px", fontSize: "0.9rem" }}>
+                <div><strong>Họ tên:</strong> {receiptDonation.idCardName || receiptDonation.donorName || receiptDonation.donor?.fullName || "Ẩn danh"}</div>
+                <div><strong>Số CCCD:</strong> <span style={{ fontWeight: 700, color: "#1e40af" }}>{receiptDonation.idCardNumber || (receiptDonation.paymentGatewayResponse as any)?.donorIdCard || "Chưa cung cấp"}</span></div>
+                <div><strong>Email:</strong> {receiptDonation.donorEmail || receiptDonation.donor?.email || "N/A"}</div>
+                <div><strong>Số điện thoại:</strong> {receiptDonation.donorPhone || receiptDonation.donor?.phoneNumber || "N/A"}</div>
+                <div style={{ gridColumn: "1 / -1" }}>
+                  <strong>Phân loại:</strong> {receiptDonation.donor ? "Thành viên đã có tài khoản" : "Khách vãng lai (Guest - Đã nhập CCCD)"}
+                </div>
+              </div>
+            </div>
+
+            <div style={{ border: "1px solid var(--color-border, #e2e8f0)", borderRadius: "8px", padding: "14px", background: "#f0fdf4" }}>
+              <h4 style={{ margin: "0 0 10px", fontSize: "0.95rem", color: "#166534", borderBottom: "1px solid #bbf7d0", paddingBottom: "6px" }}>
+                3. Tài khoản Ngân hàng nhận tiền hoàn
+              </h4>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px", fontSize: "0.9rem", color: "#14532d" }}>
+                <div><strong>Ngân hàng thụ hưởng:</strong> {receiptDonation.bankName || "Chưa cung cấp"}</div>
+                <div><strong>Số tài khoản:</strong> <span style={{ fontWeight: 700, fontSize: "1rem" }}>{receiptDonation.bankAccountNumber || "Chưa cung cấp"}</span></div>
+                <div style={{ gridColumn: "1 / -1" }}><strong>Tên chủ tài khoản:</strong> <span style={{ textTransform: "uppercase", fontWeight: 700 }}>{receiptDonation.bankAccountName || "Chưa cung cấp"}</span></div>
+              </div>
+            </div>
+
+            <div style={{ border: "1px solid var(--color-border, #e2e8f0)", borderRadius: "8px", padding: "14px" }}>
+              <h4 style={{ margin: "0 0 10px", fontSize: "0.95rem", color: "var(--color-primary, #2563eb)", borderBottom: "1px solid var(--color-border, #e2e8f0)", paddingBottom: "6px" }}>
+                4. Lý do & Nhật ký xét duyệt
+              </h4>
+              <div style={{ fontSize: "0.9rem" }}>
+                <p style={{ margin: "0 0 8px" }}>
+                  <strong>Lý do từ người yêu cầu:</strong>{" "}
+                  <em>"{receiptDonation.reason || receiptDonation.refundRequest?.reason || "Yêu cầu hoàn trả"}"</em>
+                </p>
+                <div><strong>Thời gian gửi đơn:</strong> {formatDate(receiptDonation.requestedAt || receiptDonation.createdAt)}</div>
+                {receiptDonation.reviewedAt && (
+                  <div style={{ marginTop: 4 }}><strong>Thời gian duyệt:</strong> {formatDate(receiptDonation.reviewedAt)}</div>
+                )}
+                {receiptDonation.rejectionReason && (
+                  <div style={{ marginTop: 4, color: "#dc2626" }}>
+                    <strong>Lý do từ chối:</strong> {receiptDonation.rejectionReason}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, marginTop: "1rem" }}>
+              <button type="button" className="button secondary" onClick={() => setReceiptDonation(null)}>
+                Đóng
+              </button>
+              {receiptDonation.refundStatus === "PENDING" && (
+                <>
+                  <button
+                    type="button"
+                    className="button"
+                    style={{ backgroundColor: "#16a34a", borderColor: "#16a34a", color: "#fff" }}
+                    onClick={() => {
+                      const d = receiptDonation;
+                      setReceiptDonation(null);
+                      setReviewing({ donation: d, decision: "APPROVE" });
+                      setError("");
+                    }}
+                  >
+                    <LuCheck size={16} /> Xác nhận đã hoàn tiền
+                  </button>
+                  <button
+                    type="button"
+                    className="button secondary"
+                    style={{ color: "#dc2626", borderColor: "#fca5a5" }}
+                    onClick={() => {
+                      const d = receiptDonation;
+                      setReceiptDonation(null);
+                      setReviewing({ donation: d, decision: "REJECT" });
+                      setRejectionReason("");
+                      setError("");
+                    }}
+                  >
+                    <LuX size={16} /> Từ chối hoàn
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
         </Modal>
       )}
     </div>

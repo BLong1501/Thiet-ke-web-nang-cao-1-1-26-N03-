@@ -93,6 +93,7 @@ export const authApi = {
     email: string;
     password: string;
     phoneNumber?: string;
+    idCardNumber?: string;
   }) => api.post("/auth/register", data),
   logout: () => api.post("/auth/logout"),
   me: () => api.get("/auth/me"),
@@ -215,6 +216,7 @@ export const donationApi = {
     donorName?: string;
     donorEmail?: string;
     donorPhone?: string;
+    donorIdCard?: string;
     message?: string;
     isAnonymous?: boolean;
     paymentMethod?: string;
@@ -247,8 +249,17 @@ export const donationApi = {
       headers: { "Cache-Control": "no-cache", Pragma: "no-cache" },
     }),
   simulateSuccess: (id: string) => api.post(`/donations/${id}/simulate-success`),
-  requestRefund: (id: string, data: { reason: string }) =>
-    api.post(`/donations/${id}/request-refund`, data),
+  requestRefund: (
+    id: string,
+    data: {
+      reason: string;
+      idCardNumber?: string;
+      idCardName?: string;
+      bankName: string;
+      bankAccountNumber: string;
+      bankAccountName: string;
+    },
+  ) => api.post(`/donations/${id}/request-refund`, data),
   getMyRefundRequests: (params?: Record<string, unknown>) =>
     api.get("/donations/my/refund-requests", { params }),
   getAdminRefundRequests: (params?: Record<string, unknown>) =>

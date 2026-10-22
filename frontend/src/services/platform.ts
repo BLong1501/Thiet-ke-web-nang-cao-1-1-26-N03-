@@ -111,11 +111,11 @@ export function safeUrl(value: unknown): string {
     const apiBase = api.defaults.baseURL || "";
     if (apiBase.startsWith("http")) {
       const backendOrigin = new URL(apiBase).origin;
-      if (!backendOrigin.includes("localhost:5000") && raw.includes("localhost:5000")) {
+      if (raw.includes("/api/v1/uploads/")) {
+        const uploadPath = raw.substring(raw.indexOf("/api/v1/uploads/"));
+        raw = `${backendOrigin}${uploadPath}`;
+      } else if (!backendOrigin.includes("localhost:5000") && raw.includes("localhost:5000")) {
         raw = raw.replace(/https?:\/\/localhost:5000/g, backendOrigin);
-      }
-      if (raw.startsWith("/api/v1/")) {
-        raw = `${backendOrigin}${raw}`;
       }
     }
 
@@ -127,12 +127,9 @@ export function safeUrl(value: unknown): string {
 }
 export function privateUploadPath(value: string): string | null {
   try {
-    const base = new URL(api.defaults.baseURL!, window.location.origin);
-    const url = new URL(value, base.origin);
-    return url.origin === base.origin &&
-      /^\/api\/v1\/uploads\/[0-9a-f-]+$/i.test(url.pathname)
-      ? url.pathname.replace("/api/v1", "")
-      : null;
+    const match = value.match(/\/api\/v1\/(uploads\/[0-9a-f-]+)$/i);
+    if (match) return `/${match[1]}`;
+    return null;
   } catch {
     return null;
   }

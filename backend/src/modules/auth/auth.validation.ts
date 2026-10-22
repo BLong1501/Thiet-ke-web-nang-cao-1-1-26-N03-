@@ -22,6 +22,12 @@ export const registerSchema = z.object({
     .regex(/^(0|\+84)[3|5|7|8|9][0-9]{8}$/, "Số điện thoại Việt Nam không hợp lệ")
     .optional()
     .or(z.literal("")),
+  idCardNumber: z
+    .string()
+    .trim()
+    .regex(/^[0-9]{12}$/, "Số CCCD phải gồm đúng 12 chữ số")
+    .optional()
+    .or(z.literal("")),
 });
 
 export const loginSchema = z.object({

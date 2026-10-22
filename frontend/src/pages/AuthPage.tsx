@@ -31,6 +31,7 @@ export default function AuthPage({ mode }: { mode: Mode }) {
   const navigate = useNavigate();
   const [email, setEmail] = useState(params.get("email") || "");
   const [name, setName] = useState("");
+  const [idCardNumber, setIdCardNumber] = useState("");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [otp, setOtp] = useState("");
@@ -49,6 +50,10 @@ export default function AuthPage({ mode }: { mode: Mode }) {
     setMessage("");
     if (["register", "reset"].includes(mode) && password !== confirm) {
       setError("Mật khẩu xác nhận không khớp.");
+      return;
+    }
+    if (mode === "register" && idCardNumber.trim() && !/^[0-9]{12}$/.test(idCardNumber.trim())) {
+      setError("Số Căn cước công dân phải gồm đúng 12 chữ số.");
       return;
     }
     setBusy(true);
@@ -71,6 +76,7 @@ export default function AuthPage({ mode }: { mode: Mode }) {
           fullName: name.trim(),
           email: cleanEmail,
           password,
+          idCardNumber: idCardNumber.trim() || undefined,
         });
         navigate(`/verify-email?email=${encodeURIComponent(cleanEmail)}`);
       } else if (mode === "forgot") {
@@ -125,16 +131,32 @@ export default function AuthPage({ mode }: { mode: Mode }) {
           {error && <Notice error>{error}</Notice>}
           {message && <Notice>{message}</Notice>}
           {mode === "register" && (
-            <Field label="Họ và tên">
-              <input
-                required
-                minLength={2}
-                maxLength={150}
-                autoComplete="name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-              />
-            </Field>
+            <>
+              <Field label="Họ và tên">
+                <input
+                  required
+                  minLength={2}
+                  maxLength={150}
+                  autoComplete="name"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="Ví dụ: Nguyễn Văn A"
+                />
+              </Field>
+              <Field
+                label="Số Căn cước công dân (12 chữ số)"
+                hint="Dành cho người dùng & khách vãng lai: Nhập số CCCD để hệ thống tự động kiểm tra, liên kết toàn bộ lịch sử đóng góp cũ và bảo lưu quyền hoàn tiền."
+              >
+                <input
+                  type="text"
+                  pattern="[0-9]{12}"
+                  maxLength={12}
+                  value={idCardNumber}
+                  onChange={(e) => setIdCardNumber(e.target.value)}
+                  placeholder="Nhập 12 chữ số CCCD (Ví dụ: 001201012345)"
+                />
+              </Field>
+            </>
           )}
           <Field label="Email">
             <input

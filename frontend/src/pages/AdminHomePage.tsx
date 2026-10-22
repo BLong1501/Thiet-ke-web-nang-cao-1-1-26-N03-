@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import {
   BarChart,
   Bar,
@@ -66,9 +66,10 @@ const CHART = {
 
 const QUICK_LINKS: [string, string][] = [
   ["Chiến dịch chờ duyệt", "/admin/campaigns"],
+  ["Duyệt hoàn tiền", "/admin/refunds"],
   ["Hồ sơ KYC chờ duyệt", "/admin/verifications"],
   ["Người dùng", "/admin/users"],
-  ["Giao dịch", "/admin/donations"],
+  ["Giao dịch & Sổ cái", "/admin/donations"],
   ["Giải ngân & Chứng từ", "/admin/disbursements"],
 ];
 
@@ -272,9 +273,11 @@ export default function AdminHomePage() {
   const result = useRemote(async () => {
     const responses = await Promise.all([
       campaignApi.getPending({ limit: 1 }),
+      donationApi.getAdminRefundRequests({ limit: 1, status: "PENDING" }),
       verificationApi.getPending({ limit: 1 }),
       userApi.getUsers({ limit: 1 }),
       donationApi.getAllForAdmin({ limit: 1 }),
+      campaignApi.getAdminDisbursements({ limit: 1 }),
     ]);
     return responses.map((r) => listResult(r).total);
   });
@@ -396,10 +399,21 @@ export default function AdminHomePage() {
   );
 }
 
-export function AdminDonationsPage() {
+export function AdminDonationsPage({
+  defaultTab = "refunds",
+}: {
+  defaultTab?: "refunds" | "refund_logs" | "donations";
+} = {}) {
+  const [searchParams] = useSearchParams();
+  const tabFromQuery = searchParams.get("tab") as
+    | "refunds"
+    | "refund_logs"
+    | "donations"
+    | null;
+
   const [activeTab, setActiveTab] = useState<
     "refunds" | "refund_logs" | "donations"
-  >("refunds");
+  >(tabFromQuery || defaultTab);
 
   return (
     <Page

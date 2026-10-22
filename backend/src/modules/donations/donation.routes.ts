@@ -6,6 +6,7 @@ import {
   createDonationSchema,
   confirmDonationSchema,
   reasonSchema,
+  requestRefundSchema,
   emptyActionSchema,
   donationQuerySchema,
 } from "./donation.validation";
@@ -71,11 +72,11 @@ router.post(
   donationController.refund
 );
 
-// Nhà hảo tâm gửi đơn yêu cầu hoàn tiền
+// Nhà hảo tâm gửi đơn yêu cầu hoàn tiền (Kèm thông tin CCCD và Ngân hàng nhận)
 router.post(
   "/:id/request-refund",
   authenticate,
-  validate(reasonSchema),
+  validate(requestRefundSchema),
   donationController.requestRefund
 );
 
@@ -137,8 +138,8 @@ router.get(
 // 4. DETAIL ROUTE (Đặt cuối cùng)
 // ==========================================
 
-// Tra cứu chi tiết một giao dịch quyên góp
-router.get("/:id", authenticate, donationController.getDonationDetail);
+// Tra cứu chi tiết một giao dịch quyên góp (Khách vãng lai, Admin, hoặc Donor đã đăng nhập)
+router.get("/:id", optionalAuthenticate, donationController.getDonationDetail);
 
 export default router;
 export { router as donationRouter };

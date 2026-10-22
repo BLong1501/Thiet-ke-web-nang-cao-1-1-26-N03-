@@ -197,6 +197,14 @@ export default function App() {
                       }
                     />
                     <Route
+                      path="/admin/refunds"
+                      element={
+                        <ProtectedRoute requiredRole="ADMIN">
+                          <AdminDonationsPage defaultTab="refunds" />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
                       path="/admin/disbursements"
                       element={
                         <ProtectedRoute requiredRole="ADMIN">

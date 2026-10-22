@@ -126,6 +126,10 @@ function parseDisbursementData(item: RecordData | null): ParsedDisbursement {
   return def;
 }
 
+import { useAuthStore } from "../store/authStore";
+
+const FALLBACK_CCCD = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="300" height="190" viewBox="0 0 300 190"><rect width="100%" height="100%" fill="%23f8fafc"/><rect x="10" y="10" width="280" height="170" rx="8" fill="%23ffffff" stroke="%2394a3b8" stroke-width="2" stroke-dasharray="4 4"/><circle cx="65" cy="85" r="28" fill="%23e2e8f0"/><text x="175" y="65" font-family="sans-serif" font-size="12" font-weight="bold" fill="%23334155">GIẤY TỜ ĐỊNH DANH</text><text x="175" y="85" font-family="sans-serif" font-size="10" fill="%2364748b">CCCD / Người thụ hưởng</text><text x="175" y="105" font-family="sans-serif" font-size="10" fill="%230d9488">Hồ sơ đã lưu trên hệ thống</text><text x="150" y="150" font-family="sans-serif" font-size="10" fill="%2394a3b8" text-anchor="middle">Hình ảnh lưu trữ bảo mật</text></svg>`;
+
 export default function AdminDisbursementsPage() {
   const [page, setPage] = useState(1);
   const [selected, setSelected] = useState<RecordData | null>(null);
@@ -133,6 +137,19 @@ export default function AdminDisbursementsPage() {
   const [actionBusy, setActionBusy] = useState(false);
   const [rejectDialog, setRejectDialog] = useState(false);
   const [rejectReason, setRejectReason] = useState("");
+  const [previewImage, setPreviewImage] = useState<{ url: string; title: string } | null>(null);
+
+  const token = useAuthStore((s) => s.token);
+
+  function getImageSrc(rawUrl: string): string {
+    if (!rawUrl) return "";
+    const cleaned = safeUrl(rawUrl);
+    if (token && cleaned.includes("/api/v1/uploads/")) {
+      const sep = cleaned.includes("?") ? "&" : "?";
+      return `${cleaned}${sep}token=${encodeURIComponent(token)}`;
+    }
+    return cleaned;
+  }
 
   const result = useRemote(
     () => campaignApi.getAdminDisbursements({ page, limit: 10 }).then(listResult),
@@ -646,18 +663,27 @@ export default function AdminDisbursementsPage() {
                         {parsedSelected.photos.frontUrl ? (
                           <div>
                             <img
-                              src={safeUrl(parsedSelected.photos.frontUrl)}
+                              src={getImageSrc(parsedSelected.photos.frontUrl)}
                               alt="CCCD Mặt trước"
-                              style={{ width: "100%", height: "85px", objectFit: "cover", borderRadius: "4px", border: "1px solid #e2e8f0" }}
+                              onError={(e) => {
+                                (e.currentTarget as HTMLImageElement).src = FALLBACK_CCCD;
+                              }}
+                              onClick={() => setPreviewImage({
+                                url: getImageSrc(parsedSelected.photos.frontUrl),
+                                title: "CCCD Mặt trước - " + parsedSelected.idCard.fullName,
+                              })}
+                              style={{ width: "100%", height: "85px", objectFit: "cover", borderRadius: "4px", border: "1px solid #e2e8f0", cursor: "pointer" }}
                             />
-                            <a
-                              href={safeUrl(parsedSelected.photos.frontUrl)}
-                              target="_blank"
-                              rel="noreferrer"
-                              style={{ display: "inline-flex", alignItems: "center", gap: "3px", fontSize: "11px", color: "#2563eb", marginTop: "4px" }}
+                            <button
+                              type="button"
+                              onClick={() => setPreviewImage({
+                                url: getImageSrc(parsedSelected.photos.frontUrl),
+                                title: "CCCD Mặt trước - " + parsedSelected.idCard.fullName,
+                              })}
+                              style={{ background: "none", border: "none", display: "inline-flex", alignItems: "center", gap: "3px", fontSize: "11px", color: "#2563eb", marginTop: "4px", cursor: "pointer", padding: 0 }}
                             >
-                              <FiExternalLink size={10} /> Xem ảnh gốc
-                            </a>
+                              <FiExternalLink size={10} /> Xem phóng to
+                            </button>
                           </div>
                         ) : (
                           <div style={{ height: "85px", display: "flex", alignItems: "center", justifyContent: "center", color: "#94a3b8", fontSize: "11px" }}>
@@ -674,18 +700,27 @@ export default function AdminDisbursementsPage() {
                         {parsedSelected.photos.backUrl ? (
                           <div>
                             <img
-                              src={safeUrl(parsedSelected.photos.backUrl)}
+                              src={getImageSrc(parsedSelected.photos.backUrl)}
                               alt="CCCD Mặt sau"
-                              style={{ width: "100%", height: "85px", objectFit: "cover", borderRadius: "4px", border: "1px solid #e2e8f0" }}
+                              onError={(e) => {
+                                (e.currentTarget as HTMLImageElement).src = FALLBACK_CCCD;
+                              }}
+                              onClick={() => setPreviewImage({
+                                url: getImageSrc(parsedSelected.photos.backUrl),
+                                title: "CCCD Mặt sau - " + parsedSelected.idCard.fullName,
+                              })}
+                              style={{ width: "100%", height: "85px", objectFit: "cover", borderRadius: "4px", border: "1px solid #e2e8f0", cursor: "pointer" }}
                             />
-                            <a
-                              href={safeUrl(parsedSelected.photos.backUrl)}
-                              target="_blank"
-                              rel="noreferrer"
-                              style={{ display: "inline-flex", alignItems: "center", gap: "3px", fontSize: "11px", color: "#2563eb", marginTop: "4px" }}
+                            <button
+                              type="button"
+                              onClick={() => setPreviewImage({
+                                url: getImageSrc(parsedSelected.photos.backUrl),
+                                title: "CCCD Mặt sau - " + parsedSelected.idCard.fullName,
+                              })}
+                              style={{ background: "none", border: "none", display: "inline-flex", alignItems: "center", gap: "3px", fontSize: "11px", color: "#2563eb", marginTop: "4px", cursor: "pointer", padding: 0 }}
                             >
-                              <FiExternalLink size={10} /> Xem ảnh gốc
-                            </a>
+                              <FiExternalLink size={10} /> Xem phóng to
+                            </button>
                           </div>
                         ) : (
                           <div style={{ height: "85px", display: "flex", alignItems: "center", justifyContent: "center", color: "#94a3b8", fontSize: "11px" }}>
@@ -702,18 +737,27 @@ export default function AdminDisbursementsPage() {
                         {parsedSelected.photos.selfieUrl ? (
                           <div>
                             <img
-                              src={safeUrl(parsedSelected.photos.selfieUrl)}
+                              src={getImageSrc(parsedSelected.photos.selfieUrl)}
                               alt="Ảnh chân dung"
-                              style={{ width: "100%", height: "85px", objectFit: "cover", borderRadius: "4px", border: "1px solid #e2e8f0" }}
+                              onError={(e) => {
+                                (e.currentTarget as HTMLImageElement).src = FALLBACK_CCCD;
+                              }}
+                              onClick={() => setPreviewImage({
+                                url: getImageSrc(parsedSelected.photos.selfieUrl),
+                                title: "Ảnh chân dung - " + parsedSelected.idCard.fullName,
+                              })}
+                              style={{ width: "100%", height: "85px", objectFit: "cover", borderRadius: "4px", border: "1px solid #e2e8f0", cursor: "pointer" }}
                             />
-                            <a
-                              href={safeUrl(parsedSelected.photos.selfieUrl)}
-                              target="_blank"
-                              rel="noreferrer"
-                              style={{ display: "inline-flex", alignItems: "center", gap: "3px", fontSize: "11px", color: "#2563eb", marginTop: "4px" }}
+                            <button
+                              type="button"
+                              onClick={() => setPreviewImage({
+                                url: getImageSrc(parsedSelected.photos.selfieUrl),
+                                title: "Ảnh chân dung - " + parsedSelected.idCard.fullName,
+                              })}
+                              style={{ background: "none", border: "none", display: "inline-flex", alignItems: "center", gap: "3px", fontSize: "11px", color: "#2563eb", marginTop: "4px", cursor: "pointer", padding: 0 }}
                             >
-                              <FiExternalLink size={10} /> Xem ảnh gốc
-                            </a>
+                              <FiExternalLink size={10} /> Xem phóng to
+                            </button>
                           </div>
                         ) : (
                           <div style={{ height: "85px", display: "flex", alignItems: "center", justifyContent: "center", color: "#94a3b8", fontSize: "11px" }}>
@@ -990,6 +1034,48 @@ export default function AdminDisbursementsPage() {
                 disabled={actionBusy}
               >
                 {actionBusy ? "Đang từ chối…" : "Xác nhận Từ chối"}
+              </button>
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {previewImage && (
+        <Modal
+          title={previewImage.title}
+          onClose={() => setPreviewImage(null)}
+        >
+          <div style={{ textAlign: "center", padding: "10px" }}>
+            <img
+              src={previewImage.url}
+              alt={previewImage.title}
+              onError={(e) => {
+                (e.currentTarget as HTMLImageElement).src = FALLBACK_CCCD;
+              }}
+              style={{
+                maxWidth: "100%",
+                maxHeight: "75vh",
+                borderRadius: "8px",
+                boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+                objectFit: "contain",
+              }}
+            />
+            <div style={{ marginTop: "14px", display: "flex", justifyContent: "center", gap: "10px" }}>
+              <a
+                href={previewImage.url}
+                target="_blank"
+                rel="noreferrer"
+                className="button secondary sm"
+                style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}
+              >
+                <FiExternalLink size={14} /> Mở ảnh trong tab mới
+              </a>
+              <button
+                type="button"
+                className="button sm"
+                onClick={() => setPreviewImage(null)}
+              >
+                Đóng
               </button>
             </div>
           </div>

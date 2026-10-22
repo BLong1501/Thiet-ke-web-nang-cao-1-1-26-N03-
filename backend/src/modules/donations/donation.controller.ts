@@ -69,16 +69,12 @@ export class DonationController {
   };
 
   /**
-   * Nhà hảo tâm gửi đơn yêu cầu hoàn tiền
+   * Nhà hảo tâm gửi đơn yêu cầu hoàn tiền (Kèm thông tin CCCD và Ngân hàng)
    */
   requestRefund = async (req: Request, res: Response, next: NextFunction) => {
     try {
       const id = String(req.params.id);
-      const reason = req.body?.reason;
-      if (!reason || !String(reason).trim()) {
-        return sendError(res, 400, "Vui lòng nhập lý do yêu cầu hoàn tiền");
-      }
-      const result = await this.service.requestRefund(req.user!, id, String(reason));
+      const result = await this.service.requestRefund(req.user!, id, req.body);
       return sendSuccess(res, 200, "Gửi đơn yêu cầu hoàn tiền thành công", result);
     } catch (error) {
       return next(error);

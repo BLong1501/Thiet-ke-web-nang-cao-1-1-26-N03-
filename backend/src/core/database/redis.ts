@@ -109,6 +109,7 @@ export class RedisService {
       passwordHash: string;
       fullName: string;
       phoneNumber?: string | null;
+      idCardNumber?: string | null;
       otp: string;
     },
     ttlSeconds = 600
@@ -137,6 +138,7 @@ export class RedisService {
     passwordHash: string;
     fullName: string;
     phoneNumber?: string | null;
+    idCardNumber?: string | null;
     otp: string;
   } | null> {
     const key = `pending_reg:${email}`;

@@ -137,11 +137,23 @@ export default function DonationModal({
     setQrHasError(false);
     setTimeLeft(600);
     const f = new FormData(e.currentTarget);
+    const idCard = String(f.get("idCard") || "").trim();
+    if (!user && !idCard) {
+      setError("Khách vãng lai bắt buộc phải nhập số CCCD (12 chữ số) để lưu trữ hồ sơ đối soát và quyền hoàn tiền sau này.");
+      setBusy(false);
+      return;
+    }
+    if (!user && !/^[0-9]{12}$/.test(idCard)) {
+      setError("Số Căn cước công dân phải bao gồm đúng 12 chữ số.");
+      setBusy(false);
+      return;
+    }
     const body = {
       campaignId: campaign.id,
       amount,
       donorName: String(f.get("name") || "").trim() || undefined,
       donorEmail: String(f.get("email") || "").trim() || undefined,
+      donorIdCard: idCard || undefined,
       message: String(f.get("message") || "").trim(),
       isAnonymous: f.get("anonymous") === "on",
       paymentMethod: "BANK_TRANSFER",
@@ -345,6 +357,7 @@ export default function DonationModal({
                 minLength={2}
                 maxLength={150}
                 defaultValue={user?.name || ""}
+                placeholder="Nhập họ tên của bạn"
               />
             </Field>
             <Field label="Email (không bắt buộc)">
@@ -352,10 +365,23 @@ export default function DonationModal({
                 name="email"
                 type="email"
                 defaultValue={user?.email || ""}
+                placeholder="Nhập email để nhận thông báo xác nhận"
               />
             </Field>
+            {!user && (
+              <Field label="Số Căn cước công dân (Bắt buộc với khách vãng lai - 12 số)">
+                <input
+                  name="idCard"
+                  type="text"
+                  required
+                  pattern="[0-9]{12}"
+                  maxLength={12}
+                  placeholder="Ví dụ: 001201012345"
+                />
+              </Field>
+            )}
             <Field label="Lời nhắn">
-              <textarea name="message" rows={3} maxLength={500} />
+              <textarea name="message" rows={3} maxLength={500} placeholder="Lời chúc gửi tới chiến dịch..." />
             </Field>
             <label className="check">
               <input type="checkbox" name="anonymous" />
@@ -363,9 +389,7 @@ export default function DonationModal({
             </label>
             {!user && (
               <Notice>
-                Bạn đang đóng góp dưới tư cách Khách vãng lai. Hệ thống vẫn tự
-                động ghi nhận mã QR và cập nhật số tiền ngay khi chuyển khoản
-                thành công.
+                <strong>Quy định minh bạch & hoàn tiền:</strong> Khách vãng lai bắt buộc nhập số CCCD để lưu hồ sơ đối soát. Sau này nếu chiến dịch không thành công hoặc bạn cần hoàn tiền, chỉ cần tạo tài khoản mới với số CCCD này, hệ thống sẽ tự động liên kết toàn bộ lịch sử đóng góp cũ và mở quyền gửi đơn hoàn tiền.
               </Notice>
             )}
             <button className="button dm-btn-row" disabled={busy}>

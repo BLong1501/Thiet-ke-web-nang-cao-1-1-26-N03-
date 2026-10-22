@@ -518,6 +518,25 @@ export default function DonationDetailPage() {
                 </button>
               </div>
             )}
+          {!user && d?.paymentStatus === "SUCCESS" && (
+            <div className="no-print" style={{ marginTop: "24px", padding: "18px", background: "#f8fafc", border: "1px solid #cbd5e1", borderRadius: "10px" }}>
+              <h4 style={{ margin: "0 0 8px", color: "#1e293b", fontSize: "1.05rem" }}>
+                🔒 Bạn muốn yêu cầu hoàn tiền cho khoản ủng hộ này?
+              </h4>
+              <p style={{ margin: "0 0 14px", fontSize: "14px", color: "#475569", lineHeight: 1.5 }}>
+                Theo quy định minh bạch tài chính, khách vãng lai cần <strong>Đăng nhập</strong> hoặc <strong>Tạo tài khoản</strong> với số Căn cước công dân (CCCD) đã nhập khi quyên góp. Hệ thống sẽ tự động quét, liên kết khoản đóng góp này vào tài khoản của bạn để bạn có thể gửi yêu cầu hoàn tiền và theo dõi tiến độ duyệt trực tiếp.
+              </p>
+              <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
+                <Link to={`/login?redirect=/donations/${id}`} className="button sm">
+                  Đăng nhập ngay
+                </Link>
+                <Link to={`/register?redirect=/donations/${id}`} className="button secondary sm">
+                  Tạo tài khoản mới
+                </Link>
+              </div>
+            </div>
+          )}
+
           {owner && (() => {
             const refundReq = d.paymentGatewayResponse?.refundRequest;
             const isPending = refundReq?.status === "PENDING";
@@ -526,22 +545,31 @@ export default function DonationDetailPage() {
 
             if (isPending) {
               return (
-                <div className="no-print" style={{ marginTop: "24px", padding: "16px", background: "#fef3c7", border: "1px solid #fde68a", borderRadius: "10px" }}>
-                  <h4 style={{ margin: "0 0 6px", color: "#92400e" }}>🕒 Đơn yêu cầu hoàn tiền đang chờ duyệt</h4>
-                  <p style={{ margin: 0, fontSize: "14px", color: "#78350f" }}>
-                    Bạn đã gửi yêu cầu hoàn tiền cho khoản ủng hộ này. Lý do: <em>"{refundReq.reason}"</em>. Ban Quản trị đang tiến hành xem xét và đối soát.
+                <div className="no-print" style={{ marginTop: "24px", padding: "18px", background: "#fef3c7", border: "1px solid #fde68a", borderRadius: "10px" }}>
+                  <h4 style={{ margin: "0 0 8px", color: "#92400e" }}>🕒 Đơn yêu cầu hoàn tiền đang chờ Ban Quản trị duyệt</h4>
+                  <p style={{ margin: "0 0 12px", fontSize: "14px", color: "#78350f" }}>
+                    Bạn đã gửi hồ sơ yêu cầu hoàn trả khoản đóng góp này. Ban Quản trị đang tiến hành xem xét và đối soát sổ cái.
                   </p>
+                  <div style={{ background: "rgba(255,255,255,0.7)", padding: "12px", borderRadius: "8px", fontSize: "13px", lineHeight: 1.6, color: "#451a03" }}>
+                    <div><strong>Họ tên & CCCD:</strong> {refundReq.idCardName || user?.name || "N/A"} - CCCD: {refundReq.idCardNumber || "N/A"}</div>
+                    <div><strong>Tài khoản nhận hoàn:</strong> {refundReq.bankName} - STK: {refundReq.bankAccountNumber} ({refundReq.bankAccountName})</div>
+                    <div><strong>Lý do xin hoàn:</strong> <em>"{refundReq.reason}"</em></div>
+                  </div>
                 </div>
               );
             }
 
             if (isApproved) {
               return (
-                <div className="no-print" style={{ marginTop: "24px", padding: "16px", background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: "10px" }}>
-                  <h4 style={{ margin: "0 0 6px", color: "#166534" }}>✅ Đã hoàn tiền thành công</h4>
-                  <p style={{ margin: 0, fontSize: "14px", color: "#14532d" }}>
-                    Khoản đóng góp này đã được hoàn trả thành công theo chính sách của hệ thống.
+                <div className="no-print" style={{ marginTop: "24px", padding: "18px", background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: "10px" }}>
+                  <h4 style={{ margin: "0 0 8px", color: "#166534" }}>✅ Đã hoàn tiền thành công</h4>
+                  <p style={{ margin: "0 0 12px", fontSize: "14px", color: "#14532d" }}>
+                    Khoản đóng góp này đã được Ban Quản trị phê duyệt hoàn trả vào tài khoản ngân hàng của bạn.
                   </p>
+                  <div style={{ background: "rgba(255,255,255,0.7)", padding: "12px", borderRadius: "8px", fontSize: "13px", lineHeight: 1.6, color: "#14532d" }}>
+                    <div><strong>Tài khoản nhận:</strong> {refundReq?.bankName} - STK: {refundReq?.bankAccountNumber} ({refundReq?.bankAccountName})</div>
+                    <div><strong>Lý do hoàn:</strong> {refundReq?.reason}</div>
+                  </div>
                 </div>
               );
             }
@@ -549,31 +577,98 @@ export default function DonationDetailPage() {
             return (
               <form
                 className="form-stack no-print"
-                style={{ marginTop: "24px" }}
+                style={{ marginTop: "28px", padding: "20px", background: "var(--color-surface, #fff)", border: "1px solid var(--color-border, #e2e8f0)", borderRadius: "12px" }}
                 onSubmit={(e: FormEvent<HTMLFormElement>) => {
                   e.preventDefault();
                   const f = new FormData(e.currentTarget);
-                  act(`/donations/${id}/request-refund`, { reason: f.get("reason") });
+                  act(`/donations/${id}/request-refund`, {
+                    reason: f.get("reason"),
+                    idCardNumber: f.get("idCardNumber"),
+                    idCardName: f.get("idCardName"),
+                    bankName: f.get("bankName"),
+                    bankAccountNumber: f.get("bankAccountNumber"),
+                    bankAccountName: f.get("bankAccountName"),
+                  });
                 }}
               >
-                <h3>Yêu cầu hoàn tiền</h3>
+                <div style={{ borderBottom: "1px solid var(--color-border, #e2e8f0)", paddingBottom: "10px", marginBottom: "16px" }}>
+                  <h3 style={{ margin: 0, fontSize: "1.15rem" }}>Hồ sơ Yêu cầu hoàn tiền</h3>
+                  <p style={{ margin: "4px 0 0", fontSize: "0.85rem", color: "var(--color-muted, #64748b)" }}>
+                    Cung cấp số CCCD và thông tin tài khoản ngân hàng chính chủ để Admin đối soát và hoàn tiền trực tiếp cho bạn.
+                  </p>
+                </div>
+
                 {isRejected && (
                   <Notice error>
-                    Yêu cầu trước đó bị từ chối: {refundReq.rejectionReason || "Không đủ điều kiện"}. Bạn có thể gửi lại yêu cầu với lý do bổ sung.
+                    <strong>Yêu cầu trước đó bị từ chối:</strong> {refundReq.rejectionReason || "Không đủ điều kiện"}. Bạn có thể cập nhật thông tin và gửi lại đơn yêu cầu.
                   </Notice>
                 )}
+
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+                  <Field label="Họ và tên trên CCCD">
+                    <input
+                      required
+                      name="idCardName"
+                      minLength={2}
+                      maxLength={100}
+                      defaultValue={user?.name || d.donorName || ""}
+                      placeholder="NGUYEN VAN A"
+                    />
+                  </Field>
+                  <Field label="Số Căn cước công dân (12 số)">
+                    <input
+                      required
+                      name="idCardNumber"
+                      pattern="[0-9]{9,12}"
+                      maxLength={12}
+                      defaultValue={(d.paymentGatewayResponse as any)?.donorIdCard || ""}
+                      placeholder="001201012345"
+                    />
+                  </Field>
+                </div>
+
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "12px" }}>
+                  <Field label="Tên ngân hàng thụ hưởng">
+                    <input
+                      required
+                      name="bankName"
+                      placeholder="MB Bank / Vietcombank / ..."
+                    />
+                  </Field>
+                  <Field label="Số tài khoản ngân hàng">
+                    <input
+                      required
+                      name="bankAccountNumber"
+                      placeholder="Số tài khoản nhận tiền"
+                    />
+                  </Field>
+                  <Field label="Tên chủ tài khoản">
+                    <input
+                      required
+                      name="bankAccountName"
+                      style={{ textTransform: "uppercase" }}
+                      defaultValue={user?.name || d.donorName || ""}
+                      placeholder="NGUYEN VAN A"
+                    />
+                  </Field>
+                </div>
+
                 <Field label="Lý do yêu cầu hoàn tiền">
                   <textarea
                     required
                     name="reason"
                     minLength={3}
                     maxLength={500}
+                    rows={3}
                     placeholder="Nhập lý do chi tiết bạn mong muốn hoàn trả khoản đóng góp này..."
                   />
                 </Field>
-                <button className="button secondary" disabled={busy}>
-                  Gửi yêu cầu hoàn tiền
-                </button>
+
+                <div style={{ display: "flex", justifyContent: "flex-end" }}>
+                  <button className="button" disabled={busy}>
+                    {busy ? "Đang gửi hồ sơ..." : "Gửi yêu cầu hoàn tiền"}
+                  </button>
+                </div>
               </form>
             );
           })()}
