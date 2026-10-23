@@ -24,9 +24,27 @@ export class DonationService {
   constructor(private repo: DonationRepository = donationRepository) {}
 
   /**
-   * Kiểm tra và tự động cập nhật trạng thái hết hạn cho giao dịch PENDING quá 10 phút
+   * Helper khởi tạo client PayOS an toàn từ biến môi trường
    */
-  async checkAndExpireDonation<T extends { id: string; paymentStatus: PaymentStatus; createdAt: Date | string; paymentGatewayResponse?: any }>(
+  private getPayOsClient(): PayOS | null {
+    const clientId = (process.env.PAYOS_CLIENT_ID || "").trim();
+    const apiKey = (process.env.PAYOS_API_KEY || "").trim();
+    const checksumKey = (process.env.PAYOS_CHECKSUM_KEY || "").trim();
+    if (clientId && apiKey && checksumKey) {
+      try {
+        return new PayOS({ clientId, apiKey, checksumKey });
+      } catch {
+        return null;
+      }
+    }
+    return null;
+  }
+
+  /**
+   * Kiểm tra và tự động cập nhật trạng thái hết hạn cho giao dịch PENDING quá 10 phút.
+   * Tự động đối soát với PayOS: Nếu giao dịch thực tế đã PAID thì hoàn tất thay vì hủy.
+   */
+  async checkAndExpireDonation<T extends { id: string; paymentStatus: PaymentStatus; createdAt: Date | string; paymentGatewayResponse?: any; amount?: any }>(
     donation: T
   ): Promise<T> {
     if (!donation || donation.paymentStatus !== PaymentStatus.PENDING) {
@@ -38,6 +56,31 @@ export class DonationService {
         typeof donation.paymentGatewayResponse === "object" && donation.paymentGatewayResponse !== null
           ? donation.paymentGatewayResponse
           : {};
+
+      // Đối soát tự động trước khi hủy: Nếu tiền đã vào tài khoản PayOS thì hoàn tất giao dịch
+      const orderCode = Number(existingGatewayResp.orderCode);
+      const payos = this.getPayOsClient();
+      if (orderCode > 0 && payos) {
+        try {
+          const payosOrder = await payos.paymentRequests.get(orderCode);
+          if (payosOrder && (payosOrder.status === "PAID" || Number(payosOrder.amountPaid) > 0)) {
+            console.log(`✓ [AUTO RECONCILE ON EXPIRE] Đơn PayOS #${orderCode} đã thanh toán thành công (PAID). Tự động xác nhận thay vì hủy.`);
+            const firstTx = payosOrder.transactions?.[0];
+            const result = await this.repo.confirmPayment(donation.id, {
+              gateway: "PAYOS",
+              referenceCode: firstTx?.reference || `PAYOS_${orderCode}`,
+              transferAmount: Number(payosOrder.amountPaid || (donation as any).amount || 0),
+              note: `Xác nhận tự động qua đối soát PayOS (MBBank ${process.env.BANK_ACCOUNT_NUMBER || "0344907168"})`,
+            });
+            await invalidatePublicCampaignCache();
+            this.sendReceiptEmailSafely(result.donation);
+            return result.donation as unknown as T;
+          }
+        } catch (err) {
+          // Bỏ qua lỗi mạng đối soát PayOS
+        }
+      }
+
       return (await prisma.donation.update({
         where: { id: donation.id },
         data: {
@@ -1072,6 +1115,7 @@ export class DonationService {
 
   /**
    * Tra cứu trạng thái thanh toán công khai (phục vụ Polling tự động tại giao diện VietQR)
+   * Tích hợp tự động đối soát với PayOS API: Nếu tiền đã vào MBBank thì hoàn tất giao dịch ngay lập tức
    */
   async getPublicStatus(idOrTransactionCode: string) {
     let donation: any = await this.repo.findById(idOrTransactionCode);
@@ -1081,6 +1125,35 @@ export class DonationService {
     if (!donation) {
       throw new AppError("Không tìm thấy giao dịch quyên góp", 404);
     }
+
+    // Nếu giao dịch chưa SUCCESS, chủ động kiểm tra trạng thái trên PayOS API
+    // Giúp hoàn tất thanh toán tức thì ngay khi Polling kể cả khi Webhook bị trễ/rớt mạng/chữ ký lỗi hoặc đơn bị hết hạn 10 phút nhưng tiền đã vào
+    if (donation.paymentStatus !== PaymentStatus.SUCCESS) {
+      const gw = (donation.paymentGatewayResponse as any) || {};
+      const orderCode = Number(gw.orderCode);
+      const payos = this.getPayOsClient();
+      if (orderCode > 0 && payos) {
+        try {
+          const payosOrder = await payos.paymentRequests.get(orderCode);
+          if (payosOrder && (payosOrder.status === "PAID" || Number(payosOrder.amountPaid) >= Number(donation.amount))) {
+            console.log(`✓ [POLLING AUTO-CONFIRM] Khớp thành công đơn PayOS #${orderCode} (PAID). Tự động xác nhận giao dịch ${donation.transactionCode}`);
+            const firstTx = payosOrder.transactions?.[0];
+            const result = await this.repo.confirmPayment(donation.id, {
+              gateway: "PAYOS",
+              referenceCode: firstTx?.reference || `PAYOS_${orderCode}`,
+              transferAmount: Number(payosOrder.amountPaid || donation.amount),
+              note: `Tự động đồng bộ từ PayOS API khi Polling (MBBank ${process.env.BANK_ACCOUNT_NUMBER || "0344907168"})`,
+            });
+            donation = result.donation;
+            await invalidatePublicCampaignCache();
+            this.sendReceiptEmailSafely(donation);
+          }
+        } catch {
+          // Bỏ qua lỗi gián đoạn mạng tra cứu PayOS trong nhịp Polling
+        }
+      }
+    }
+
     donation = await this.checkAndExpireDonation(donation);
 
     const isExpired = donation.paymentStatus === PaymentStatus.FAILED;
@@ -1104,13 +1177,29 @@ export class DonationService {
 
   /**
    * Xác thực chữ ký số HMAC-SHA256 chuẩn PayOS
+   * Sử dụng SDK PayOS hoặc chuẩn HMAC bảo toàn các trường null/undefined
    */
-  private verifyPayOsSignature(data: Record<string, any>, signature: string, checksumKey: string): boolean {
+  private async verifyPayOsSignature(data: Record<string, any>, signature: string, checksumKey: string): Promise<boolean> {
     try {
+      const payos = this.getPayOsClient();
+      if (payos) {
+        const expectedSig = await payos.crypto.createSignatureFromObj(data, checksumKey);
+        if (expectedSig && expectedSig === signature) {
+          return true;
+        }
+      }
+
+      // Thuật toán chuẩn dự phòng (PayOS format):
       const sortedKeys = Object.keys(data).sort();
       const queryStr = sortedKeys
-        .filter((k) => data[k] !== undefined && data[k] !== null)
-        .map((k) => `${k}=${data[k]}`)
+        .filter((k) => data[k] !== undefined)
+        .map((k) => {
+          let val = data[k];
+          if (val === null || val === undefined || val === "null" || val === "undefined") {
+            val = "";
+          }
+          return `${k}=${val}`;
+        })
         .join("&");
       const hmac = crypto.createHmac("sha256", checksumKey).update(queryStr).digest("hex");
       return hmac === signature;
@@ -1153,9 +1242,9 @@ export class DonationService {
     }
 
     // 3. Kiểm tra chữ ký số bảo mật của PayOS (nếu có cấu hình PAYOS_CHECKSUM_KEY trong .env)
-    const checksumKey = process.env.PAYOS_CHECKSUM_KEY;
+    const checksumKey = (process.env.PAYOS_CHECKSUM_KEY || "").trim();
     if (checksumKey && payload.signature && payload.data) {
-      const isSignatureValid = this.verifyPayOsSignature(payload.data, payload.signature, checksumKey);
+      const isSignatureValid = await this.verifyPayOsSignature(payload.data, payload.signature, checksumKey);
       if (!isSignatureValid) {
         console.error("❌ [PAYOS WEBHOOK] Chữ ký số HMAC-SHA256 không hợp lệ!");
         return {
@@ -1174,10 +1263,20 @@ export class DonationService {
       try {
         donation = await prisma.donation.findFirst({
           where: {
-            paymentGatewayResponse: {
-              path: "$.orderCode",
-              equals: orderCode,
-            },
+            OR: [
+              {
+                paymentGatewayResponse: {
+                  path: "$.orderCode",
+                  equals: orderCode,
+                },
+              },
+              {
+                paymentGatewayResponse: {
+                  path: "$.orderCode",
+                  equals: String(orderCode),
+                },
+              },
+            ],
           },
           include: { campaign: true },
         });
