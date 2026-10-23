@@ -188,7 +188,7 @@ export default function CampaignSummary({
               </Link>
             )
           )}
-          {owner && ["DRAFT", "PENDING_APPROVAL"].includes(campaign.status) && (
+          {signedIn && owner && ["DRAFT", "PENDING_APPROVAL"].includes(campaign.status) && (
             <Link
               className="button secondary block"
               to={`${campaignPath(campaign)}/edit`}
@@ -196,7 +196,7 @@ export default function CampaignSummary({
               Chỉnh sửa chiến dịch
             </Link>
           )}
-          {owner && onDisburse && (
+          {signedIn && owner && onDisburse && (
             <button
               type="button"
               className="button secondary block"
@@ -215,7 +215,7 @@ export default function CampaignSummary({
               Tạo hồ sơ giải ngân
             </button>
           )}
-          {owner && campaign.status === "ACTIVE" && onRequestClosure && (
+          {signedIn && owner && campaign.status === "ACTIVE" && onRequestClosure && (
             <button
               type="button"
               className="button ghost block"

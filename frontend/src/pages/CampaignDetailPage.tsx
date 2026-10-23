@@ -82,11 +82,22 @@ export default function CampaignDetailPage() {
   const [disburseModalOpen, setDisburseModalOpen] = useState(false);
   const [closureModalOpen, setClosureModalOpen] = useState(false);
   const user = useAuthStore((s) => s.user);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const c = result.data;
-  const isCreator = !!c && (c.fundraiserId === user?.id || c.creator?.id === user?.id);
-  const owner =
-    !!c &&
-    (isCreator || user?.role?.toUpperCase() === "ADMIN");
+  const isCreator = Boolean(
+    isAuthenticated &&
+    user?.id &&
+    c &&
+    (
+      (c.fundraiserId && c.fundraiserId === user.id) ||
+      (c.creator?.id && c.creator.id === user.id) ||
+      (c.fundraiser?.id && c.fundraiser.id === user.id)
+    )
+  );
+  const isAdmin = Boolean(
+    isAuthenticated && user?.id && user?.role?.toUpperCase() === "ADMIN"
+  );
+  const owner = isCreator || isAdmin;
 
   async function share() {
     try {
@@ -183,17 +194,17 @@ export default function CampaignDetailPage() {
 
             <CampaignSummary
               campaign={c}
-              signedIn={!!user}
-              owner={isCreator}
+              signedIn={Boolean(isAuthenticated && user?.id)}
+              owner={owner}
               onDonate={() => setDonate(true)}
               onShare={share}
               onReport={() => setReport(true)}
-              onDisburse={() => setDisburseModalOpen(true)}
-              onRequestClosure={() => setClosureModalOpen(true)}
+              onDisburse={owner ? () => setDisburseModalOpen(true) : undefined}
+              onRequestClosure={owner ? () => setClosureModalOpen(true) : undefined}
             />
 
             <div className="cd-main">
-              {c.closureRequest?.status === "PENDING" && (
+              {c.closureRequest?.status === "PENDING" && owner && (
                 <div
                   style={{
                     background: "#fffbeb",
@@ -765,7 +776,7 @@ export default function CampaignDetailPage() {
           {report && (
             <ReportDialog targetId={c.id} onClose={() => setReport(false)} />
           )}
-          {disburseModalOpen && (
+          {disburseModalOpen && owner && (
             <DisbursementModal
               campaign={c}
               onClose={() => setDisburseModalOpen(false)}
@@ -775,7 +786,7 @@ export default function CampaignDetailPage() {
               }}
             />
           )}
-          {closureModalOpen && (
+          {closureModalOpen && owner && (
             <EarlyClosureModal
               campaign={c}
               onClose={() => setClosureModalOpen(false)}
