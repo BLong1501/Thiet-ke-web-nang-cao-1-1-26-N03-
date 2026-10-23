@@ -206,6 +206,14 @@ export const campaignApi = {
   getSupportedBanks: () => api.get("/campaigns/supported-banks"),
   lookupBankAccount: (data: { bankCode: string; accountNumber: string }) =>
     api.post("/campaigns/lookup-bank-account", data),
+  requestClosure: (id: string, data: { reason: string; evidenceUrls?: string[] }) =>
+    api.post(`/campaigns/${id}/closure-request`, data),
+  getAdminClosureRequests: (params?: { status?: string; page?: number; limit?: number }) =>
+    api.get("/campaigns/admin/closure-requests", { params }),
+  reviewClosureRequest: (
+    id: string,
+    data: { status: "APPROVED" | "REJECTED"; reviewNote?: string }
+  ) => api.patch(`/campaigns/admin/closure-requests/${id}/review`, data),
 };
 
 // --- Donation APIs ---

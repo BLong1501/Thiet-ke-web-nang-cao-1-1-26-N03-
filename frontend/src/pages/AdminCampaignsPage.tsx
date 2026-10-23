@@ -131,12 +131,12 @@ export default function AdminCampaignsPage() {
   }
 
   // Lọc theo tab con cho mục Chờ duyệt mới vs Chờ duyệt chỉnh sửa
-  const rawItems = result.data?.items || [];
+  const rawItems: RecordData[] = result.data?.items || [];
   const displayItems =
     activeTab === "pending_new"
-      ? rawItems.filter((c) => !c.isEdited)
+      ? rawItems.filter((c: RecordData) => !c.isEdited)
       : activeTab === "pending_edited"
-      ? rawItems.filter((c) => c.isEdited)
+      ? rawItems.filter((c: RecordData) => c.isEdited)
       : rawItems;
 
   return (
@@ -233,7 +233,7 @@ export default function AdminCampaignsPage() {
                     )}
                   </thead>
                   <tbody>
-                    {displayItems.map((c) => (
+                    {displayItems.map((c: RecordData) => (
                       <tr key={c.id}>
                         <td>
                           <div style={{ fontWeight: 600 }}>
