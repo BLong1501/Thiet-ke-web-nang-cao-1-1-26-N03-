@@ -279,6 +279,49 @@ export class CampaignController {
       next(error);
     }
   }
+
+  /**
+   * [POST /api/v1/campaigns/:id/closure-request] Chủ chiến dịch gửi đơn yêu cầu đóng chiến dịch sớm
+   */
+  async requestClosure(req: Request, res: Response, next: NextFunction) {
+    try {
+      const campaignId = String(req.params.id);
+      const actorId = (req as any).user.userId;
+      const result = await campaignService.requestClosure(campaignId, actorId, req.body);
+      return sendSuccess(res, 200, result.message, result.closureRequest);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * [GET /api/v1/campaigns/admin/closure-requests] Admin lấy danh sách yêu cầu đóng chiến dịch sớm
+   */
+  async getAdminClosureRequests(req: Request, res: Response, next: NextFunction) {
+    try {
+      const page = req.query.page ? parseInt(req.query.page as string, 10) : 1;
+      const limit = req.query.limit ? parseInt(req.query.limit as string, 10) : 10;
+      const status = req.query.status as string | undefined;
+      const result = await campaignService.getAdminClosureRequests({ status, page, limit });
+      return sendSuccess(res, 200, "Lấy danh sách yêu cầu đóng chiến dịch sớm thành công", result.items, result.meta);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * [PATCH /api/v1/campaigns/admin/closure-requests/:id/review] Admin phê duyệt hoặc từ chối yêu cầu đóng sớm
+   */
+  async reviewClosureRequest(req: Request, res: Response, next: NextFunction) {
+    try {
+      const campaignId = String(req.params.id);
+      const adminId = (req as any).user.userId;
+      const result = await campaignService.reviewClosureRequest(campaignId, adminId, req.body);
+      return sendSuccess(res, 200, result.message, result);
+    } catch (error) {
+      next(error);
+    }
+  }
 }
 
 export const campaignController = new CampaignController();

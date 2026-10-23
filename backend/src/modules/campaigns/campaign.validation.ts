@@ -269,6 +269,37 @@ export const lookupBankAccountSchema = z.object({
   accountNumber: z.string().trim().regex(/^[0-9]{6,19}$/, "Số tài khoản ngân hàng không hợp lệ (chỉ gồm 6-19 chữ số)"),
 });
 
+// Schema yêu cầu đóng chiến dịch sớm (Chủ chiến dịch)
+export const requestClosureSchema = z.object({
+  reason: z
+    .string()
+    .trim()
+    .min(10, "Lý do yêu cầu đóng chiến dịch phải có ít nhất 10 ký tự")
+    .max(1000, "Lý do đóng chiến dịch tối đa 1000 ký tự"),
+  evidenceUrls: z.array(z.string().url("Đường dẫn chứng từ không hợp lệ")).optional(),
+});
+
+// Schema duyệt yêu cầu đóng chiến dịch sớm (Admin)
+export const reviewClosureSchema = z
+  .object({
+    status: z.enum(["APPROVED", "REJECTED"], {
+      message: "Trạng thái phê duyệt chỉ có thể là APPROVED hoặc REJECTED",
+    }),
+    reviewNote: z.string().trim().max(1000, "Ghi chú tối đa 1000 ký tự").optional(),
+  })
+  .refine(
+    (data) => {
+      if (data.status === "REJECTED" && (!data.reviewNote || data.reviewNote.trim().length === 0)) {
+        return false;
+      }
+      return true;
+    },
+    {
+      message: "Vui lòng nhập lý do từ chối yêu cầu đóng sớm",
+      path: ["reviewNote"],
+    }
+  );
+
 export type CreateCampaignInput = z.infer<typeof createCampaignSchema>;
 export type UpdateCampaignInput = z.infer<typeof updateCampaignSchema>;
 export type CampaignQueryInput = z.infer<typeof campaignQuerySchema>;
@@ -279,4 +310,6 @@ export type CategoryInput = z.infer<typeof categorySchema>;
 export type CreateDisbursementInput = z.infer<typeof createDisbursementSchema>;
 export type ReviewDisbursementInput = z.infer<typeof reviewDisbursementSchema>;
 export type LookupBankAccountInput = z.infer<typeof lookupBankAccountSchema>;
+export type RequestClosureInput = z.infer<typeof requestClosureSchema>;
+export type ReviewClosureInput = z.infer<typeof reviewClosureSchema>;
 

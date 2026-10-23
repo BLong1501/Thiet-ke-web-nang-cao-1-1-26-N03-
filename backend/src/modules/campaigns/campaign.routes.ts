@@ -13,6 +13,8 @@ import {
   createDisbursementSchema,
   reviewDisbursementSchema,
   lookupBankAccountSchema,
+  requestClosureSchema,
+  reviewClosureSchema,
 } from "./campaign.validation";
 import { UserRole } from "@prisma/client";
 
@@ -102,10 +104,36 @@ router.post(
   campaignController.addDisbursement
 );
 
+// Gửi đơn yêu cầu đóng chiến dịch sớm kèm lý do (Chủ chiến dịch)
+router.post(
+  "/:id/closure-request",
+  authenticate,
+  authorize(UserRole.FUNDRAISER, UserRole.ADMIN),
+  validate(requestClosureSchema),
+  campaignController.requestClosure
+);
+
 
 // ==========================================
 // 3. ADMIN ROUTES (Dành riêng cho Quản trị viên)
 // ==========================================
+
+// Danh sách chiến dịch có yêu cầu đóng sớm
+router.get(
+  "/admin/closure-requests",
+  authenticate,
+  authorize(UserRole.ADMIN),
+  campaignController.getAdminClosureRequests
+);
+
+// Phê duyệt hoặc từ chối yêu cầu đóng sớm
+router.patch(
+  "/admin/closure-requests/:id/review",
+  authenticate,
+  authorize(UserRole.ADMIN),
+  validate(reviewClosureSchema),
+  campaignController.reviewClosureRequest
+);
 
 // Danh sách chiến dịch chờ duyệt
 router.get(

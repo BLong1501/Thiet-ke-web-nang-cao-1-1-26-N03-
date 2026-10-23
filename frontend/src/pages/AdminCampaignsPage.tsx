@@ -25,12 +25,14 @@ import toast from "react-hot-toast";
 
 export default function AdminCampaignsPage() {
   const [activeTab, setActiveTab] = useState<
-    "pending_new" | "pending_edited" | "active" | "other"
+    "pending_new" | "pending_edited" | "closure_requests" | "active" | "other"
   >("pending_new");
   const [page, setPage] = useState(1);
   const [otherStatus, setOtherStatus] = useState("COMPLETED");
   const [selected, setSelected] = useState<RecordData | null>(null);
-  const [action, setAction] = useState("ACTIVE");
+  const [action, setAction] = useState<
+    "ACTIVE" | "REJECTED" | "CANCELLED" | "APPROVE_CLOSURE" | "REJECT_CLOSURE"
+  >("ACTIVE");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [reconciliation, setReconciliation] = useState<RecordData | null>(null);
@@ -40,6 +42,11 @@ export default function AdminCampaignsPage() {
     async () => {
       if (activeTab === "pending_new" || activeTab === "pending_edited") {
         return campaignApi.getPending({ page, limit: 20 }).then(listResult);
+      }
+      if (activeTab === "closure_requests") {
+        return campaignApi
+          .getAdminClosureRequests({ page, limit: 10 })
+          .then(listResult);
       }
       if (activeTab === "active") {
         return campaignApi
@@ -65,24 +72,41 @@ export default function AdminCampaignsPage() {
     setBusy(true);
     setError("");
     try {
-      if (action === "CANCELLED") {
+      if (action === "APPROVE_CLOSURE") {
+        await campaignApi.reviewClosureRequest(selected.id, {
+          status: "APPROVED",
+          reviewNote: f.get("reason") ? String(f.get("reason")) : undefined,
+        });
+        toast.success("Đã phê duyệt đóng chiến dịch sớm thành công. Chiến dịch đã chuyển sang ĐÃ HOÀN THÀNH.");
+      } else if (action === "REJECT_CLOSURE") {
+        const reason = String(f.get("reason") || "").trim();
+        if (!reason) {
+          setError("Vui lòng nhập lý do từ chối yêu cầu đóng sớm");
+          setBusy(false);
+          return;
+        }
+        await campaignApi.reviewClosureRequest(selected.id, {
+          status: "REJECTED",
+          reviewNote: reason,
+        });
+        toast.success("Đã từ chối yêu cầu đóng chiến dịch sớm.");
+      } else if (action === "CANCELLED") {
         await api.post(`/donations/campaigns/${selected.id}/cancel`, {
           reason: String(f.get("reason")),
         });
+        toast.success("Đã hủy chiến dịch.");
       } else {
         await campaignApi.review(selected.id, {
           status: action as "ACTIVE" | "REJECTED",
           rejectionReason:
             action === "REJECTED" ? String(f.get("reason")) : undefined,
         });
+        toast.success(
+          action === "ACTIVE"
+            ? "Đã phê duyệt chiến dịch thành công."
+            : "Đã từ chối chiến dịch."
+        );
       }
-      toast.success(
-        action === "ACTIVE"
-          ? "Đã phê duyệt chiến dịch thành công."
-          : action === "REJECTED"
-          ? "Đã từ chối chiến dịch."
-          : "Đã hủy chiến dịch."
-      );
       setSelected(null);
       result.reload();
     } catch (e) {
@@ -134,6 +158,7 @@ export default function AdminCampaignsPage() {
         tabs={[
           { id: "pending_new", label: "Duyệt chiến dịch mới" },
           { id: "pending_edited", label: "Duyệt chiến dịch chỉnh sửa" },
+          { id: "closure_requests", label: "Yêu cầu đóng sớm" },
           { id: "active", label: "Đang hoạt động" },
           { id: "other", label: "Trạng thái khác" },
         ]}
@@ -189,13 +214,23 @@ export default function AdminCampaignsPage() {
               <div className="table-wrap">
                 <table>
                   <thead>
-                    <tr>
-                      <th>Chiến dịch</th>
-                      <th>Mục tiêu gây quỹ</th>
-                      <th>Phân loại</th>
-                      <th>Trạng thái</th>
-                      <th style={{ textAlign: "right" }}>Thao tác</th>
-                    </tr>
+                    {activeTab === "closure_requests" ? (
+                      <tr>
+                        <th>Chiến dịch</th>
+                        <th>Mục tiêu & Đã nhận</th>
+                        <th>Lý do yêu cầu đóng sớm</th>
+                        <th>Trạng thái duyệt</th>
+                        <th style={{ textAlign: "right" }}>Thao tác</th>
+                      </tr>
+                    ) : (
+                      <tr>
+                        <th>Chiến dịch</th>
+                        <th>Mục tiêu gây quỹ</th>
+                        <th>Phân loại</th>
+                        <th>Trạng thái</th>
+                        <th style={{ textAlign: "right" }}>Thao tác</th>
+                      </tr>
+                    )}
                   </thead>
                   <tbody>
                     {displayItems.map((c) => (
@@ -230,64 +265,180 @@ export default function AdminCampaignsPage() {
                             </div>
                           )}
                         </td>
-                        <td>
-                          <strong>
-                            {formatCurrency(Number(c.targetAmount))}
-                          </strong>
-                          <div
-                            style={{
-                              fontSize: "0.8rem",
-                              color: "var(--color-muted)",
-                            }}
-                          >
-                            Hiện có: {formatCurrency(Number(c.currentAmount))}
-                          </div>
-                        </td>
-                        <td>
-                          {c.status === "PENDING_APPROVAL" ? (
-                            c.isEdited ? (
-                              <span
+                        {activeTab === "closure_requests" ? (
+                          <>
+                            <td>
+                              <strong>
+                                {formatCurrency(Number(c.targetAmount))}
+                              </strong>
+                              <div
                                 style={{
-                                  display: "inline-block",
-                                  backgroundColor: "#fef3c7",
-                                  color: "#92400e",
-                                  padding: "3px 8px",
-                                  borderRadius: "6px",
-                                  fontSize: "0.78rem",
+                                  fontSize: "0.8rem",
+                                  color: "#16a34a",
                                   fontWeight: 600,
                                 }}
                               >
-                                Đã sửa - Cần duyệt lại
-                              </span>
-                            ) : (
-                              <span
+                                Đã nhận: {formatCurrency(Number(c.currentAmount))} ({c.progressPercentage || 0}%)
+                              </div>
+                            </td>
+                            <td style={{ maxWidth: "320px" }}>
+                              <div
                                 style={{
-                                  display: "inline-block",
-                                  backgroundColor: "#e0f2fe",
-                                  color: "#0369a1",
-                                  padding: "3px 8px",
-                                  borderRadius: "6px",
-                                  fontSize: "0.78rem",
-                                  fontWeight: 600,
+                                  fontSize: "0.88rem",
+                                  color: "#1e293b",
+                                  lineHeight: 1.4,
                                 }}
                               >
-                                Chiến dịch mới
-                              </span>
-                            )
-                          ) : (
-                            <span
-                              style={{
-                                fontSize: "0.85rem",
-                                color: "var(--color-muted)",
-                              }}
-                            >
-                              {c.category?.name || "Cộng đồng"}
-                            </span>
-                          )}
-                        </td>
-                        <td>
-                          <Status value={c.status} />
-                        </td>
+                                {c.closureRequest?.reason || "Không có lý do"}
+                              </div>
+                              <div
+                                style={{
+                                  fontSize: "0.78rem",
+                                  color: "var(--color-muted)",
+                                  marginTop: 4,
+                                }}
+                              >
+                                Gửi lúc:{" "}
+                                {formatDate(
+                                  c.closureRequest?.requestedAt || c.updatedAt
+                                )}
+                              </div>
+                              {c.closureRequest?.evidenceUrls?.[0] && (
+                                <a
+                                  href={c.closureRequest.evidenceUrls[0]}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  style={{
+                                    fontSize: "0.8rem",
+                                    color: "#0284c7",
+                                    textDecoration: "underline",
+                                    display: "inline-block",
+                                    marginTop: 3,
+                                  }}
+                                >
+                                  Xem ảnh/chứng từ minh chứng
+                                </a>
+                              )}
+                              {c.closureRequest?.reviewNote && (
+                                <div
+                                  style={{
+                                    fontSize: "0.8rem",
+                                    color: "#b91c1c",
+                                    marginTop: 4,
+                                  }}
+                                >
+                                  Ghi chú phản hồi: {c.closureRequest.reviewNote}
+                                </div>
+                              )}
+                            </td>
+                            <td>
+                              {c.closureRequest?.status === "PENDING" ? (
+                                <span
+                                  style={{
+                                    display: "inline-block",
+                                    padding: "2px 8px",
+                                    borderRadius: 4,
+                                    background: "#fef3c7",
+                                    color: "#92400e",
+                                    fontSize: "0.8rem",
+                                    fontWeight: 600,
+                                  }}
+                                >
+                                  Chờ duyệt đóng
+                                </span>
+                              ) : c.closureRequest?.status === "APPROVED" ? (
+                                <span
+                                  style={{
+                                    display: "inline-block",
+                                    padding: "2px 8px",
+                                    borderRadius: 4,
+                                    background: "#dcfce7",
+                                    color: "#15803d",
+                                    fontSize: "0.8rem",
+                                    fontWeight: 600,
+                                  }}
+                                >
+                                  Đã duyệt đóng sớm
+                                </span>
+                              ) : (
+                                <span
+                                  style={{
+                                    display: "inline-block",
+                                    padding: "2px 8px",
+                                    borderRadius: 4,
+                                    background: "#fee2e2",
+                                    color: "#b91c1c",
+                                    fontSize: "0.8rem",
+                                    fontWeight: 600,
+                                  }}
+                                >
+                                  Đã từ chối đóng
+                                </span>
+                              )}
+                            </td>
+                          </>
+                        ) : (
+                          <>
+                            <td>
+                              <strong>
+                                {formatCurrency(Number(c.targetAmount))}
+                              </strong>
+                              <div
+                                style={{
+                                  fontSize: "0.8rem",
+                                  color: "var(--color-muted)",
+                                }}
+                              >
+                                Hiện có: {formatCurrency(Number(c.currentAmount))}
+                              </div>
+                            </td>
+                            <td>
+                              {c.status === "PENDING_APPROVAL" ? (
+                                c.isEdited ? (
+                                  <span
+                                    style={{
+                                      display: "inline-block",
+                                      backgroundColor: "#fef3c7",
+                                      color: "#92400e",
+                                      padding: "3px 8px",
+                                      borderRadius: "6px",
+                                      fontSize: "0.78rem",
+                                      fontWeight: 600,
+                                    }}
+                                  >
+                                    Đã sửa - Cần duyệt lại
+                                  </span>
+                                ) : (
+                                  <span
+                                    style={{
+                                      display: "inline-block",
+                                      backgroundColor: "#e0f2fe",
+                                      color: "#0369a1",
+                                      padding: "3px 8px",
+                                      borderRadius: "6px",
+                                      fontSize: "0.78rem",
+                                      fontWeight: 600,
+                                    }}
+                                  >
+                                    Chiến dịch mới
+                                  </span>
+                                )
+                              ) : (
+                                <span
+                                  style={{
+                                    fontSize: "0.85rem",
+                                    color: "var(--color-muted)",
+                                  }}
+                                >
+                                  {c.category?.name || "Cộng đồng"}
+                                </span>
+                              )}
+                            </td>
+                            <td>
+                              <Status value={c.status} />
+                            </td>
+                          </>
+                        )}
                         <td style={{ textAlign: "right" }}>
                           <div
                             className="actions"
@@ -312,66 +463,109 @@ export default function AdminCampaignsPage() {
                               <LuEye size={15} /> Xem
                             </Link>
 
-                            {c.status === "PENDING_APPROVAL" && (
+                            {activeTab === "closure_requests" ? (
+                              c.closureRequest?.status === "PENDING" && (
+                                <>
+                                  <button
+                                    className="button sm"
+                                    style={{
+                                      backgroundColor: "#16a34a",
+                                      borderColor: "#16a34a",
+                                      color: "#fff",
+                                      display: "inline-flex",
+                                      alignItems: "center",
+                                      gap: 4,
+                                    }}
+                                    onClick={() => {
+                                      setSelected(c);
+                                      setAction("APPROVE_CLOSURE");
+                                      setError("");
+                                    }}
+                                  >
+                                    <LuCheck size={15} /> Duyệt đóng
+                                  </button>
+                                  <button
+                                    className="button secondary sm"
+                                    style={{
+                                      color: "#dc2626",
+                                      display: "inline-flex",
+                                      alignItems: "center",
+                                      gap: 4,
+                                    }}
+                                    onClick={() => {
+                                      setSelected(c);
+                                      setAction("REJECT_CLOSURE");
+                                      setError("");
+                                    }}
+                                  >
+                                    <LuX size={15} /> Từ chối
+                                  </button>
+                                </>
+                              )
+                            ) : (
                               <>
-                                <button
-                                  className="button sm"
-                                  style={{
-                                    backgroundColor: "#16a34a",
-                                    borderColor: "#16a34a",
-                                    color: "#fff",
-                                    display: "inline-flex",
-                                    alignItems: "center",
-                                    gap: 4,
-                                  }}
-                                  onClick={() => {
-                                    setSelected(c);
-                                    setAction("ACTIVE");
-                                    setError("");
-                                  }}
-                                >
-                                  <LuCheck size={15} /> Duyệt
-                                </button>
+                                {c.status === "PENDING_APPROVAL" && (
+                                  <>
+                                    <button
+                                      className="button sm"
+                                      style={{
+                                        backgroundColor: "#16a34a",
+                                        borderColor: "#16a34a",
+                                        color: "#fff",
+                                        display: "inline-flex",
+                                        alignItems: "center",
+                                        gap: 4,
+                                      }}
+                                      onClick={() => {
+                                        setSelected(c);
+                                        setAction("ACTIVE");
+                                        setError("");
+                                      }}
+                                    >
+                                      <LuCheck size={15} /> Duyệt
+                                    </button>
+                                    <button
+                                      className="button secondary sm"
+                                      style={{
+                                        color: "#dc2626",
+                                        display: "inline-flex",
+                                        alignItems: "center",
+                                        gap: 4,
+                                      }}
+                                      onClick={() => {
+                                        setSelected(c);
+                                        setAction("REJECTED");
+                                        setError("");
+                                      }}
+                                    >
+                                      <LuX size={15} /> Từ chối
+                                    </button>
+                                  </>
+                                )}
+
+                                {c.status === "ACTIVE" && (
+                                  <button
+                                    className="button secondary sm"
+                                    style={{ color: "#dc2626" }}
+                                    onClick={() => {
+                                      setSelected(c);
+                                      setAction("CANCELLED");
+                                      setError("");
+                                    }}
+                                  >
+                                    Hủy chiến dịch
+                                  </button>
+                                )}
+
                                 <button
                                   className="button secondary sm"
-                                  style={{
-                                    color: "#dc2626",
-                                    display: "inline-flex",
-                                    alignItems: "center",
-                                    gap: 4,
-                                  }}
-                                  onClick={() => {
-                                    setSelected(c);
-                                    setAction("REJECTED");
-                                    setError("");
-                                  }}
+                                  disabled={busy}
+                                  onClick={() => reconcile(c.id)}
                                 >
-                                  <LuX size={15} /> Từ chối
+                                  Đối soát
                                 </button>
                               </>
                             )}
-
-                            {c.status === "ACTIVE" && (
-                              <button
-                                className="button secondary sm"
-                                style={{ color: "#dc2626" }}
-                                onClick={() => {
-                                  setSelected(c);
-                                  setAction("CANCELLED");
-                                  setError("");
-                                }}
-                              >
-                                Hủy chiến dịch
-                              </button>
-                            )}
-
-                            <button
-                              className="button secondary sm"
-                              disabled={busy}
-                              onClick={() => reconcile(c.id)}
-                            >
-                              Đối soát
-                            </button>
                           </div>
                         </td>
                       </tr>
@@ -385,6 +579,8 @@ export default function AdminCampaignsPage() {
                   ? "Không có chiến dịch mới nào đang chờ duyệt."
                   : activeTab === "pending_edited"
                   ? "Không có chiến dịch chỉnh sửa nào cần duyệt lại."
+                  : activeTab === "closure_requests"
+                  ? "Không có yêu cầu đóng chiến dịch sớm nào."
                   : activeTab === "active"
                   ? "Không có chiến dịch nào đang hoạt động."
                   : "Không có chiến dịch nào phù hợp với bộ lọc."}
@@ -398,7 +594,11 @@ export default function AdminCampaignsPage() {
       {selected && (
         <Modal
           title={
-            action === "ACTIVE"
+            action === "APPROVE_CLOSURE"
+              ? "Duyệt yêu cầu kết thúc sớm chiến dịch"
+              : action === "REJECT_CLOSURE"
+              ? "Từ chối yêu cầu kết thúc sớm chiến dịch"
+              : action === "ACTIVE"
               ? selected.isEdited
                 ? "Phê duyệt lại chiến dịch đã chỉnh sửa"
                 : "Phê duyệt chiến dịch mới"
@@ -415,7 +615,46 @@ export default function AdminCampaignsPage() {
               <strong>Chiến dịch:</strong> {selected.title}
             </p>
             {error && <Notice error>{error}</Notice>}
-            {action === "ACTIVE" ? (
+            {action === "APPROVE_CLOSURE" ? (
+              <>
+                <Notice>
+                  Xác nhận phê duyệt yêu cầu đóng sớm cho chiến dịch này. Trạng thái chiến dịch sẽ chuyển sang <strong>ĐÃ HOÀN THÀNH</strong> và đóng cổng quyên góp. Chủ chiến dịch sẽ tiến hành thủ tục giải ngân minh bạch.
+                </Notice>
+                <div style={{ background: "#f8fafc", padding: "12px", borderRadius: "6px", border: "1px solid #e2e8f0", margin: "10px 0" }}>
+                  <strong>Lý do xin đóng từ chủ chiến dịch:</strong>
+                  <p style={{ margin: "4px 0 0 0", color: "#475569" }}>
+                    {selected.closureRequest?.reason || "Không có lý do"}
+                  </p>
+                </div>
+                <Field label="Ghi chú phản hồi cho chủ chiến dịch (tùy chọn)">
+                  <textarea
+                    name="reason"
+                    rows={3}
+                    placeholder="Nhập ghi chú phản hồi kèm theo nếu có..."
+                    maxLength={1000}
+                  />
+                </Field>
+              </>
+            ) : action === "REJECT_CLOSURE" ? (
+              <>
+                <div style={{ background: "#f8fafc", padding: "12px", borderRadius: "6px", border: "1px solid #e2e8f0", margin: "10px 0" }}>
+                  <strong>Lý do xin đóng từ chủ chiến dịch:</strong>
+                  <p style={{ margin: "4px 0 0 0", color: "#475569" }}>
+                    {selected.closureRequest?.reason || "Không có lý do"}
+                  </p>
+                </div>
+                <Field label="Lý do từ chối yêu cầu đóng sớm (*)">
+                  <textarea
+                    name="reason"
+                    required
+                    rows={4}
+                    placeholder="Nhập lý do chi tiết từ chối yêu cầu kết thúc sớm để thông báo cho chủ chiến dịch..."
+                    minLength={5}
+                    maxLength={1000}
+                  />
+                </Field>
+              </>
+            ) : action === "ACTIVE" ? (
               <Notice>
                 {selected.isEdited
                   ? "Xác nhận các thông tin/hình ảnh chỉnh sửa của chiến dịch này hợp lệ và cho phép tiếp tục gây quỹ."
@@ -453,13 +692,20 @@ export default function AdminCampaignsPage() {
                 className="button"
                 style={{
                   backgroundColor:
-                    action === "ACTIVE" ? "#16a34a" : "#dc2626",
-                  borderColor: action === "ACTIVE" ? "#16a34a" : "#dc2626",
+                    action === "ACTIVE" || action === "APPROVE_CLOSURE"
+                      ? "#16a34a"
+                      : "#dc2626",
+                  borderColor:
+                    action === "ACTIVE" || action === "APPROVE_CLOSURE"
+                      ? "#16a34a"
+                      : "#dc2626",
                   color: "#fff",
                 }}
                 disabled={busy}
               >
-                {action === "ACTIVE" ? "Xác nhận duyệt" : "Xác nhận từ chối"}
+                {action === "ACTIVE" || action === "APPROVE_CLOSURE"
+                  ? "Xác nhận duyệt"
+                  : "Xác nhận từ chối"}
               </button>
             </div>
           </form>

@@ -26,6 +26,7 @@ import CampaignSummary from "../components/campaign/CampaignSummary";
 import { categoryIcon } from "../components/ui/categoryIcon";
 import { imageSources } from "../components/home/homeData";
 import DisbursementModal from "../components/campaign/DisbursementModal";
+import EarlyClosureModal from "../components/campaign/EarlyClosureModal";
 import { LuBanknote } from "react-icons/lu";
 import {
   FiCheckCircle,
@@ -79,11 +80,13 @@ export default function CampaignDetailPage() {
   const [donate, setDonate] = useState(false);
   const [report, setReport] = useState(false);
   const [disburseModalOpen, setDisburseModalOpen] = useState(false);
+  const [closureModalOpen, setClosureModalOpen] = useState(false);
   const user = useAuthStore((s) => s.user);
   const c = result.data;
+  const isCreator = !!c && (c.fundraiserId === user?.id || c.creator?.id === user?.id);
   const owner =
     !!c &&
-    (c.fundraiserId === user?.id || user?.role?.toUpperCase() === "ADMIN");
+    (isCreator || user?.role?.toUpperCase() === "ADMIN");
 
   async function share() {
     try {
@@ -181,14 +184,33 @@ export default function CampaignDetailPage() {
             <CampaignSummary
               campaign={c}
               signedIn={!!user}
-              owner={owner}
+              owner={isCreator}
               onDonate={() => setDonate(true)}
               onShare={share}
               onReport={() => setReport(true)}
               onDisburse={() => setDisburseModalOpen(true)}
+              onRequestClosure={() => setClosureModalOpen(true)}
             />
 
             <div className="cd-main">
+              {c.closureRequest?.status === "PENDING" && (
+                <div
+                  style={{
+                    background: "#fffbeb",
+                    border: "1px solid #fde68a",
+                    padding: "12px 18px",
+                    borderRadius: "8px",
+                    marginBottom: "16px",
+                  }}
+                >
+                  <div style={{ color: "#b45309", fontWeight: 600, display: "flex", alignItems: "center", gap: "8px", fontSize: "14px" }}>
+                    <FiClock size={16} /> Chiến dịch đang có yêu cầu kết thúc sớm chờ Quản trị viên duyệt
+                  </div>
+                  <div style={{ fontSize: "13px", color: "#78350f", marginTop: "4px" }}>
+                    <strong>Lý do gửi:</strong> {c.closureRequest.reason}
+                  </div>
+                </div>
+              )}
               {owner && (
                 <div
                   style={{
@@ -749,6 +771,16 @@ export default function CampaignDetailPage() {
               onClose={() => setDisburseModalOpen(false)}
               onSuccess={() => {
                 setDisburseModalOpen(false);
+                result.reload();
+              }}
+            />
+          )}
+          {closureModalOpen && (
+            <EarlyClosureModal
+              campaign={c}
+              onClose={() => setClosureModalOpen(false)}
+              onSuccess={() => {
+                setClosureModalOpen(false);
                 result.reload();
               }}
             />

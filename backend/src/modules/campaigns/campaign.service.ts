@@ -11,6 +11,8 @@ import {
   CreateDisbursementInput,
   ReviewDisbursementInput,
   LookupBankAccountInput,
+  RequestClosureInput,
+  ReviewClosureInput,
 } from "./campaign.validation";
 import { findBank, NAPAS_BANKS } from "../../core/constants/banks.constant";
 
@@ -108,6 +110,7 @@ export class CampaignService {
         : null,
       communityLink: legalMetadata?.communityLink || null,
       beneficiaryDetails: legalMetadata?.details || campaign.beneficiaryInfo,
+      closureRequest: legalMetadata?.closureRequest || null,
       bankAccountNumber: campaign.bankAccountNumber,
       bankName: campaign.bankName,
       bankAccountName: campaign.bankAccountName,
@@ -779,6 +782,235 @@ export class CampaignService {
       verified: false,
       source: "LOCAL_VALIDATED",
       message: `Đã xác thực định dạng số tài khoản và ngân hàng ${bank.shortName} (${bank.name}) thuộc mạng lưới Napas 247. Vui lòng nhập tên chủ tài khoản in hoa không dấu để hệ thống đối chiếu với CCCD.`,
+    };
+  }
+
+  /**
+   * Chủ chiến dịch gửi đơn yêu cầu đóng chiến dịch sớm kèm lý do cho admin duyệt
+   */
+  async requestClosure(campaignId: string, actorId: string, input: RequestClosureInput) {
+    const campaign = await this.repo.findById(campaignId);
+    if (!campaign) {
+      throw new AppError("Chiến dịch không tồn tại", 404);
+    }
+
+    if (campaign.fundraiserId !== actorId) {
+      throw new AppError("Bạn không có quyền gửi yêu cầu đóng chiến dịch này", 403);
+    }
+
+    if (campaign.status !== CampaignStatus.ACTIVE) {
+      throw new AppError("Chỉ có thể yêu cầu đóng sớm đối với chiến dịch đang hoạt động", 400);
+    }
+
+    let legalMetadata: any = {};
+    if (campaign.beneficiaryInfo) {
+      try {
+        legalMetadata = JSON.parse(campaign.beneficiaryInfo);
+      } catch {
+        legalMetadata = { details: campaign.beneficiaryInfo };
+      }
+    }
+
+    if (legalMetadata.closureRequest?.status === "PENDING") {
+      throw new AppError("Chiến dịch đang có yêu cầu đóng sớm chờ admin duyệt", 400);
+    }
+
+    legalMetadata.closureRequest = {
+      status: "PENDING",
+      reason: input.reason,
+      evidenceUrls: input.evidenceUrls || [],
+      requestedAt: new Date().toISOString(),
+      requestedBy: actorId,
+      reviewedAt: null,
+      reviewedBy: null,
+      reviewNote: null,
+    };
+
+    await prisma.campaign.update({
+      where: { id: campaignId },
+      data: {
+        beneficiaryInfo: JSON.stringify(legalMetadata),
+      },
+    });
+
+    await auditService.log({
+      userId: actorId,
+      action: "REQUEST_CAMPAIGN_CLOSURE",
+      entityName: "Campaign",
+      entityId: campaignId,
+    });
+
+    // Thông báo cho các quản trị viên
+    try {
+      const admins = await prisma.user.findMany({
+        where: { role: UserRole.ADMIN, status: "ACTIVE" },
+        select: { id: true },
+      });
+      for (const admin of admins) {
+        await prisma.notification.create({
+          data: {
+            userId: admin.id,
+            title: "Yêu cầu đóng chiến dịch sớm mới",
+            message: `Chủ chiến dịch "${campaign.title}" vừa gửi yêu cầu đóng sớm với lý do: "${input.reason.slice(0, 100)}..."`,
+            type: "CAMPAIGN",
+            linkUrl: `/admin/campaigns?tab=closure_requests`,
+          },
+        });
+      }
+    } catch (err) {
+      console.warn("[CLOSURE_REQUEST_NOTIFICATION_WARN]:", err);
+    }
+
+    await invalidatePublicCampaignCache();
+    return {
+      message: "Gửi yêu cầu đóng chiến dịch sớm thành công. Vui lòng chờ Ban Quản trị phê duyệt.",
+      closureRequest: legalMetadata.closureRequest,
+    };
+  }
+
+  /**
+   * Admin lấy danh sách các chiến dịch có yêu cầu đóng sớm
+   */
+  async getAdminClosureRequests(query?: { status?: string; page?: number; limit?: number }) {
+    const page = query?.page ? Number(query.page) : 1;
+    const limit = query?.limit ? Number(query.limit) : 10;
+    const skip = (page - 1) * limit;
+
+    const campaigns = await prisma.campaign.findMany({
+      where: {
+        beneficiaryInfo: {
+          contains: '"closureRequest"',
+        },
+      },
+      include: {
+        fundraiser: {
+          select: {
+            id: true,
+            fullName: true,
+            email: true,
+            avatarUrl: true,
+            phoneNumber: true,
+          },
+        },
+        category: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+      },
+      orderBy: { updatedAt: "desc" },
+    });
+
+    const hydrated = await this.hydrateCampaigns(campaigns, { includeSensitive: true });
+
+    let filtered = hydrated.filter((c: any) => c.closureRequest && c.closureRequest.status);
+
+    if (query?.status) {
+      filtered = filtered.filter((c: any) => c.closureRequest.status === query.status);
+    }
+
+    const total = filtered.length;
+    const paginated = filtered.slice(skip, skip + limit);
+
+    return {
+      items: paginated.map((c: any) => ({
+        id: c.id,
+        title: c.title,
+        slug: c.slug,
+        status: c.status,
+        targetAmount: c.targetAmount,
+        currentAmount: c.currentAmount,
+        progressPercentage: c.progressPercentage,
+        startDate: c.startDate,
+        endDate: c.endDate,
+        daysLeft: c.daysLeft,
+        fundraiser: c.fundraiser,
+        category: c.category,
+        closureRequest: c.closureRequest,
+        createdAt: c.createdAt,
+        updatedAt: c.updatedAt,
+      })),
+      meta: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit) || 1,
+      },
+    };
+  }
+
+  /**
+   * Admin duyệt hoặc từ chối yêu cầu đóng chiến dịch sớm
+   */
+  async reviewClosureRequest(campaignId: string, adminId: string, input: ReviewClosureInput) {
+    const campaign = await this.repo.findById(campaignId);
+    if (!campaign) {
+      throw new AppError("Chiến dịch không tồn tại", 404);
+    }
+
+    let legalMetadata: any = {};
+    if (campaign.beneficiaryInfo) {
+      try {
+        legalMetadata = JSON.parse(campaign.beneficiaryInfo);
+      } catch {
+        legalMetadata = { details: campaign.beneficiaryInfo };
+      }
+    }
+
+    if (!legalMetadata.closureRequest || legalMetadata.closureRequest.status !== "PENDING") {
+      throw new AppError("Chiến dịch này không có yêu cầu đóng sớm đang chờ duyệt", 400);
+    }
+
+    const isApproved = input.status === "APPROVED";
+    legalMetadata.closureRequest.status = input.status;
+    legalMetadata.closureRequest.reviewedAt = new Date().toISOString();
+    legalMetadata.closureRequest.reviewedBy = adminId;
+    legalMetadata.closureRequest.reviewNote = input.reviewNote || null;
+
+    await prisma.$transaction(async (tx) => {
+      await tx.campaign.update({
+        where: { id: campaignId },
+        data: {
+          status: isApproved ? CampaignStatus.COMPLETED : campaign.status,
+          beneficiaryInfo: JSON.stringify(legalMetadata),
+        },
+      });
+
+      await auditService.write(
+        {
+          userId: adminId,
+          action: isApproved ? "APPROVE_CAMPAIGN_CLOSURE" : "REJECT_CAMPAIGN_CLOSURE",
+          entityName: "Campaign",
+          entityId: campaignId,
+        },
+        tx
+      );
+
+      await tx.notification.create({
+        data: {
+          userId: campaign.fundraiserId,
+          title: isApproved
+            ? "Yêu cầu đóng chiến dịch sớm đã được phê duyệt"
+            : "Yêu cầu đóng chiến dịch sớm bị từ chối",
+          message: isApproved
+            ? `Chiến dịch "${campaign.title}" của bạn đã được Admin chấp thuận kết thúc sớm thành công. Trạng thái chiến dịch chuyển sang ĐÃ HOÀN THÀNH.`
+            : `Yêu cầu đóng sớm chiến dịch "${campaign.title}" đã bị từ chối. Lý do: ${input.reviewNote}`,
+          type: isApproved ? "CAMPAIGN_APPROVED" : "CAMPAIGN_REJECTED",
+          linkUrl: `/campaigns/${campaign.slug}`,
+        },
+      });
+    });
+
+    await invalidatePublicCampaignCache();
+
+    return {
+      message: isApproved
+        ? "Đã phê duyệt đóng chiến dịch sớm thành công. Chiến dịch đã chuyển sang trạng thái Hoàn thành."
+        : "Đã từ chối yêu cầu đóng chiến dịch sớm.",
+      campaignId,
+      status: isApproved ? CampaignStatus.COMPLETED : campaign.status,
+      closureRequest: legalMetadata.closureRequest,
     };
   }
 }

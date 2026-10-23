@@ -54,6 +54,18 @@ export interface Campaign {
   bankAccountName?: string;
   beneficiaryInfo?: string;
   rejectionReason?: string;
+  closureRequest?: CampaignClosureRequest | null;
+}
+
+export interface CampaignClosureRequest {
+  status: "PENDING" | "APPROVED" | "REJECTED";
+  reason: string;
+  evidenceUrls?: string[];
+  requestedAt: string;
+  requestedBy: string;
+  reviewedAt?: string | null;
+  reviewedBy?: string | null;
+  reviewNote?: string | null;
 }
 
 export interface DisbursementRecord {

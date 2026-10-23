@@ -73,6 +73,7 @@ export default function CampaignSummary({
   onShare,
   onReport,
   onDisburse,
+  onRequestClosure,
 }: {
   campaign: RecordData;
   signedIn: boolean;
@@ -81,6 +82,7 @@ export default function CampaignSummary({
   onShare: () => void;
   onReport: () => void;
   onDisburse?: () => void;
+  onRequestClosure?: () => void;
 }) {
   const raised = Number(campaign.currentAmount);
   const target = Number(campaign.targetAmount);
@@ -175,12 +177,16 @@ export default function CampaignSummary({
             <LuShare2 aria-hidden="true" />
             Sao chép liên kết
           </button>
-          {signedIn ? (
-            <button className="button ghost block" onClick={onReport}>
-              Báo cáo chiến dịch
-            </button>
-          ) : (
-            <Link to="/login">Đăng nhập để báo cáo nội dung</Link>
+          {!owner && (
+            signedIn ? (
+              <button className="button ghost block" onClick={onReport}>
+                Báo cáo chiến dịch
+              </button>
+            ) : (
+              <Link to="/login" className="button ghost block text-center" style={{ fontSize: "0.875rem" }}>
+                Đăng nhập để báo cáo nội dung
+              </Link>
+            )
           )}
           {owner && ["DRAFT", "PENDING_APPROVAL"].includes(campaign.status) && (
             <Link
@@ -207,6 +213,28 @@ export default function CampaignSummary({
             >
               <LuBanknote aria-hidden="true" size={16} />
               Tạo hồ sơ giải ngân
+            </button>
+          )}
+          {owner && campaign.status === "ACTIVE" && onRequestClosure && (
+            <button
+              type="button"
+              className="button ghost block"
+              onClick={onRequestClosure}
+              style={{
+                borderColor: campaign.closureRequest?.status === "PENDING" ? "#f59e0b" : "#dc2626",
+                color: campaign.closureRequest?.status === "PENDING" ? "#b45309" : "#dc2626",
+                fontWeight: 600,
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: "6px",
+                backgroundColor: campaign.closureRequest?.status === "PENDING" ? "#fffbeb" : undefined,
+              }}
+            >
+              <LuCalendarClock aria-hidden="true" size={16} />
+              {campaign.closureRequest?.status === "PENDING"
+                ? "Đang chờ duyệt đóng sớm"
+                : "Yêu cầu đóng chiến dịch sớm"}
             </button>
           )}
         </div>
