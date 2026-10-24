@@ -1,0 +1,674 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Crowdfunding Community Platform API",
+    "version": "1.0.0",
+    "description": "Đặc tả bám theo các route đã xác minh trong backend/src/app.ts và bộ kiểm thử chapter 6. Các schema chưa có bằng chứng được mô tả tối thiểu; endpoint dự kiến không được coi là endpoint đã triển khai."
+  },
+  "servers": [
+    {
+      "url": "http://localhost:5000/api/v1",
+      "description": "Local theo backend/.env.example; thay bằng URL môi trường thực tế"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Health"
+    },
+    {
+      "name": "Authentication"
+    },
+    {
+      "name": "Profile"
+    },
+    {
+      "name": "Campaigns"
+    },
+    {
+      "name": "Donations"
+    },
+    {
+      "name": "KYC"
+    },
+    {
+      "name": "Uploads"
+    },
+    {
+      "name": "Notifications"
+    },
+    {
+      "name": "Communities"
+    },
+    {
+      "name": "Reports"
+    },
+    {
+      "name": "Admin Analytics"
+    }
+  ],
+  "paths": {
+    "/health": {
+      "get": {
+        "tags": [
+          "Health"
+        ],
+        "summary": "Kiểm tra sức khỏe backend",
+        "responses": {
+          "200": {
+            "description": "API hoạt động",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "timestamp": {
+                      "type": "string",
+                      "format": "date-time"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/login": {
+      "post": {
+        "tags": [
+          "Authentication"
+        ],
+        "summary": "Đăng nhập",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "email",
+                  "password"
+                ],
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "format": "email"
+                  },
+                  "password": {
+                    "type": "string",
+                    "format": "password"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Đăng nhập thành công; kiểm thử xác nhận role và accessToken"
+          },
+          "400": {
+            "description": "Dữ liệu không hợp lệ"
+          },
+          "401": {
+            "description": "Thông tin đăng nhập không hợp lệ"
+          },
+          "403": {
+            "description": "Origin không được tin cậy"
+          }
+        }
+      }
+    },
+    "/auth/logout": {
+      "post": {
+        "tags": [
+          "Authentication"
+        ],
+        "summary": "Đăng xuất và thu hồi phiên",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Đăng xuất thành công"
+          },
+          "401": {
+            "description": "Chưa xác thực"
+          }
+        }
+      }
+    },
+    "/auth/me": {
+      "get": {
+        "tags": [
+          "Authentication"
+        ],
+        "summary": "Lấy tài khoản hiện tại",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Thông tin user; không trả passwordHash"
+          },
+          "401": {
+            "description": "Thiếu/sai token"
+          }
+        }
+      }
+    },
+    "/profile/me": {
+      "get": {
+        "tags": [
+          "Profile"
+        ],
+        "summary": "Xem hồ sơ cá nhân",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Thông tin hồ sơ"
+          },
+          "401": {
+            "description": "Chưa xác thực"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Profile"
+        ],
+        "summary": "Cập nhật hồ sơ cá nhân",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "fullName": {
+                    "type": "string"
+                  },
+                  "phoneNumber": {
+                    "type": "string"
+                  },
+                  "bio": {
+                    "type": "string"
+                  },
+                  "avatarUrl": {
+                    "type": "string",
+                    "format": "uri"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Hồ sơ được cập nhật"
+          },
+          "400": {
+            "description": "Dữ liệu không hợp lệ"
+          },
+          "401": {
+            "description": "Chưa xác thực"
+          }
+        }
+      }
+    },
+    "/campaigns/categories": {
+      "get": {
+        "tags": [
+          "Campaigns"
+        ],
+        "summary": "Lấy danh mục chiến dịch công khai",
+        "responses": {
+          "200": {
+            "description": "Danh sách danh mục"
+          }
+        }
+      }
+    },
+    "/campaigns": {
+      "get": {
+        "tags": [
+          "Campaigns"
+        ],
+        "summary": "Liệt kê và tìm kiếm chiến dịch",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Danh sách chiến dịch có phân trang"
+          },
+          "400": {
+            "description": "Tham số phân trang không hợp lệ"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Campaigns"
+        ],
+        "summary": "Tạo chiến dịch (phân quyền theo code hiện hành)",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Chiến dịch được tạo"
+          },
+          "400": {
+            "description": "Dữ liệu không hợp lệ"
+          },
+          "401": {
+            "description": "Chưa xác thực"
+          },
+          "403": {
+            "description": "Không đủ quyền"
+          }
+        }
+      }
+    },
+    "/donations": {
+      "post": {
+        "tags": [
+          "Donations"
+        ],
+        "summary": "Tạo yêu cầu quyên góp; bộ test chỉ dùng tiền thử nghiệm",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "amount"
+                ],
+                "properties": {
+                  "amount": {
+                    "type": "number",
+                    "minimum": 1
+                  },
+                  "requestKey": {
+                    "type": "string"
+                  },
+                  "campaignId": {
+                    "type": "string"
+                  },
+                  "isAnonymous": {
+                    "type": "boolean"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Yêu cầu PENDING mới"
+          },
+          "200": {
+            "description": "Yêu cầu idempotent trả lại cùng giao dịch"
+          },
+          "400": {
+            "description": "Dữ liệu không hợp lệ"
+          },
+          "409": {
+            "description": "Request key đã dùng với dữ liệu khác"
+          }
+        }
+      }
+    },
+    "/donations/my/history": {
+      "get": {
+        "tags": [
+          "Donations"
+        ],
+        "summary": "Lịch sử quyên góp người dùng",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Danh sách giao dịch"
+          },
+          "401": {
+            "description": "Chưa xác thực"
+          }
+        }
+      }
+    },
+    "/verifications/request": {
+      "post": {
+        "tags": [
+          "KYC"
+        ],
+        "summary": "Gửi yêu cầu xác minh danh tính",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Hồ sơ được tạo"
+          },
+          "400": {
+            "description": "Thiếu dữ liệu"
+          }
+        }
+      }
+    },
+    "/uploads": {
+      "post": {
+        "tags": [
+          "Uploads"
+        ],
+        "summary": "Tải tệp lên",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Tệp được xử lý"
+          },
+          "400": {
+            "description": "Thiếu tệp"
+          },
+          "415": {
+            "description": "Nội dung tệp không được chấp nhận"
+          }
+        }
+      }
+    },
+    "/notifications": {
+      "get": {
+        "tags": [
+          "Notifications"
+        ],
+        "summary": "Xem thông báo cá nhân",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Danh sách thông báo"
+          },
+          "401": {
+            "description": "Chưa xác thực"
+          }
+        }
+      }
+    },
+    "/communities": {
+      "get": {
+        "tags": [
+          "Communities"
+        ],
+        "summary": "Danh sách cộng đồng",
+        "responses": {
+          "200": {
+            "description": "Danh sách cộng đồng"
+          }
+        }
+      }
+    },
+    "/reports": {
+      "post": {
+        "tags": [
+          "Reports"
+        ],
+        "summary": "Gửi báo cáo nội dung",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Báo cáo được tạo"
+          },
+          "401": {
+            "description": "Chưa xác thực"
+          },
+          "400": {
+            "description": "Dữ liệu không hợp lệ"
+          }
+        }
+      }
+    },
+    "/admin/analytics/daily": {
+      "get": {
+        "tags": [
+          "Admin Analytics"
+        ],
+        "summary": "Báo cáo thu/hoàn theo ngày (JSON/CSV)",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "from",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "format",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "json",
+                "csv"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Báo cáo; CSV khi format=csv"
+          },
+          "400": {
+            "description": "Khoảng ngày không hợp lệ"
+          },
+          "401": {
+            "description": "Chưa xác thực"
+          },
+          "403": {
+            "description": "Không có quyền ADMIN"
+          }
+        }
+      }
+    },
+    "/admin/analytics/campaigns": {
+      "get": {
+        "tags": [
+          "Admin Analytics"
+        ],
+        "summary": "Báo cáo thu/hoàn theo chiến dịch (JSON/CSV)",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "from",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "format",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "json",
+                "csv"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Báo cáo; CSV khi format=csv"
+          },
+          "400": {
+            "description": "Khoảng ngày không hợp lệ"
+          },
+          "401": {
+            "description": "Chưa xác thực"
+          },
+          "403": {
+            "description": "Không có quyền ADMIN"
+          }
+        }
+      }
+    },
+    "/admin/analytics/categories": {
+      "get": {
+        "tags": [
+          "Admin Analytics"
+        ],
+        "summary": "Báo cáo thu/hoàn theo danh mục (JSON/CSV)",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "from",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "format",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "json",
+                "csv"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Báo cáo; CSV khi format=csv"
+          },
+          "400": {
+            "description": "Khoảng ngày không hợp lệ"
+          },
+          "401": {
+            "description": "Chưa xác thực"
+          },
+          "403": {
+            "description": "Không có quyền ADMIN"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    }
+  }
+}
