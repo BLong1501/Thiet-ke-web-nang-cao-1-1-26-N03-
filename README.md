@@ -122,6 +122,143 @@ Dự án này được thiết kế để vượt qua mọi tiêu chuẩn khắt
 
 ---
 
+## 🚀 Hướng dẫn Cài đặt & Khởi chạy Hệ thống (Quick Start Guide)
+
+Dành cho thành viên nhóm hoặc người mới clone mã nguồn về máy tính. Dự án hỗ trợ 2 phương thức khởi chạy: **Chạy Local Development (Khuyến nghị cho lập trình viên)** và **Chạy toàn bộ qua Docker Compose**.
+
+### ⚙️ 1. Yêu cầu Môi trường (Prerequisites)
+Trước khi bắt đầu, hãy đảm bảo máy tính đã cài đặt:
+- **Node.js**: Phiên bản `18.x` hoặc `20.x LTS` (Khuyến nghị Node.js 20).
+- **Git**: Quản lý phiên bản mã nguồn.
+- **Docker & Docker Compose**: Để khởi chạy các dịch vụ phụ trợ (MySQL, Redis, MinIO, phpMyAdmin).
+
+---
+
+### 💻 Cách 1: Chạy Môi trường Phát triển (Local Development - Khuyên dùng)
+Cách này khởi chạy các dịch vụ hạ tầng (Database, Cache, Object Storage) bằng Docker, còn Backend và Frontend chạy trực tiếp trên máy host giúp việc lập trình, debug và Hot Reload nhanh nhất.
+
+#### Bước 1: Khởi động các dịch vụ phụ trợ bằng Docker
+Mở terminal tại thư mục gốc của repository:
+```bash
+# Khởi động MySQL, Redis, phpMyAdmin, MinIO dưới dạng tiến trình nền
+docker compose up -d mysql redis phpmyadmin minio
+
+# Kiểm tra trạng thái các container (chờ tới khi mysql và redis báo healthy)
+docker compose ps
+```
+
+#### Bước 2: Thiết lập và Khởi chạy Backend API
+Mở terminal và chuyển vào thư mục `backend`:
+```bash
+cd backend
+
+# 1. Tạo file cấu hình môi trường (.env) từ file mẫu
+# Trên Windows (PowerShell):
+Copy-Item .env.example .env
+# Hoặc trên Linux / macOS / Git Bash:
+cp .env.example .env
+
+# 2. Cài đặt các thư viện phụ thuộc (tự động chạy prisma generate)
+npm install
+
+# 3. Đồng bộ lược đồ cơ sở dữ liệu & Nạp dữ liệu mẫu chuẩn (Seed Data)
+npx prisma db push
+node scripts/clean-seed.cjs
+
+# 4. Khởi chạy Backend ở chế độ phát triển (Hot reload)
+npm run dev
+```
+👉 Backend sẽ lắng nghe tại: `http://localhost:5000`  
+👉 Kiểm tra API hoạt động: `http://localhost:5000/api/v1/health`
+
+#### Bước 3: Thiết lập và Khởi chạy Frontend Web
+Mở **một cửa sổ terminal mới**, chuyển vào thư mục `frontend`:
+```bash
+cd frontend
+
+# 1. Tạo file cấu hình môi trường (.env.local) từ file mẫu
+# Trên Windows (PowerShell):
+Copy-Item .env.example .env.local
+# Hoặc trên Linux / macOS / Git Bash:
+cp .env.example .env.local
+
+# 2. Cài đặt các thư viện phụ thuộc
+npm install
+
+# 3. Khởi chạy Frontend ở chế độ phát triển
+npm run dev
+```
+👉 Giao diện Frontend sẽ hiển thị tại: `http://localhost:5173`
+
+---
+
+### 🐳 Cách 2: Chạy Toàn bộ qua Docker Compose (All-in-One)
+Phương pháp này phù hợp để kiểm thử nhanh hoặc đóng gói chạy trên máy không cài sẵn Node.js:
+
+1. Đảm bảo đã sao chép cấu hình môi trường backend:
+   ```bash
+   # Windows PowerShell:
+   Copy-Item backend/.env.example backend/.env
+   # Linux / macOS / Git Bash:
+   cp backend/.env.example backend/.env
+   ```
+2. Khởi chạy toàn bộ hệ thống bằng một câu lệnh duy nhất từ thư mục gốc:
+   ```bash
+   docker compose up -d --build
+   ```
+3. Xem nhật ký hoạt động (logs):
+   ```bash
+   docker compose logs -f
+   ```
+4. Khi cần dừng toàn bộ hệ thống:
+   ```bash
+   docker compose down
+   ```
+
+---
+
+### 🔑 Tài khoản Kiểm thử Mặc định (Test Accounts)
+Sau khi nạp dữ liệu mẫu bằng `node scripts/clean-seed.cjs`, bạn có thể sử dụng các tài khoản có sẵn dưới đây để kiểm thử toàn diện các luồng nghiệp vụ:
+
+> 💡 **Mật khẩu chung cho tất cả tài khoản mẫu:** `Password@123`
+
+| Vai trò (Role) | Email đăng nhập | Mật khẩu | Mục đích sử dụng / Tính năng kiểm thử |
+| :--- | :--- | :--- | :--- |
+| **Admin** | `admin@crowdfunding.vn` | `Password@123` | Phê duyệt hồ sơ KYC, duyệt chiến dịch gây quỹ, quản lý báo cáo vi phạm, dashboard thống kê |
+| **Fundraiser** | `fundraiser@gmail.com` | `Password@123` | Đã xác minh KYC; tạo chiến dịch mới, chỉnh sửa bài viết, đăng tải cập nhật tiến độ, giải ngân |
+| **User (Chờ KYC)** | `pending_kyc@gmail.com` | `Password@123` | Đã nộp hồ sơ KYC, đang ở trạng thái `PENDING` chờ Admin duyệt hoặc từ chối |
+| **Donator 1** | `donor1@gmail.com` | `Password@123` | Tài khoản nhà hảo tâm ủng hộ chiến dịch, theo dõi lịch sử quyên góp và biên lai |
+| **Donator 2** | `donor2@gmail.com` | `Password@123` | Nhà hảo tâm phụ, bình luận và chia sẻ chiến dịch cộng đồng |
+
+---
+
+### 🌐 Danh sách Cổng dịch vụ & URL Quản trị
+
+| Dịch vụ | URL / Cổng truy cập | Thông tin đăng nhập mặc định |
+| :--- | :--- | :--- |
+| **Frontend Web** | `http://localhost:5173` | Xem bảng tài khoản kiểm thử ở trên |
+| **Backend API** | `http://localhost:5000` | Endpoint Health: `/api/v1/health` |
+| **phpMyAdmin** | `http://localhost:8085` | **Server:** `mysql` (hoặc `localhost:3306`) <br> **User:** `root` <br> **Password:** `rootpassword` |
+| **MinIO S3 Console** | `http://localhost:9006` (API: `9005`) | **User:** `minioadmin` <br> **Password:** `minioadminpassword` |
+| **MySQL Database** | `localhost:3306` | **Database:** `crowdfunding_db` <br> **User:** `dbuser` / `dbpassword` (hoặc `root` / `rootpassword`) |
+| **Redis Server** | `localhost:6379` | Không mật khẩu (mặc định) |
+
+---
+
+### 🛠️ Một số Lưu ý & Xử lý sự cố (Troubleshooting)
+
+1. **Khớp Origin & Cookie Authentication:**
+   - Backend sử dụng Cookie bảo mật với `SameSite=Strict` / `Lax`.
+   - Luôn truy cập Frontend qua địa chỉ **`http://localhost:5173`** (khớp với `CLIENT_URL` trong file `.env` của backend). **Không trộn lẫn** giữa `localhost` và `127.0.0.1` trên thanh địa chỉ trình duyệt vì sẽ làm mất cookie xác thực.
+2. **Lỗi Prisma Client (`Cannot find module '@prisma/client'`):**
+   - Chạy lệnh `npm run prisma:generate` tại thư mục `backend` để sinh lại code client tương thích hệ điều hành.
+3. **Xung đột cổng (Port In Use):**
+   - Nếu các cổng `3306`, `6379`, `5000` hoặc `5173` đã bị chiếm dụng bởi các ứng dụng khác (như MySQL/XAMPP cài sẵn trên máy), hãy tắt dịch vụ đó hoặc đổi cổng tương ứng trong `docker-compose.yml` và các file `.env`.
+4. **Khởi tạo dữ liệu Database:**
+   - Nếu gặp lỗi kết nối cơ sở dữ liệu khi chạy `node scripts/clean-seed.cjs`, hãy kiểm tra chắc chắn container `crowdfunding_mysql` đã khởi động hoàn tất (`STATUS: healthy`).
+
+---
+
 ## 📋 Yêu cầu Đặc thù Chuyên đề (CĐ09)
 
 ### Thực thể Dữ liệu (Dự kiến)
