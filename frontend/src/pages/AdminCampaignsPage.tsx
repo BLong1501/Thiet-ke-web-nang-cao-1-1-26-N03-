@@ -22,8 +22,14 @@ import {
 } from "../components/ui/WorkspaceUI";
 import Tabs from "../components/ui/Tabs";
 import toast from "react-hot-toast";
+import {
+  useAdminPendingCounts,
+  useInvalidatePendingCounts,
+} from "../hooks/useAdminPendingCounts";
 
 export default function AdminCampaignsPage() {
+  const { data: pendingCounts } = useAdminPendingCounts();
+  const invalidatePendingCounts = useInvalidatePendingCounts();
   const [activeTab, setActiveTab] = useState<
     "pending_new" | "pending_edited" | "closure_requests" | "active" | "other"
   >("pending_new");
@@ -109,6 +115,7 @@ export default function AdminCampaignsPage() {
       }
       setSelected(null);
       result.reload();
+      invalidatePendingCounts();
     } catch (e) {
       setError(errorMessage(e));
     } finally {
@@ -146,7 +153,10 @@ export default function AdminCampaignsPage() {
       actions={
         <button
           className="button secondary"
-          onClick={() => result.reload()}
+          onClick={() => {
+            result.reload();
+            invalidatePendingCounts();
+          }}
           style={{ display: "inline-flex", alignItems: "center", gap: 6 }}
         >
           <LuRotateCw size={16} /> Làm mới
@@ -156,9 +166,21 @@ export default function AdminCampaignsPage() {
       <Tabs
         label="Phân loại duyệt chiến dịch"
         tabs={[
-          { id: "pending_new", label: "Duyệt chiến dịch mới" },
-          { id: "pending_edited", label: "Duyệt chiến dịch chỉnh sửa" },
-          { id: "closure_requests", label: "Yêu cầu đóng sớm" },
+          {
+            id: "pending_new",
+            label: "Duyệt chiến dịch mới",
+            badge: pendingCounts?.campaigns?.pendingNew,
+          },
+          {
+            id: "pending_edited",
+            label: "Duyệt chiến dịch chỉnh sửa",
+            badge: pendingCounts?.campaigns?.pendingEdited,
+          },
+          {
+            id: "closure_requests",
+            label: "Yêu cầu đóng sớm",
+            badge: pendingCounts?.campaigns?.closureRequests,
+          },
           { id: "active", label: "Đang hoạt động" },
           { id: "other", label: "Trạng thái khác" },
         ]}

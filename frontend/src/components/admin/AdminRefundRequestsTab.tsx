@@ -13,8 +13,10 @@ import {
   RemoteState,
 } from "../ui/WorkspaceUI";
 import toast from "react-hot-toast";
+import { useInvalidatePendingCounts } from "../../hooks/useAdminPendingCounts";
 
 export default function AdminRefundRequestsTab() {
+  const invalidatePendingCounts = useInvalidatePendingCounts();
   const [page, setPage] = useState(1);
   const [statusFilter, setStatusFilter] = useState<string>("PENDING");
   const [receiptDonation, setReceiptDonation] = useState<RecordData | null>(null);
@@ -65,6 +67,7 @@ export default function AdminRefundRequestsTab() {
       setReviewing(null);
       setRejectionReason("");
       result.reload();
+      invalidatePendingCounts();
     } catch (err) {
       setError(errorMessage(err));
     } finally {

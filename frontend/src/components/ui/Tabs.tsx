@@ -10,6 +10,9 @@ import {
 export interface TabItem {
   id: string;
   label: string;
+  badge?: number;
+  badgeVariant?: "danger" | "warning" | "neutral";
+  highlightPending?: boolean;
 }
 
 interface TabsProps {
@@ -92,6 +95,15 @@ export default function Tabs({
         <div className="tabs" role="tablist" aria-label={label} ref={scroller}>
           {tabs.map((tab, index) => {
             const selected = tab.id === value;
+            const hasBadge = typeof tab.badge === "number" && tab.badge > 0;
+            const isPending = hasBadge || tab.highlightPending;
+            const btnClass = [
+              selected ? "active" : "",
+              isPending ? "has-pending" : "",
+            ]
+              .filter(Boolean)
+              .join(" ");
+
             return (
               <button
                 key={tab.id}
@@ -104,11 +116,19 @@ export default function Tabs({
                 aria-selected={selected}
                 aria-controls={`${base}-panel`}
                 tabIndex={selected ? 0 : -1}
-                className={selected ? "active" : ""}
+                className={btnClass}
                 onClick={() => onChange(tab.id)}
                 onKeyDown={(e) => onKeyDown(e, index)}
               >
-                {tab.label}
+                <span className="tab-label">{tab.label}</span>
+                {hasBadge && (
+                  <span
+                    className={`tab-badge tab-badge--${tab.badgeVariant || "danger"}`}
+                    aria-label={`${tab.badge} yêu cầu chờ phê duyệt`}
+                  >
+                    {tab.badge! > 99 ? "99+" : tab.badge}
+                  </span>
+                )}
               </button>
             );
           })}

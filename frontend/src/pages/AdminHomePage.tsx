@@ -35,6 +35,7 @@ import DonationHistory from "../components/DonationHistory";
 import Tabs from "../components/ui/Tabs";
 import AdminRefundRequestsTab from "../components/admin/AdminRefundRequestsTab";
 import AdminRefundLogsTab from "../components/admin/AdminRefundLogsTab";
+import { useAdminPendingCounts } from "../hooks/useAdminPendingCounts";
 
 type Row = {
   id: string;
@@ -300,13 +301,31 @@ export default function AdminHomePage() {
       <RemoteState {...result} />
       {result.data && (
         <div className="stats-grid">
-          {QUICK_LINKS.map(([label, to], i) => (
-            <Link className="panel" key={to} to={to}>
-              <small>{label}</small>
-              <strong className="stat-number">{result.data![i] ?? "—"}</strong>
-              <span>Xem chi tiết →</span>
-            </Link>
-          ))}
+          {QUICK_LINKS.map(([label, to], i) => {
+            const count = Number(result.data![i]) || 0;
+            const isPendingCategory = i === 0 || i === 1 || i === 2 || i === 5;
+            const hasPending = isPendingCategory && count > 0;
+            return (
+              <Link
+                className={`panel ${hasPending ? "panel--has-pending" : ""}`}
+                key={to}
+                to={to}
+              >
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", width: "100%" }}>
+                  <small>{label}</small>
+                  {hasPending && (
+                    <span className="tab-badge tab-badge--danger" style={{ fontSize: "0.7rem", padding: "1px 6px" }}>
+                      Cần xử lý
+                    </span>
+                  )}
+                </div>
+                <strong className={`stat-number ${hasPending ? "stat-number--pending" : ""}`}>
+                  {result.data![i] ?? "—"}
+                </strong>
+                <span>Xem chi tiết →</span>
+              </Link>
+            );
+          })}
         </div>
       )}
 
@@ -404,6 +423,7 @@ export function AdminDonationsPage({
 }: {
   defaultTab?: "refunds" | "refund_logs" | "donations";
 } = {}) {
+  const { data: pendingCounts } = useAdminPendingCounts();
   const [searchParams] = useSearchParams();
   const tabFromQuery = searchParams.get("tab") as
     | "refunds"
@@ -423,7 +443,11 @@ export function AdminDonationsPage({
       <Tabs
         label="Quản lý giao dịch và hoàn tiền"
         tabs={[
-          { id: "refunds", label: "Duyệt đơn hoàn tiền" },
+          {
+            id: "refunds",
+            label: "Duyệt đơn hoàn tiền",
+            badge: pendingCounts?.refunds,
+          },
           { id: "refund_logs", label: "Nhật ký duyệt hoàn tiền" },
           { id: "donations", label: "Tất cả giao dịch quyên góp" },
         ]}

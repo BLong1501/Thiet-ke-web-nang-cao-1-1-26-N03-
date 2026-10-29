@@ -354,6 +354,96 @@ export const reportApi = {
     api.patch(`/admin/reports/${id}/resolve`, data),
 };
 
+// --- Admin APIs ---
+export interface AdminPendingCounts {
+  campaigns: {
+    total: number;
+    pendingNew: number;
+    pendingEdited: number;
+    closureRequests: number;
+  };
+  disbursements: number;
+  refunds: number;
+  verifications: number;
+  reports: number;
+  total: number;
+}
+
+export const adminApi = {
+  getPendingCounts: async (): Promise<AdminPendingCounts> => {
+    try {
+      const res = await api.get("/admin/pending-counts");
+      return res.data?.data || res.data;
+    } catch {
+      // Cơ chế dự phòng: lấy số lượng từ các endpoint đơn lẻ nếu endpoint tổng hợp gặp sự cố
+      const [campRes, cloRes, disbRes, refRes, verRes, repRes] =
+        await Promise.allSettled([
+          campaignApi.getPending({ limit: 100 }),
+          campaignApi.getAdminClosureRequests({ status: "PENDING", limit: 100 }),
+          campaignApi.getAdminDisbursements({ limit: 100 }),
+          donationApi.getAdminRefundRequests({ status: "PENDING", limit: 1 }),
+          verificationApi.getPending({ limit: 1 }),
+          api.get("/admin/reports", { params: { status: "PENDING", limit: 1 } }),
+        ]);
+
+      let pendingNew = 0;
+      let pendingEdited = 0;
+      if (campRes.status === "fulfilled") {
+        const items = campRes.value.data?.data || campRes.value.data?.items || [];
+        for (const c of items) {
+          if (c.isEdited) pendingEdited++;
+          else pendingNew++;
+        }
+      }
+
+      let closureRequests = 0;
+      if (cloRes.status === "fulfilled") {
+        closureRequests =
+          cloRes.value.data?.meta?.total ??
+          cloRes.value.data?.total ??
+          (cloRes.value.data?.items || cloRes.value.data?.data || []).length;
+      }
+
+      let disbursements = 0;
+      if (disbRes.status === "fulfilled") {
+        const items = disbRes.value.data?.items || disbRes.value.data?.data || [];
+        disbursements = items.filter((d: any) => {
+          const note = d.note || "";
+          return !/\[TRẠNG THÁI:\s*(APPROVED|REJECTED)\]/i.test(note);
+        }).length;
+      }
+
+      const refunds =
+        refRes.status === "fulfilled"
+          ? (refRes.value.data?.total ?? refRes.value.data?.meta?.total ?? 0)
+          : 0;
+      const verifications =
+        verRes.status === "fulfilled"
+          ? (verRes.value.data?.total ?? verRes.value.data?.meta?.total ?? 0)
+          : 0;
+      const reports =
+        repRes.status === "fulfilled"
+          ? (repRes.value.data?.total ?? repRes.value.data?.meta?.total ?? 0)
+          : 0;
+
+      const campaignTotal = pendingNew + pendingEdited + closureRequests;
+      return {
+        campaigns: {
+          total: campaignTotal,
+          pendingNew,
+          pendingEdited,
+          closureRequests,
+        },
+        disbursements,
+        refunds,
+        verifications,
+        reports,
+        total: campaignTotal + disbursements + refunds + verifications + reports,
+      };
+    }
+  },
+};
+
 // --- Community APIs ---
 export const communityApi = {
   list: (params?: Record<string, unknown>) =>

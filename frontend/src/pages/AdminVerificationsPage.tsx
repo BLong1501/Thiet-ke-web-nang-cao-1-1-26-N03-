@@ -13,7 +13,15 @@ import {
   SecureImage,
 } from "../components/ui/WorkspaceUI";
 import toast from "react-hot-toast";
+import {
+  useAdminPendingCounts,
+  useInvalidatePendingCounts,
+} from "../hooks/useAdminPendingCounts";
+import { LuRotateCw } from "react-icons/lu";
+
 export default function AdminVerificationsPage() {
+  const { data: pendingCounts } = useAdminPendingCounts();
+  const invalidatePendingCounts = useInvalidatePendingCounts();
   const [page, setPage] = useState(1);
   const [id, setId] = useState("");
   const result = useRemote(
@@ -22,10 +30,32 @@ export default function AdminVerificationsPage() {
     { keepPrevious: true },
   );
   return (
-    <Page title="Xét duyệt danh tính">
-      <button className="button secondary" onClick={result.reload}>
-        Làm mới danh sách
-      </button>
+    <Page
+      title="Xét duyệt danh tính KYC"
+      intro="Phê duyệt hoặc từ chối hồ sơ định danh CCCD của người dùng để mở quyền gây quỹ."
+      actions={
+        <div style={{ display: "inline-flex", alignItems: "center", gap: 10 }}>
+          {Boolean(pendingCounts?.verifications) && (
+            <span
+              className="tab-badge tab-badge--danger"
+              style={{ fontSize: "0.85rem", padding: "4px 10px" }}
+            >
+              {pendingCounts!.verifications} hồ sơ chờ duyệt
+            </span>
+          )}
+          <button
+            className="button secondary"
+            onClick={() => {
+              result.reload();
+              invalidatePendingCounts();
+            }}
+            style={{ display: "inline-flex", alignItems: "center", gap: 6 }}
+          >
+            <LuRotateCw size={15} /> Làm mới
+          </button>
+        </div>
+      }
+    >
       <RemoteState {...result} />
       {result.data && (
         <>
@@ -72,6 +102,7 @@ export default function AdminVerificationsPage() {
           updated={() => {
             setId("");
             result.reload();
+            invalidatePendingCounts();
           }}
         />
       )}

@@ -30,6 +30,11 @@ import {
 } from "react-icons/fi";
 import { RiBankCardLine } from "react-icons/ri";
 import toast from "react-hot-toast";
+import Tabs from "../components/ui/Tabs";
+import {
+  useAdminPendingCounts,
+  useInvalidatePendingCounts,
+} from "../hooks/useAdminPendingCounts";
 
 interface ParsedDisbursement {
   status: "PENDING" | "APPROVED" | "REJECTED";
@@ -131,9 +136,11 @@ import { useAuthStore } from "../store/authStore";
 const FALLBACK_CCCD = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="300" height="190" viewBox="0 0 300 190"><rect width="100%" height="100%" fill="%23f8fafc"/><rect x="10" y="10" width="280" height="170" rx="8" fill="%23ffffff" stroke="%2394a3b8" stroke-width="2" stroke-dasharray="4 4"/><circle cx="65" cy="85" r="28" fill="%23e2e8f0"/><text x="175" y="65" font-family="sans-serif" font-size="12" font-weight="bold" fill="%23334155">GIẤY TỜ ĐỊNH DANH</text><text x="175" y="85" font-family="sans-serif" font-size="10" fill="%2364748b">CCCD / Người thụ hưởng</text><text x="175" y="105" font-family="sans-serif" font-size="10" fill="%230d9488">Hồ sơ đã lưu trên hệ thống</text><text x="150" y="150" font-family="sans-serif" font-size="10" fill="%2394a3b8" text-anchor="middle">Hình ảnh lưu trữ bảo mật</text></svg>`;
 
 export default function AdminDisbursementsPage() {
+  const { data: pendingCounts } = useAdminPendingCounts();
+  const invalidatePendingCounts = useInvalidatePendingCounts();
   const [page, setPage] = useState(1);
   const [selected, setSelected] = useState<RecordData | null>(null);
-  const [statusFilter, setStatusFilter] = useState<"ALL" | "PENDING" | "APPROVED" | "REJECTED">("ALL");
+  const [statusFilter, setStatusFilter] = useState<"ALL" | "PENDING" | "APPROVED" | "REJECTED">("PENDING");
   const [actionBusy, setActionBusy] = useState(false);
   const [rejectDialog, setRejectDialog] = useState(false);
   const [rejectReason, setRejectReason] = useState("");
@@ -196,6 +203,7 @@ export default function AdminDisbursementsPage() {
       });
       toast.success("Phê duyệt hồ sơ giải ngân thành công!");
       result.reload();
+      invalidatePendingCounts();
       setSelected(null);
     } catch (err) {
       toast.error(errorMessage(err) || "Lỗi khi phê duyệt hồ sơ giải ngân");
@@ -221,6 +229,7 @@ export default function AdminDisbursementsPage() {
       setRejectDialog(false);
       setRejectReason("");
       result.reload();
+      invalidatePendingCounts();
       setSelected(null);
     } catch (err) {
       toast.error(errorMessage(err) || "Lỗi khi từ chối hồ sơ");
@@ -234,24 +243,45 @@ export default function AdminDisbursementsPage() {
       title="Duyệt & Đối soát Hồ sơ Giải ngân"
       intro="Thẩm định thông tin định danh CCCD, đối chiếu tài khoản ngân hàng thụ hưởng và phê duyệt giải ngân từ tài khoản Quỹ trung tâm."
     >
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          marginBottom: "20px",
-          flexWrap: "wrap",
-          gap: "12px",
+      <Tabs
+        label="Phân loại hồ sơ giải ngân"
+        tabs={[
+          {
+            id: "PENDING",
+            label: "Chờ phê duyệt",
+            badge: pendingCounts?.disbursements,
+          },
+          { id: "APPROVED", label: "Đã phê duyệt" },
+          { id: "REJECTED", label: "Bị từ chối" },
+          { id: "ALL", label: "Tất cả hồ sơ" },
+        ]}
+        value={statusFilter}
+        onChange={(val) => {
+          setStatusFilter(val as any);
+          setPage(1);
         }}
       >
-        <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
-          <button
-            className="button secondary"
-            onClick={result.reload}
-            style={{ display: "inline-flex", alignItems: "center", gap: "8px" }}
-          >
-            <FiRefreshCw size={15} /> Làm mới
-          </button>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            marginBottom: "20px",
+            flexWrap: "wrap",
+            gap: "12px",
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
+            <button
+              className="button secondary"
+              onClick={() => {
+                result.reload();
+                invalidatePendingCounts();
+              }}
+              style={{ display: "inline-flex", alignItems: "center", gap: "8px" }}
+            >
+              <FiRefreshCw size={15} /> Làm mới
+            </button>
 
           {/* Bộ lọc trạng thái */}
           <div style={{ display: "inline-flex", alignItems: "center", gap: "6px", background: "#f8fafc", padding: "4px 8px", borderRadius: "8px", border: "1px solid #e2e8f0" }}>
@@ -502,6 +532,7 @@ export default function AdminDisbursementsPage() {
           <Pager page={page} pages={result.data.pages} onChange={setPage} />
         </>
       )}
+      </Tabs>
 
       {/* MODAL ĐỐI SOÁT HỒ SƠ GIẢI NGÂN CHI TIẾT */}
       {selected && (

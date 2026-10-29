@@ -68,6 +68,7 @@ import { notificationRouter } from "./modules/notifications/notification.routes"
 import { reportRouter, adminReportRouter } from "./modules/reports/report.routes";
 import { communityRouter } from "./modules/communities/community.routes";
 import { analyticsRouter } from './modules/analytics/analytics.routes';
+import { adminRouter } from "./modules/admin/admin.routes";
 
 // Health check endpoint
 app.get("/api/v1/health", (_req: Request, res: Response) => {
@@ -92,6 +93,7 @@ app.use("/api/v1/reports", reportRouter);
 app.use("/api/v1/admin/reports", adminReportRouter);
 app.use("/api/v1/communities", communityRouter);
 app.use('/api/v1/admin/analytics', analyticsRouter);
+app.use("/api/v1/admin", adminRouter);
 
 // Alias linh hoạt cho Webhook PayOS (bắt được cả khi PayOS gọi vào /api/v1 hoặc /api/v1/webhook)
 import { donationController } from "./modules/donations/donation.controller";
