@@ -13,6 +13,11 @@ import { Page, Field, Notice, RemoteState } from "../components/ui/WorkspaceUI";
 import toast from "react-hot-toast";
 import { VIETNAM_BANKS } from "../data/vietnamBanks";
 import { FiShield } from "react-icons/fi";
+import { LuEye } from "react-icons/lu";
+import CampaignPreviewModal, {
+  type CampaignPreviewData,
+} from "../components/campaign/CampaignPreviewModal";
+
 export default function CreateCampaignPage() {
   const { id } = useParams();
   const result = useRemote(async () => {
@@ -121,6 +126,7 @@ function CampaignForm({
 
   const [selectedBank, setSelectedBank] = useState<string>(c?.bankName || VIETNAM_BANKS[0].name);
   const [accountNumber, setAccountNumber] = useState<string>(c?.bankAccountNumber || "");
+  const [previewData, setPreviewData] = useState<CampaignPreviewData | null>(null);
 
   useEffect(() => {
     return () => {
@@ -225,6 +231,63 @@ function CampaignForm({
           .filter((line: string) => line && line !== shot.url)
           .join("\n"),
       );
+    }
+  }
+
+  function handleOpenPreview() {
+    const form = formRef.current;
+    if (!form) return;
+    const f = new FormData(form);
+    const value = (key: string) => String(f.get(key) || "").trim();
+
+    const catId = value("categoryId");
+    const selectedCat = categories.find((cat) => String(cat.id) === String(catId));
+
+    const startVal = value("startDate");
+    const endVal = value("endDate");
+
+    const mediaList = [
+      ...mediaShots.map((s) => s.url || s.preview).filter(Boolean),
+      ...value("media")
+        .split("\n")
+        .map((s) => s.trim())
+        .filter(Boolean),
+    ];
+    const uniqueMedia = Array.from(new Set(mediaList));
+
+    setPreviewData({
+      title: value("title") || c?.title || "",
+      categoryName: selectedCat?.name || c?.category?.name || "Danh mục chung",
+      shortDescription: value("shortDescription") || c?.shortDescription || "",
+      story: value("story") || c?.story || "",
+      targetAmount: Number(value("targetAmount")) || Number(c?.targetAmount) || 0,
+      beneficiaryInfo: value("beneficiaryInfo") || c?.beneficiaryDetails || c?.beneficiaryInfo || "",
+      startDate: startVal ? new Date(startVal).toISOString() : c?.startDate,
+      endDate: endVal ? new Date(endVal).toISOString() : c?.endDate,
+      coverImageUrl: coverUrl || localPreview || c?.coverImageUrl || "",
+      mediaUrls: uniqueMedia,
+      organizerType: organizer,
+      organizationName: value("organizationName") || c?.organizationName,
+      bankName: selectedBank || c?.bankName,
+      bankAccountNumber: accountNumber || c?.bankAccountNumber,
+      bankAccountName:
+        organizer === "INDIVIDUAL"
+          ? (user?.name || value("bankAccountName"))
+          : (value("bankAccountName") || c?.bankAccountName),
+      fundraiserName: user?.name,
+      fundraiserEmail: user?.email,
+      status: c?.status || "PENDING_APPROVAL",
+    });
+  }
+
+  function handleConfirmSubmitFromPreview() {
+    setPreviewData(null);
+    if (!formRef.current) return;
+    const submitBtn = formRef.current.querySelector('button[value="PENDING_APPROVAL"]') as HTMLButtonElement | null;
+    if (submitBtn) {
+      submitBtn.click();
+    } else {
+      formRef.current.requestSubmit();
     }
   }
 
@@ -783,6 +846,17 @@ function CampaignForm({
         ) : (
           <span />
         )}
+        <div style={{ display: "inline-flex", gap: "8px", alignItems: "center", flexWrap: "wrap" }}>
+          <button
+            type="button"
+            className="button secondary"
+            disabled={busy}
+            onClick={handleOpenPreview}
+            title="Xem thử bản thu nhỏ (Pop up) trước khi gửi duyệt"
+            style={{ display: "inline-flex", alignItems: "center", gap: 6 }}
+          >
+            <LuEye size={16} /> Xem trước
+          </button>
         {step < STEPS.length - 1 ? (
           <button
             type="button"
@@ -807,6 +881,17 @@ function CampaignForm({
           </div>
         )}
       </div>
+
+      </div>
+      {previewData && (
+        <CampaignPreviewModal
+          data={previewData}
+          onClose={() => setPreviewData(null)}
+          onSubmitForApproval={handleConfirmSubmitFromPreview}
+          submitButtonText="Xác nhận gửi xét duyệt"
+          isSubmitting={busy}
+        />
+      )}
     </form>
   );
 }

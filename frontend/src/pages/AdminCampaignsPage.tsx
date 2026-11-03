@@ -27,6 +27,7 @@ import {
   useInvalidatePendingCounts,
 } from "../hooks/useAdminPendingCounts";
 
+import CampaignPreviewModal from "../components/campaign/CampaignPreviewModal";
 export default function AdminCampaignsPage() {
   const { data: pendingCounts } = useAdminPendingCounts();
   const invalidatePendingCounts = useInvalidatePendingCounts();
@@ -42,6 +43,7 @@ export default function AdminCampaignsPage() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [reconciliation, setReconciliation] = useState<RecordData | null>(null);
+  const [previewingCampaign, setPreviewingCampaign] = useState<RecordData | null>(null);
 
   // Truy vấn chiến dịch theo tab
   const result = useRemote(
@@ -470,20 +472,19 @@ export default function AdminCampaignsPage() {
                               justifyContent: "flex-end",
                             }}
                           >
-                            <Link
+                            <button
+                              type="button"
                               className="button secondary sm"
-                              to={campaignPath(c)}
-                              target="_blank"
-                              rel="noreferrer"
-                              title="Xem chi tiết chiến dịch"
+                              onClick={() => setPreviewingCampaign(c)}
+                              title="Xem trước bản thu nhỏ (Pop up)"
                               style={{
                                 display: "inline-flex",
                                 alignItems: "center",
                                 gap: 4,
                               }}
                             >
-                              <LuEye size={15} /> Xem
-                            </Link>
+                              <LuEye size={15} /> Xem trước
+                            </button>
 
                             {activeTab === "closure_requests" ? (
                               c.closureRequest?.status === "PENDING" && (
@@ -755,6 +756,57 @@ export default function AdminCampaignsPage() {
             ))}
           </dl>
         </Modal>
+      )}
+      {previewingCampaign && (
+        <CampaignPreviewModal
+          data={{
+            id: previewingCampaign.id,
+            title: previewingCampaign.title,
+            categoryName: previewingCampaign.category?.name,
+            shortDescription: previewingCampaign.shortDescription,
+            story: previewingCampaign.story,
+            targetAmount: Number(previewingCampaign.targetAmount),
+            currentAmount: Number(previewingCampaign.currentAmount),
+            beneficiaryInfo:
+              previewingCampaign.beneficiaryDetails ||
+              previewingCampaign.beneficiaryInfo,
+            startDate: previewingCampaign.startDate,
+            endDate: previewingCampaign.endDate,
+            coverImageUrl: previewingCampaign.coverImageUrl,
+            mediaUrls: (previewingCampaign.media || []).map((m: any) => m.url),
+            organizerType: previewingCampaign.organizerType,
+            organizationName: previewingCampaign.organizationName,
+            bankName: previewingCampaign.bankName,
+            bankAccountNumber: previewingCampaign.bankAccountNumber,
+            bankAccountName: previewingCampaign.bankAccountName,
+            fundraiserName:
+              previewingCampaign.fundraiser?.fullName ||
+              previewingCampaign.fundraiser?.name,
+            fundraiserEmail: previewingCampaign.fundraiser?.email,
+            status: previewingCampaign.status,
+            isEdited: previewingCampaign.isEdited,
+          }}
+          onClose={() => setPreviewingCampaign(null)}
+          adminActions={{
+            viewUrl: campaignPath(previewingCampaign),
+            onApprove:
+              previewingCampaign.status === "PENDING_APPROVAL"
+                ? () => {
+                    setSelected(previewingCampaign);
+                    setAction("ACTIVE");
+                    setError("");
+                  }
+                : undefined,
+            onReject:
+              previewingCampaign.status === "PENDING_APPROVAL"
+                ? () => {
+                    setSelected(previewingCampaign);
+                    setAction("REJECTED");
+                    setError("");
+                  }
+                : undefined,
+          }}
+        />
       )}
     </Page>
   );

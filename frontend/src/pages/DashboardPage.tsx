@@ -16,6 +16,8 @@ import Tabs from "../components/ui/Tabs";
 import DonationHistory from "../components/DonationHistory";
 import MyRefundRequests from "../components/MyRefundRequests";
 import DisbursementModal from "../components/campaign/DisbursementModal";
+import CampaignPreviewModal from "../components/campaign/CampaignPreviewModal";
+
 export default function DashboardPage() {
   const user = useAuthStore((s) => s.user);
   const role = user?.role?.toUpperCase();
@@ -65,9 +67,12 @@ export default function DashboardPage() {
     </Page>
   );
 }
+
 function MyCampaigns() {
   const [page, setPage] = useState(1);
   const [selectedDisburseCampaign, setSelectedDisburseCampaign] =
+    useState<RecordData | null>(null);
+  const [previewingCampaign, setPreviewingCampaign] =
     useState<RecordData | null>(null);
   const result = useRemote(
     () => campaignApi.getMyCampaigns({ page, limit: 10 }).then(listResult),
@@ -115,6 +120,23 @@ function MyCampaigns() {
                             flexWrap: "wrap",
                           }}
                         >
+                          <button
+                            type="button"
+                            onClick={() => setPreviewingCampaign(c)}
+                            style={{
+                              background: "none",
+                              border: "none",
+                              padding: 0,
+                              color: "#2563eb",
+                              fontWeight: 600,
+                              cursor: "pointer",
+                              fontSize: "inherit",
+                              textDecoration: "underline",
+                            }}
+                          >
+                            Xem trước
+                          </button>
+                          <span style={{ color: "#94a3b8" }}>·</span>
                           <Link to={campaignPath(c)} style={{ fontWeight: 500 }}>
                             Quản lý
                           </Link>
@@ -174,6 +196,39 @@ function MyCampaigns() {
             setSelectedDisburseCampaign(null);
             result.reload();
           }}
+        />
+      )}
+
+      {previewingCampaign && (
+        <CampaignPreviewModal
+          data={{
+            id: previewingCampaign.id,
+            title: previewingCampaign.title,
+            categoryName: previewingCampaign.category?.name,
+            shortDescription: previewingCampaign.shortDescription,
+            story: previewingCampaign.story,
+            targetAmount: Number(previewingCampaign.targetAmount),
+            currentAmount: Number(previewingCampaign.currentAmount),
+            beneficiaryInfo:
+              previewingCampaign.beneficiaryDetails ||
+              previewingCampaign.beneficiaryInfo,
+            startDate: previewingCampaign.startDate,
+            endDate: previewingCampaign.endDate,
+            coverImageUrl: previewingCampaign.coverImageUrl,
+            mediaUrls: (previewingCampaign.media || []).map((m: any) => m.url),
+            organizerType: previewingCampaign.organizerType,
+            organizationName: previewingCampaign.organizationName,
+            bankName: previewingCampaign.bankName,
+            bankAccountNumber: previewingCampaign.bankAccountNumber,
+            bankAccountName: previewingCampaign.bankAccountName,
+            fundraiserName:
+              previewingCampaign.fundraiser?.fullName ||
+              previewingCampaign.fundraiser?.name,
+            fundraiserEmail: previewingCampaign.fundraiser?.email,
+            status: previewingCampaign.status,
+            isEdited: previewingCampaign.isEdited,
+          }}
+          onClose={() => setPreviewingCampaign(null)}
         />
       )}
     </>
